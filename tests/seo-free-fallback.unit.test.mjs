@@ -25,3 +25,37 @@ test('social network links are never reported as broken', () => {
   for (const u of ['https://www.instagram.com/lobistarsfc', 'https://x.com/lobistars', 'https://web.facebook.com/x', 'https://wa.me/234']) assert.equal(isSocialLink(u), true, u);
   for (const u of ['https://nnl.ng/', 'https://box.com/', 'https://notx.com/']) assert.equal(isSocialLink(u), false, u);
 });
+
+test('a speed test that did not finish (no main-content time) is not reported as 0/100', async () => {
+  const { computeIssues } = await import('../functions/api/_lib/seoAnalyse.js');
+  const speed = {
+    '/news/a/': { mobile: { score: 0, lcp: 0, cls: 0, fcp: 0.97 } },
+    '/news/b/': { mobile: { score: 30, lcp: 6.2, cls: 0.02, fcp: 2 } },
+  };
+  const out = computeIssues({ pages: [], ran: { speed: true }, speed });
+  const found = out.filter(i => i.type.startsWith('speed') || i.type === 'cwv_poor').map(i => `${i.type} ${i.path}`);
+  assert.ok(!found.some(x => x.includes('/news/a/')), found.join(', '));
+  assert.ok(found.includes('speed_poor /news/b/'), found.join(', '));
+});
+
+test('AI Fix is greyed out for 24 hours after a fix is recorded, unless the issue is still there', async () => {
+  const { fixProgress } = await import('../functions/api/_lib/seoFix.js');
+  const now = Date.parse('2026-11-18T12:00:00Z'), ago = h => new Date(now - h * 3600e3).toISOString();
+  const issue = { type: 'title_length' };
+  // Applied 2 hours ago, not checked again yet: locked, and says when it opens again.
+  let p = fixProgress(issue, { status: 'applied', applied_at: ago(2) }, null, now);
+  assert.equal(p.lock, true); assert.match(p.button, /opens again/);
+  // Checked again after the fix and still open: unlocked at once.
+  p = fixProgress(issue, { status: 'applied', applied_at: ago(2) }, ago(1), now);
+  assert.equal(p.state, 'still_open'); assert.equal(p.lock, false);
+  // After 24 hours: open again.
+  assert.equal(fixProgress(issue, { status: 'applied', applied_at: ago(25) }, null, now).lock, false);
+  // A VS Code instruction or a suggestion counts as a recorded fix too.
+  assert.equal(fixProgress({ type: 'h1_missing' }, { status: 'instruction', created_at: ago(3) }, null, now).lock, true);
+  assert.equal(fixProgress({ type: 'thin_page' }, { status: 'draft', created_at: ago(30) }, null, now).lock, false);
+  // Google-figure issues keep the longer wait.
+  p = fixProgress({ type: 'almost_top' }, { status: 'applied', applied_at: ago(48) }, null, now);
+  assert.equal(p.state, 'waiting_google'); assert.equal(p.lock, true);
+  // A fix waiting for approval is never locked (pressing AI Fix shows it again).
+  assert.equal(fixProgress(issue, { status: 'proposed', created_at: ago(1) }, null, now).lock, false);
+});

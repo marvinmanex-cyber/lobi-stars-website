@@ -33,3 +33,8 @@ export const TEAM_LOGOS = {
 export function teamLogo(name) {
   return TEAM_LOGOS[name] || null;
 }
+
+// The same logos as WebP (every one has a .webp copy in public/images, made by scripts/optimize-images.mjs): for web
+// pages only, which load them faster (SEO Scanner "Image not in WebP", Nov 2026). Emails, ticket PDFs, accreditation
+// cards and share pictures keep TEAM_LOGOS (PNG/JPG), which every email program and PDF tool can show.
+export const WEB_LOGOS = Object.fromEntries(Object.entries(TEAM_LOGOS).map(([k, v]) => [k, v.replace(/\.(png|jpe?g)$/i, '.webp')]));

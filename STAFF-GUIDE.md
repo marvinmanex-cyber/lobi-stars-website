@@ -4073,6 +4073,17 @@ the Super Admins should be owners of the Search Console property.
 **Learn:** **SEO basics** (button at the top) explains all of this in plain
 English for anyone on the media team.
 
+**AI Fix is greyed out for 24 hours after a fix:** once a fix is applied (or a
+VS Code instruction or suggestion is given), the AI Fix button turns grey and
+says when it opens again, so the same fix is never made twice. It opens sooner
+if a check shows the issue is still there ("Still open after the fix"). Issues
+measured from Google's figures wait 28 days. To see a recorded instruction
+again, press **Show it again** on the card's status line.
+
+**Speed results:** when Google's speed test does not finish on a page, nothing
+is recorded and the page is tested again next time (it is never shown as
+"0/100").
+
 **AI Fix without AI (free):** when AI is not available (not connected, or the
 daily or monthly AI limit is reached), AI Fix for titles, descriptions and alt
 text still works. It writes a version from the page's own heading and first

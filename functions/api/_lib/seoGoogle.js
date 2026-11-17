@@ -131,6 +131,13 @@ export async function pageSpeed(env, path, strategy = 'mobile') {
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(`PageSpeed answered ${r.status}: ${String(d.error?.message || '').slice(0, 160)}`);
   const a = d.lighthouseResult?.audits || {}, field = d.loadingExperience?.metrics || {};
+  // A test that did not finish (no score, or no main-content time) is not saved as "0/100": the page is tested
+  // again at the next speed test instead (Google sometimes gives up on a page on its side, e.g. "NO_LCP").
+  const perf = d.lighthouseResult?.categories?.performance?.score;
+  if (perf == null || !(a['largest-contentful-paint']?.numericValue > 0)) {
+    const why = d.lighthouseResult?.runtimeError?.code || a['largest-contentful-paint']?.errorMessage || 'no result';
+    throw new Error(`PageSpeed could not measure this page this time (${String(why).slice(0, 120)}); it is tested again next time.`);
+  }
   return {
     score: Math.round((d.lighthouseResult?.categories?.performance?.score ?? 0) * 100),
     lcp: (a['largest-contentful-paint']?.numericValue || 0) / 1000,

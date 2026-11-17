@@ -65,12 +65,14 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   .seo { --blue: #1C3F7A; --red: #C8102E; }
   .seo-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
   .seo-acts { display: flex; flex-wrap: wrap; gap: 8px; } .seo-acts a { text-decoration: none; }
-  .fxs { margin: 8px 0; padding: 10px 12px; border-radius: 10px; font-size: 14px; line-height: 1.45; background: #EEF2F7; color: #1F2A37; border-left: 4px solid #64748B; }
-  .fxs b { margin-right: 4px; }
-  .fxs-checking { background: #EFF6FF; border-left-color: #2563EB; }
-  .fxs-waiting_google { background: #FFF7E6; border-left-color: #D97706; }
-  .fxs-still_open { background: #FEF2F2; border-left-color: #DC2626; }
-  .fxs-instruction, .fxs-draft, .fxs-proposed { background: #F5F3FF; border-left-color: #7C3AED; }
+  .seo :global(.three button:disabled) { background: #9AA3AE !important; color: #F4F6F8 !important; cursor: not-allowed; opacity: .85; }
+  .seo :global(.fxs) { margin: 8px 0; padding: 10px 12px; border-radius: 10px; font-size: 14px; line-height: 1.45; background: #EEF2F7; color: #1F2A37; border-left: 4px solid #64748B; }
+  .seo :global(.fxs b) { margin-right: 4px; }
+  .seo :global(.fxs-checking), .seo :global(.fxs-applied) { background: #EFF6FF; border-left-color: #2563EB; }
+  .seo :global(.fxs-again) { margin-left: 4px; padding: 4px 10px; border: 1px solid currentColor; border-radius: 8px; background: #fff; color: #5B21B6; font: inherit; font-weight: 700; cursor: pointer; }
+  .seo :global(.fxs-waiting_google) { background: #FFF7E6; border-left-color: #D97706; }
+  .seo :global(.fxs-still_open) { background: #FEF2F2; border-left-color: #DC2626; }
+  .seo :global(.fxs-instruction), .seo :global(.fxs-draft), .seo :global(.fxs-proposed) { background: #F5F3FF; border-left-color: #7C3AED; }
   /* A notice pinned to the bottom of the screen: the page never jumps to show it (owner's request, 16 Nov 2026). */
   .seo-msg { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 4000; max-width: min(640px, calc(100vw - 32px)); padding: 12px 16px; border-radius: 12px; background: #DCFCE7; color: #166534; margin: 0; font-weight: 600; box-shadow: 0 10px 30px rgba(0, 0, 0, .18); } .seo-msg.err { background: #FEE2E2; color: #991B1B; }
   .seo-prog { margin: 0 0 14px; } .seo-bar { height: 10px; border-radius: 999px; background: var(--a-line); overflow: hidden; }
@@ -189,7 +191,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     $('alerts').replaceChildren(...D.alerts.filter(a => a.day >= new Date(Date.now() - 2 * 864e5).toISOString().slice(0, 10)).map(a => el('div', { class: 'alert' }, el('b', { text: `${a.day === today ? 'Today' : a.day}: ` }), a.message)));
     $('waitingCard').hidden = !D.waiting.length;
     $('waitingList').replaceChildren(...D.waiting.map(f => { const box = el('div'); showFix(box, f); return el('div', { class: 'seo-item', style: '--c:#1C3F7A' }, el('h3', {}, f.name, f.auto ? el('span', { class: 'chip', text: 'Prepared by an automation rule' }) : null), el('p', { text: f.path || 'Whole website' }), box); }));
-    $('top').replaceChildren(...(D.top.length ? D.top.map((i, n) => el('div', { class: 'seo-item', style: `--c:${SEV[i.severity]}` }, el('h3', {}, `${n + 1}. ${i.name}`, el('span', { class: 'badge', text: i.severityLabel })), el('p', { text: i.problem }), el('p', { class: 'muted', text: i.why }), threeButtons(i))) : [el('p', { class: 'muted', text: 'Nothing urgent: well done.' })]));
+    $('top').replaceChildren(...(D.top.length ? D.top.map((i, n) => el('div', { class: 'seo-item', style: `--c:${SEV[i.severity]}` }, el('h3', {}, `${n + 1}. ${i.name}`, el('span', { class: 'badge', text: i.severityLabel })), statusLine(i), el('p', { text: i.problem }), el('p', { class: 'muted', text: i.why }), threeButtons(i))) : [el('p', { class: 'muted', text: 'Nothing urgent: well done.' })]));
     ranks(D.ranks);
     const cat = $('fCat');
     if (cat.options.length === 1) for (const k of D.categories) cat.append(el('option', { value: k.key, text: `${k.icon} ${k.label}` }));
@@ -213,12 +215,12 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   $('device').addEventListener('change', async () => { try { ranks(await api(null, `?view=ranks&device=${$('device').value}`)); } catch (e) { msg(e.message, false); } });
 
   function threeButtons(i) {
-    const box = el('div');
+    const box = el('div', { class: 'fix-box' });
     const a = i.actions;
     const wrap = el('div', {},
       el('div', { class: 'three' },
         el('button', { type: 'button', class: 'a1', disabled: a.ai && !i.progress?.lock ? null : '', title: !a.ai ? 'No AI Fix for this kind of issue' : i.progress?.lock ? i.progress.text : '', onclick: e => aiFix(i, box, e.currentTarget) },
-          i.progress?.lock ? (i.progress.state === 'waiting_google' ? '⏳ Fix applied: waiting for Google' : '⏳ Fix applied: checking…') : i.progress?.state === 'proposed' ? '🤖 AI Fix: see the prepared fix' : a.code ? '🤖 AI Fix (VS Code instruction)' : '🤖 AI Fix'),
+          i.progress?.lock ? (i.progress.button || '⏳ Fix recorded') : i.progress?.state === 'proposed' ? '🤖 AI Fix: see the prepared fix' : a.code ? '🤖 AI Fix (VS Code instruction)' : '🤖 AI Fix'),
         el('button', { type: 'button', class: 'a2', disabled: a.automate ? null : '', title: a.automate ? '' : 'This kind of issue needs a person or code', onclick: () => { location.href = `/admin/seo/settings/?rule=${encodeURIComponent(i.type)}#rules`; } }, '⚙️ Set up AI to fix this next time'),
         el('button', { type: 'button', class: 'a3', onclick: () => myself(i, box) }, '🛠️ Fix it myself')),
       el('div', { class: 'small-btns' },
@@ -228,12 +230,22 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       box);
     return wrap;
   }
+  // Where the latest fix stands (the same line on the Top 5 and in the issue list).
+  function statusLine(i) {
+    const pr = i.progress;
+    if (!pr) return null;
+    const label = { checking: '⏳ Checking', applied: '✅ Fix applied', still_open: '⚠️ Still open after the fix', waiting_google: '⏳ Waiting for Google', instruction: '🧑‍💻 Instruction given', draft: '📝 Suggestion given', proposed: '📝 Waiting for your approval' }[pr.state] || 'Fix';
+    const again = (pr.state === 'instruction' || pr.state === 'draft') && i.fix?.id
+      ? el('button', { type: 'button', class: 'fxs-again', onclick: async e => { const box = e.currentTarget.closest('.seo-item').querySelector('.fix-box'); try { const r = await api({ action: 'show', fixId: i.fix.id }); showFix(box, r.fix, i); } catch (err) { msg(err.message, false); } } }, 'Show it again')
+      : null;
+    return el('p', { class: `fxs fxs-${pr.state}`, role: 'status' }, el('b', { text: label }), ' ', pr.text, again ? ' ' : null, again);
+  }
   function issueItem(i) {
     const fx = i.fix;
     return el('div', { class: 'seo-item', style: `--c:${SEV[i.severity]}` },
       el('h3', {}, i.name, el('span', { class: 'badge', text: i.severityLabel }), el('span', { class: 'chip', text: (D.categories.find(c => c.key === i.category) || {}).label || i.category }),
         null),
-      i.progress ? el('p', { class: `fxs fxs-${i.progress.state}`, role: 'status' }, el('b', { text: { checking: '⏳ Checking', still_open: '⚠️ Still open after the fix', waiting_google: '⏳ Waiting for Google', instruction: '🧑‍💻 Instruction given', draft: '📝 Suggestion given', proposed: '📝 Waiting for your approval' }[i.progress.state] || 'Fix' }), ' ', i.progress.text) : null,
+      statusLine(i),
       el('p', {}, i.path ? el('a', { href: '#', class: 'pg', onclick: e => { e.preventDefault(); openPage(i.path); }, text: i.path }) : el('b', { text: 'Whole website' }), ' · ', i.problem),
       el('p', { class: 'muted', text: `Why it matters: ${i.why}` }),
       i.status === 'ignored' ? el('p', { class: 'muted', text: `Ignored by ${i.ignoredBy}: ${i.ignoredReason}` }) : null,

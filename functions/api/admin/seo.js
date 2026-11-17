@@ -93,8 +93,10 @@ export async function onRequestGet({ request, env }) {
   const scannedAt = new Map((await db.prepare(`SELECT path, scanned_at FROM seo_pages WHERE path IN (SELECT DISTINCT path FROM seo_fixes WHERE created_at >= ?)`).bind(new Date(Date.now() - 35 * 864e5).toISOString()).all()).results.map(r => [r.path, r.scanned_at]));
   const fixesFor = new Map();
   for (const r of (await db.prepare(`SELECT issue_id, id, status, applied_at, created_at FROM seo_fixes WHERE status IN ('proposed', 'applied', 'instruction', 'draft') AND created_at >= ? ORDER BY created_at DESC`).bind(new Date(Date.now() - 35 * 864e5).toISOString()).all()).results) if (!fixesFor.has(r.issue_id)) fixesFor.set(r.issue_id, r);
+  // Every card (the Top 5 too) carries where its fix stands, so AI Fix is greyed out everywhere while locked.
+  const withProgress = issues.map(i => ({ ...i, fix: fixesFor.get(i.id) || null, progress: fixProgress(i, fixesFor.get(i.id), scannedAt.get(i.path)) }));
   return json({
-    ...rep, top: opportunities(issues, 5), issues: issues.map(i => ({ ...i, fix: fixesFor.get(i.id) || null, progress: fixProgress(i, fixesFor.get(i.id), scannedAt.get(i.path)) })), ignored,
+    ...rep, top: opportunities(withProgress, 5), issues: withProgress, ignored,
     categories: CATEGORIES, severities: SEVERITY_LABEL, running: running ? progressOf(running) : null, lastScan: lastScan ? progressOf(lastScan) : null,
     waiting: await Promise.all(waiting.map(w => fixRow(db, w.id))), alerts, usage: await seoSpend(db), connections: await connections(env),
   });
@@ -115,6 +117,8 @@ export async function onRequestPost({ request, env }) {
     case 'step': return out(await stepScan(env, origin, String(b.id || '')));
     case 'prepare': return out(await prepareFix(env, admin, String(b.issueId || ''), { note: b.note ? String(b.note).slice(0, 300) : '' }));
     case 'apply': return out(await applyFix(env, admin, String(b.fixId || ''), { edited: b.edited || null }));
+    // Show a recorded fix again (e.g. a VS Code instruction while AI Fix is greyed out), without preparing a new one.
+    case 'show': { const f = await fixRow(db, String(b.fixId || '')); return f ? json({ fix: f }) : json({ error: 'That fix is no longer there.' }, 404); }
     case 'cancel': return out(await cancelFix(env, admin, String(b.fixId || '')));
     case 'undo': return out(await undoFix(env, admin, String(b.fixId || '')));
     case 'ignore': return out(await ignoreIssue(db, admin, String(b.issueId || ''), b.reason));

@@ -7,7 +7,7 @@ import { withSecurityHeaders } from './securityHeaders.js';
 //
 // The HTML built here mirrors the cards the browser scripts build, using the
 // same CSS classes.
-import { TEAM_LOGOS } from './teamLogos.js';
+import { WEB_LOGOS as TEAM_LOGOS } from './teamLogos.js'; // WebP copies for web pages
 import { listMatches, toSummary } from './matchCentre.js';
 import { decorateMatches } from './ticketShop.js';
 import { upcomingHtml } from './tickets/upcomingHtml.js';

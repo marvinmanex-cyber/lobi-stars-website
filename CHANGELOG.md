@@ -8,7 +8,29 @@ in HANDOVER-TODO.md.
 
 ---
 
-## 2026-11-16: Free SEO fixes: match story reminders, player and story titles, free AI Fix fallback
+## 2026-11-18: SEO Scanner: AI Fix greyed out for 24 hours, honest speed results; WebP pictures; steadier homepage
+
+**Who it affects:** the Super Admins (SEO Scanner) and every visitor. **Nothing to do**, and no extra cost.
+
+- **AI Fix can't be pressed twice for the same fix.** Once a fix is recorded (applied, or a VS Code instruction
+  or suggestion given), the AI Fix button is greyed out for 24 hours and says when it opens again. It opens
+  sooner only if a check shows the issue is still there. Issues measured from Google's figures (ranking, clicks)
+  keep their 28-day wait. A recorded instruction can be opened again with **Show it again** (nothing new is
+  prepared). The **Top 5** cards now show the same status line and greyed-out button as the issue list (they did
+  not before, so AI Fix could still be pressed there).
+- **Speed "0/100" was a failed test, not a slow page.** On 10 and 16 Nov Google's phone test did not finish on two
+  news stories (no main-content time recorded) and the scanner saved that as 0/100; the same stories scored
+  98–100 on desktop. A test that does not finish is now never saved or reported: the page is tested again at the
+  next speed test. The two "Slow on mobile" issues clear at the next speed test.
+- **Homepage:** the league table is now built into the page by the server, so nothing below it jumps when it
+  arrives (layout shift). The "Across the Club" and "Video" links point straight to /news/ and /video/ (no
+  redirect), the first now reading "More Lobi Stars news".
+- **WebP pictures:** every picture in a folder (partner photos such as Ropajo, House 43 and EXO, kitchen and gate
+  logos) now gets a smaller WebP copy automatically, and team logos on web pages load the WebP copies. Emails,
+  ticket PDFs and accreditation cards keep PNG, which every email program can show. The install prompt's app
+  icon is WebP too.
+
+: match story reminders, player and story titles, free AI Fix fallback
 
 **Who it affects:** the media team, the Super Admins, fans and Google. **Nothing to do**, and no extra cost.
 

@@ -1,5 +1,5 @@
 // Browser helpers shared by the fixtures/results lists and the Match Centre.
-import { TEAM_LOGOS } from '../../functions/api/_lib/teamLogos.js';
+import { WEB_LOGOS as TEAM_LOGOS } from '../../functions/api/_lib/teamLogos.js'; // WebP copies for web pages
 import { teamInitials } from './site';
 
 export type Match = {

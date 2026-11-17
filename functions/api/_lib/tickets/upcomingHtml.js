@@ -3,7 +3,7 @@
 // Pure: used by the server (functions/index.js) and the browser refresh
 // (src/components/news/NextMatches.astro), so both always match. The card
 // itself is the shared one (fixtureCard.js) used on /fixtures and /results.
-import { TEAM_LOGOS } from '../teamLogos.js';
+import { WEB_LOGOS as TEAM_LOGOS } from '../teamLogos.js'; // WebP copies for web pages
 import { matchSlug } from '../matchSlug.js';
 import { upcomingMatches, nextLobiMatch, matchBarMatch, naira } from './rules.js';
 import { fixtureCardHtml, shareAction, lagosParts, splitVenue, esc } from '../fixtureCard.js';

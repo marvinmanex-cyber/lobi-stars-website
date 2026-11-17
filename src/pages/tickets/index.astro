@@ -17,7 +17,7 @@
 // visual controls, so selection, prices, totals and payment work as before.
 import Layout from '../../layouts/Layout.astro';
 import settings from '../../data/fan-settings.json';
-import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
+import { WEB_LOGOS as TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js'; // WebP copies for web pages
 import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
 const siteKey = settings.turnstileSiteKey;
 const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 'Lobi Stars': '/images/lobi-stars-badge.png' };

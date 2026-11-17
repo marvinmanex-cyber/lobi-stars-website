@@ -1,5 +1,5 @@
 import { ensureSeasonSchema, TIER_LABELS as SEASON_TIERS } from '../api/_lib/seasonTickets.js';
-import { TEAM_LOGOS } from '../api/_lib/teamLogos.js';
+import { WEB_LOGOS as TEAM_LOGOS } from '../api/_lib/teamLogos.js'; // WebP copies for web pages
 
 const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
 // Everything shown comes from the address or the database: always escaped.

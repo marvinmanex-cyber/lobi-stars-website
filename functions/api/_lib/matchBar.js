@@ -7,7 +7,7 @@
 //   | Sun 8 Nov | 4:00 PM | Kick-off in 25d 05h 42m 10s | [Buy ticket from ₦1,000] [More ▾]
 // One main button: Buy ticket (home match on sale), Listen live (live match),
 // otherwise Match Centre. The other actions are in the "More" menu.
-import { TEAM_LOGOS } from './teamLogos.js';
+import { WEB_LOGOS as TEAM_LOGOS } from './teamLogos.js'; // WebP copies for web pages
 import { matchSlug } from './matchSlug.js';
 import { matchBarMatch, naira } from './tickets/rules.js';
 import { crestHtml, lagosParts, esc } from './fixtureCard.js';

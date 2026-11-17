@@ -252,7 +252,8 @@ export function computeIssues(input) {
   if (input.ran?.speed) {
     for (const [path, s] of Object.entries(input.speed || {})) {
       const m = s.mobile;
-      if (!m || m.score == null) continue;
+      // No main-content time (LCP 0) means Google's test did not finish: not measured, not "0/100" (Nov 2026).
+      if (!m || m.score == null || !(m.lcp > 0)) continue;
       if (m.score < 50) out.push(make('speed_poor', path, `${path} scores ${m.score}/100 for speed on mobile (PageSpeed Insights).`, { data: s }));
       else if (m.score < 80) out.push(make('speed_fair', path, `${path} scores ${m.score}/100 for speed on mobile.`, { data: s }));
       const cwv = [m.lcp > 4 && `LCP ${m.lcp.toFixed(1)} s (aim under 2.5)`, m.cls > 0.25 && `CLS ${m.cls.toFixed(2)} (aim under 0.1)`, m.inp > 500 && `INP ${Math.round(m.inp)} ms (aim under 200)`].filter(Boolean);

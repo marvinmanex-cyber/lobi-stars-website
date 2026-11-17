@@ -29,6 +29,8 @@
 (function () {
   document.querySelectorAll('[data-mini-table]').forEach(function (box) {
     var body = box.querySelector('[data-body]');
+    // Already built by the server (homepage): nothing to load, nothing moves.
+    if (body.querySelector('table')) return;
     var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { if (k === 'text') n.textContent = props[k]; else if (k === 'class') n.className = props[k]; else n.setAttribute(k, props[k]); }); for (var i = 2; i < arguments.length; i++) if (arguments[i]) n.append(arguments[i]); return n; };
     fetch('/api/league/table').then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (t) {
       var sign = function (n) { return n > 0 ? '+' + n : String(n); };

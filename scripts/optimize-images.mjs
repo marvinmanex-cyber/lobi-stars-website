@@ -20,7 +20,7 @@ const BADGE = path.join(IMAGES, 'lobi-stars-fc.jpg');
 const RED = '#E31E24', DEEP = '#4D0B0D', GOLD = '#FFC72C';
 
 // Generated files that shouldn't be treated as content photos.
-const GENERATED = new Set(['lobi-stars-badge.png', 'lobi-stars-badge.webp', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'og-default.jpg']);
+const GENERATED = new Set(['lobi-stars-badge.png', 'lobi-stars-badge.webp', 'icon-192.png', 'icon-192.webp', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'og-default.jpg']);
 
 const kb = n => `${(n / 1024).toFixed(0)} KB`;
 
@@ -157,6 +157,8 @@ async function iconOnBackground(size, inner, background) {
 async function makeIcons() {
   const white = '#FFFFFF';
   await (await iconOnBackground(192, 0.86, white)).toFile(path.join(IMAGES, 'icon-192.png'));
+  // WebP copy for pages that show the app icon (e.g. the install prompt).
+  await sharp(path.join(IMAGES, 'icon-192.png')).webp({ quality: 86 }).toFile(path.join(IMAGES, 'icon-192.webp'));
   await (await iconOnBackground(512, 0.86, white)).toFile(path.join(IMAGES, 'icon-512.png'));
   // Maskable icons get cropped to a circle/squircle, so keep the badge
   // inside the central safe zone.
@@ -222,6 +224,15 @@ async function webpVariants() {
       // JPG / PNG in folders: only their size is recorded, so the build gives every <img> a width and height (no layout jump).
       if (/\.(jpe?g|png)$/i.test(name)) {
         if (!sizes[key]) { const m = await sharp(full).metadata().catch(() => null); if (m?.width) sizes[key] = [m.width, m.height]; }
+        // A WebP copy beside it (the build then serves it with <picture>), unless another picture shares the
+        // name (photo.jpg + photo.png) or the copy is already there.
+        const base = name.replace(/\.(jpe?g|png)$/i, '');
+        const twins = (await readdir(dir)).filter(f => f.replace(/\.(jpe?g|png)$/i, '').toLowerCase() === base.toLowerCase() && /\.(jpe?g|png)$/i.test(f));
+        const webpOut = path.join(dir, `${base}.webp`);
+        if (twins.length === 1 && !(await stat(webpOut).then(() => true, () => false))) {
+          await writeFile(webpOut, await sharp(full).webp({ quality: 74, effort: 6 }).toBuffer());
+          made++;
+        }
         continue;
       }
       if (!/\.webp$/i.test(name)) continue;

@@ -86,33 +86,41 @@ const DESC_ONLY = ['desc_missing', 'desc_duplicate', 'desc_length'];
 export const GOOGLE_TYPES = ['rank_drop', 'clicks_drop', 'low_ctr', 'almost_top', 'cannibal', 'not_indexed', 'deindexed'];
 // Measured by PageSpeed (weekly, or "Check again").
 export const SPEED_TYPES = ['speed_poor', 'speed_fair', 'cwv_poor'];
-const GOOGLE_WAIT_DAYS = 28, CHECK_WINDOW_MIN = 15;
+const GOOGLE_WAIT_DAYS = 28, CHECK_WINDOW_MIN = 15, LOCK_HOURS = 24;
 const fmt = iso => new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 /**
- * { state, text, lock } for an open issue and its latest fix. lock: AI Fix is not offered again yet (the same fix
- * applied twice changes nothing). States: proposed, checking, still_open, waiting_google, instruction, draft.
+ * { state, text, lock, until, button } for an open issue and its latest fix. lock: AI Fix is greyed out (the same
+ * fix twice changes nothing). Rule (owner's request, Nov 2026): once a fix is recorded (applied, or an instruction
+ * or suggestion given), AI Fix stays greyed out for 24 hours, unless a check shows the issue is still there, which
+ * opens it again at once. Issues measured from Google's figures wait 28 days (Google needs 2 to 4 weeks).
+ * States: proposed, checking, applied, still_open, waiting_google, instruction, draft.
  * pageScannedAt: when the scanner last looked at the issue's page.
  */
 export function fixProgress(issue, fix, pageScannedAt = null, now = Date.now()) {
   if (!fix) return null;
-  const at = fix.applied_at || fix.created_at;
+  const at = fix.applied_at || fix.created_at, t = Date.parse(at);
+  const until = new Date(t + LOCK_HOURS * 3600e3).toISOString(), inLock = now < Date.parse(until);
+  const opens = `AI Fix opens again on ${fmt(until)} if the issue is still there.`;
+  // The page was looked at again after the fix (more than a minute later) and the issue is still open.
+  const checked = pageScannedAt && Date.parse(pageScannedAt) > t + 60e3;
   if (fix.status === 'proposed') return { state: 'proposed', text: `A fix was prepared on ${fmt(fix.created_at)} and is waiting for your approval. Press AI Fix to see it.`, lock: false };
-  if (fix.status === 'draft') return { state: 'draft', text: `A suggestion was given on ${fmt(fix.created_at)} (nothing is changed on the site). Do what it says, then press Check again.`, lock: false };
-  if (fix.status === 'instruction') {
-    return { state: 'instruction', lock: false, text: SPEED_TYPES.includes(issue.type)
-      ? `A VS Code instruction was given on ${fmt(fix.created_at)}. Once the change is live, the speed is measured again in the weekly speed test, or press Check again.`
-      : `A VS Code instruction was given on ${fmt(fix.created_at)}. It clears when the code change is live and the page is checked again (press Check again after the deploy).` };
+  if (fix.status === 'draft' || fix.status === 'instruction') {
+    const what = fix.status === 'draft' ? `A suggestion was given on ${fmt(at)} (nothing is changed on the site). Do what it says, then press Check again.`
+      : SPEED_TYPES.includes(issue.type) ? `A VS Code instruction was given on ${fmt(at)}. Once the change is live, the speed is measured again in the weekly speed test, or press Check again.`
+      : `A VS Code instruction was given on ${fmt(at)}. It clears when the code change is live and the page is checked again (press Check again after the deploy).`;
+    if (inLock) return { state: fix.status, lock: true, until, text: `${what} ${opens}`, button: `${fix.status === 'draft' ? '📝 Suggestion given' : '🧑‍💻 Instruction given'}: opens again ${fmt(until)}` };
+    return { state: fix.status, lock: false, text: `${what} The issue is still there after 24 hours, so AI Fix is open again.` };
   }
   if (fix.status !== 'applied') return null;
   if (GOOGLE_TYPES.includes(issue.type)) {
-    const days = Math.floor((now - Date.parse(at)) / 864e5), left = GOOGLE_WAIT_DAYS - days;
-    if (left > 0) return { state: 'waiting_google', lock: true, text: `Fix applied on ${fmt(at)}. This is measured from Google's figures over several weeks, so it can't clear on the next scan: Google usually reacts within 2 to 4 weeks. No need to fix it again; it is checked automatically (${left} day${left === 1 ? '' : 's'} left).` };
+    const days = Math.floor((now - t) / 864e5), left = GOOGLE_WAIT_DAYS - days;
+    if (left > 0) return { state: 'waiting_google', lock: true, until: new Date(t + GOOGLE_WAIT_DAYS * 864e5).toISOString(), button: '⏳ Fix applied: waiting for Google', text: `Fix applied on ${fmt(at)}. This is measured from Google's figures over several weeks, so it can't clear on the next scan: Google usually reacts within 2 to 4 weeks. No need to fix it again; it is checked automatically (${left} day${left === 1 ? '' : 's'} left).` };
     return { state: 'still_open', lock: false, text: `Fix applied on ${fmt(at)}, but after ${GOOGLE_WAIT_DAYS} days Google's figures haven't improved enough. Try a different fix or "Fix it myself".` };
   }
-  const checked = pageScannedAt && Date.parse(pageScannedAt) > Date.parse(at) + 60e3;
-  if (checked) return { state: 'still_open', lock: false, text: `Fix applied on ${fmt(at)}, but the page still shows the problem (checked ${fmt(pageScannedAt)}). Undo it in the Fixes history and try again, or use "Fix it myself".` };
-  if (now - Date.parse(at) < CHECK_WINDOW_MIN * 60e3) return { state: 'checking', lock: true, text: `Fix applied at ${fmt(at)}. The website is rebuilding; the page is checked again about 4 minutes after. This card updates by itself.` };
-  return { state: 'checking', lock: false, text: `Fix applied at ${fmt(at)}. Waiting for the page to be checked again (press Check again to check now).` };
+  if (checked) return { state: 'still_open', lock: false, text: `Fix applied on ${fmt(at)}, but the page still shows the problem (checked ${fmt(pageScannedAt)}). AI Fix is open again: undo the fix in the Fixes history and try again, or use "Fix it myself".` };
+  if (now - t < CHECK_WINDOW_MIN * 60e3) return { state: 'checking', lock: true, until, button: '⏳ Fix applied: checking…', text: `Fix applied at ${fmt(at)}. The website is rebuilding; the page is checked again about 4 minutes after. This card updates by itself.` };
+  if (inLock) return { state: 'applied', lock: true, until, button: `✅ Fix applied: opens again ${fmt(until)}`, text: `Fix applied at ${fmt(at)}. Waiting for the page to be checked again (press Check again to check now). ${opens}` };
+  return { state: 'still_open', lock: false, text: `Fix applied on ${fmt(at)} and the issue is still listed after 24 hours, so AI Fix is open again. Press Check again first if the page has changed since.` };
 }
 
 export async function prepareFix(env, admin, issueId, { auto = false, note = '' } = {}) {
@@ -124,7 +132,7 @@ export async function prepareFix(env, admin, issueId, { auto = false, note = '' 
   // checked (or waiting for Google) says so instead of preparing another.
   const latest = await db.prepare(`SELECT * FROM seo_fixes WHERE issue_id = ? AND status IN ('proposed', 'applied', 'instruction', 'draft') ORDER BY created_at DESC LIMIT 1`).bind(issue.id).first();
   if (latest?.status === 'proposed') return { fix: await fixRow(db, latest.id), again: true };
-  if (latest?.status === 'applied' && !auto) {
+  if (latest && latest.status !== 'proposed' && !auto) {
     const page = issue.path ? await db.prepare(`SELECT scanned_at FROM seo_pages WHERE path = ?`).bind(issue.path).first() : null;
     const pr = fixProgress(issue, latest, page?.scanned_at);
     if (pr?.lock) return { error: pr.text, status: 409, progress: pr };
