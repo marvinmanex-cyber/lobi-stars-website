@@ -17,6 +17,8 @@ in HANDOVER-TODO.md.
   Players | First Team Squad" never showed). The default list title is now "Lobi Stars Players: First Team Squad |
   Lobi Stars FC". All four kinds of server-built page (match, Matchday Live, press releases, squad) now honour
   approved titles.
+- **Homepage league table** now spans the full width like the other homepage sections (it was a narrow box in
+  the middle).
 - **Match pages have more facts of their own:** each team's season so far (played, won, drawn, lost, goals),
   recent form (last five league results with scores) and the opponent's home ground, all from the club's league
   records. Every match page is now clearly different from the others.
