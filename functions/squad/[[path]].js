@@ -6,6 +6,7 @@ import { can, loadRoles } from '../api/_lib/adminRoles.js';
 import { getProfile } from '../api/_lib/squadProfiles.js';
 import { previewItem } from '../api/_lib/squadPublish.js';
 import { PERSONALISATION } from '../api/_lib/shirtOrders.js';
+import { pageMeta } from '../api/_lib/pageTitles.js';
 
 // The Squad pages, live (23 Oct 2026): /squad/, /squad/<slug>/ and
 // /squad/staff/<slug>/ are filled on the server from the approved (LIVE)
@@ -41,7 +42,11 @@ const html = (res, status = 200) => {
 };
 
 /** Puts the page's own title, description, address, share image and structured data into the built page. */
-function rewrite(shell, { title, description, url, image, imageAlt, ld, rootHtml, shareTitle, shareText, templateUrl, index = true, heading = null, kicker = null }) {
+function rewrite(shell, { title: titleDefault, description: descDefault, url, image, imageAlt, ld, rootHtml, shareTitle, shareText, templateUrl, index = true, heading = null, kicker = null }) {
+  // The title and description approved in the SEO Scanner (src/data/seo.json) win over the defaults below; without
+  // this the server replaced them and approved fixes never reached the squad pages (Nov 2026).
+  let path = '/squad/'; try { path = new URL(url).pathname; } catch { /* default */ }
+  const { title, description } = pageMeta(path, { title: titleDefault, description: descDefault });
   const set = v => ({ element(el) { el.setAttribute('content', v); } });
   let rw = new HTMLRewriter()
     .on('title', { element(el) { el.setInnerContent(title); } })
@@ -128,7 +133,7 @@ export async function onRequestGet({ request, env, params, next }) {
     if (!parts.length) {
       const shell = await env.ASSETS.fetch(new URL('/squad/', url));
       return html(rewrite(shell, {
-        title: 'First Team Squad | Lobi Stars FC', description: `Meet the Lobi Stars FC First Team squad for ${feed.season}: goalkeepers, defenders, midfielders, forwards and coaching staff.`,
+        title: 'Lobi Stars Players: First Team Squad | Lobi Stars FC', description: `Meet the Lobi Stars FC First Team squad for ${feed.season}: goalkeepers, defenders, midfielders, forwards and coaching staff.`,
         url: `${url.origin}/squad/`, ld: [breadcrumbs(url.origin, [['Squad', '/squad/']])], rootHtml: renderList({ players, staff, loans, season: feed.season, formerPage: !!feed.formerPage }),
       }));
     }

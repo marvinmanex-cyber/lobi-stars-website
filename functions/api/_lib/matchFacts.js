@@ -30,6 +30,26 @@ export async function matchFactsHtml(env, event, { ticket = null, slug = '' } = 
       const h = row(fx.home_team_id), a = row(fx.away_team_id);
       if (h && a && !t.preSeason) items.push(['League positions', `${esc(h.team.name)} ${ord(h.pos)} (${h.points} pts), ${esc(a.team.name)} ${ord(a.pos)} (${a.points} pts), ${esc(t.competition.shortName || t.competition.name)}`]);
     } catch { /* table not available */ }
+    // Each team's season so far (from the table) and recent form (its last league results before this match).
+    try {
+      const t = tablePayload(league);
+      const ko = Date.parse(fx.kickoff_at || event.event_date) || Infinity;
+      const done = f => DONE.includes(f.status) && f.home_goals != null && f.away_goals != null;
+      const form = id => league.fixtures.filter(f => f.id !== fx.id && done(f) && (f.home_team_id === id || f.away_team_id === id) && Date.parse(f.kickoff_at) < ko).slice(-5).map(f => {
+        const home = f.home_team_id === id, g = home ? f.home_goals : f.away_goals, o = home ? f.away_goals : f.home_goals;
+        return `${g > o ? 'W' : g < o ? 'L' : 'D'} ${g}–${o} ${home ? 'v' : 'at'} ${(home ? f.away : f.home)?.name || '?'}`;
+      });
+      for (const id of [fx.home_team_id, fx.away_team_id]) {
+        const r = t.rows.find(x => x.team.id === id);
+        if (r && r.played > 0 && !t.preSeason) items.push([`${r.team.name} this season`, `Played ${r.played}: won ${r.won}, drawn ${r.drawn}, lost ${r.lost}; goals ${r.gf} for, ${r.ga} against`]);
+        const f = form(id);
+        if (f.length) items.push([`${r?.team.name || (id === fx.home_team_id ? event.home_team : event.away_team)} recent form`, esc(f.join('; '))]);
+      }
+    } catch { /* not available */ }
+    // The opponent's home ground (from the league's team records).
+    const opp = [fx.home, fx.away].find(x => x && !x.is_lobi);
+    const ground = opp?.home_venue_id ? (league.venues || []).find(v => v.id === opp.home_venue_id) : null;
+    if (ground?.name) items.push([`${opp.name}'s home ground`, esc(ground.name)]);
     // The other meeting between the same two teams this season.
     const other = league.fixtures.find(f => f.id !== fx.id && ((f.home_team_id === fx.home_team_id && f.away_team_id === fx.away_team_id) || (f.home_team_id === fx.away_team_id && f.away_team_id === fx.home_team_id)));
     if (other) {

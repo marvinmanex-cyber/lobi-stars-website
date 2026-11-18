@@ -177,6 +177,9 @@ export function analysePage(html, { origin, path, headers = new Headers() }) {
   const insecure = site.protocol !== 'https:' ? [] : [...html.matchAll(/<(img|script|link|iframe|source|video|audio)\b[^>]*\s(src|href|srcset)=["']http:\/\/[^"']+/gi)]
     .filter(m => !/^<link\b/i.test(m[0]) || /rel=["']?(stylesheet|preload|icon|modulepreload)/i.test(m[0])).map(m => m[0].match(/http:\/\/[^"'\s]+/)[0]).slice(0, 10);
   const text = textOf(markup);
+  // Near-duplicates are judged on the page's own content (<main>), as Google does: the menu, cookie notice, install
+  // prompt and other parts every page shares are left out (they made short pages look like copies, Nov 2026).
+  const mainWords = textOf(markup.match(/<main\b[\s\S]*<\/main>/i)?.[0] || markup).toLowerCase().split(/\s+/).filter(w => w.length > 1);
   const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 1);
   const firstPara = textOf(markup.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1] || '').slice(0, 300);
   return {
@@ -192,7 +195,7 @@ export function analysePage(html, { origin, path, headers = new Headers() }) {
     hreflang,
     schema: [...schemaTypes], sameAs, schemaErrors: [...new Set(schemaErrors)].slice(0, 5),
     images, links: [...internal].slice(0, 150), external: [...external].slice(0, 40), insecure,
-    wordCount: words.length, firstPara, textSample: /^\/news\/[^/]+\/$/.test(path) ? text.slice(0, 4000) : undefined, fp: fingerprint(words),
+    wordCount: words.length, firstPara, textSample: /^\/news\/[^/]+\/$/.test(path) ? text.slice(0, 4000) : undefined, fp: fingerprint(mainWords), mainWords: mainWords.length,
     published: metaContent(head, 'article:published_time', 'property'),
     modified: metaContent(head, 'article:modified_time', 'property'),
     kb: Math.round(html.length / 1024),

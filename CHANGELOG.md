@@ -8,6 +8,21 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-18: Squad titles from the SEO Scanner reach the page; richer match pages; fairer duplicate check
+
+**Who it affects:** fans, Google and the Super Admins. **Nothing to do.**
+
+- **Squad pages now use the titles approved in the SEO Scanner.** The squad list, player profiles and former
+  players are built on the server, which replaced any approved title with its own (so the approved "Lobi Stars
+  Players | First Team Squad" never showed). The default list title is now "Lobi Stars Players: First Team Squad |
+  Lobi Stars FC". All four kinds of server-built page (match, Matchday Live, press releases, squad) now honour
+  approved titles.
+- **Match pages have more facts of their own:** each team's season so far (played, won, drawn, lost, goals),
+  recent form (last five league results with scores) and the opponent's home ground, all from the club's league
+  records. Every match page is now clearly different from the others.
+- **SEO Scanner: "Near-duplicate pages" is judged on each page's own content** (as Google does), not on the menu,
+  cookie notice and other parts every page shares, which made short pages look like copies.
+
 ## 2026-11-18: "Lobi Stars match today" points to the fixtures page
 
 **Who it affects:** fans and Google. **Nothing to do.**

@@ -187,7 +187,7 @@ export function computeIssues(input) {
       if (missingLinks.length) out.push(make('news_player_links', p.path, `${p.path} mentions ${list(missingLinks.map(x => x.name), 4)} without linking to ${missingLinks.length === 1 ? 'their profile' : 'their profiles'}.`, { data: { people: missingLinks } }));
     }
     // Near-duplicates (pages that share most of their wording).
-    const long = ok.filter(p => !p.data.noindex && p.data.wordCount > 120 && p.data.fp?.length >= 8);
+    const long = ok.filter(p => !p.data.noindex && (p.data.mainWords ?? p.data.wordCount) > 120 && p.data.fp?.length >= 8);
     const buckets = new Map();
     for (const p of long) for (const h of p.data.fp.slice(0, 4)) (buckets.get(h) || buckets.set(h, []).get(h)).push(p);
     const seenPair = new Set();

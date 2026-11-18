@@ -59,3 +59,14 @@ test('AI Fix is greyed out for 24 hours after a fix is recorded, unless the issu
   // A fix waiting for approval is never locked (pressing AI Fix shows it again).
   assert.equal(fixProgress(issue, { status: 'proposed', created_at: ago(1) }, null, now).lock, false);
 });
+
+test('near-duplicates are judged on the main content, not the menu and other shared parts', async () => {
+  const { analysePage } = await import('../functions/api/_lib/seoCrawl.js');
+  const shared = Array.from({ length: 300 }, (_, i) => `menu${i % 50} promo${i % 37}`).join(' ');
+  const page = main => `<html><head><title>x</title></head><body><div class="drawer">${shared}</div><main id="main"><h1>Match</h1><p>${main}</p></main><div class="cookie">${shared}</div></body></html>`;
+  const a = analysePage(page(Array.from({ length: 160 }, (_, i) => `alpha${i}`).join(' ')), { origin: 'https://example.com', path: '/a/' });
+  const b = analysePage(page(Array.from({ length: 160 }, (_, i) => `beta${i}`).join(' ')), { origin: 'https://example.com', path: '/b/' });
+  assert.ok(a.mainWords >= 160 && a.mainWords < 200, String(a.mainWords));
+  const common = a.fp.filter(h => b.fp.includes(h)).length;
+  assert.equal(common, 0);
+});
