@@ -17,6 +17,48 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 
 ---
 
+## Priority list (18 Nov 2026): the 25 things to do, in order
+
+Kept at the owner's request to work through later. Details for each code are in the sections below.
+Suggested start: 1, then 2.
+
+**Before the home match v Yobe Desert Stars (Sun 22 Nov 2026)**
+1. Enter the missing result **Mighty Jets v Sokoto United (14 Nov)** in the Scores Update Centre (the table is out of date without it).
+2. **K5**: tick **Transfer** in the kitchen's Paystack account (Settings › Preferences › Payment channels).
+3. **A4b**: add the kitchen's own Paystack secret key in Cloudflare.
+4. **L7 / T6**: seats per stand (VIP Sitting, Grand Stand, Popular Stand).
+5. **T1–T9**: Gate Control: scanner phones, gate names, staff and media passes, practice run.
+6. **M7**: accreditation match settings for the Yobe match.
+7. **K1 / K3**: kitchen staff accounts and the Kitchen app on the tablets.
+
+**SEO and Google (free)**
+8. **A36**: PageSpeed API key, Search Console permission, confirm the keywords.
+9. **S1–S7**: free SEO steps (Free-SEO-Steps-for-Lobi-Stars.docx).
+10. Squad portal: correct "Yusuf aFEEZ" to "Yusuf Afeez"; check Daniel Atsaka's X link (x.com/Atsakasafe01 is not found).
+11. **L3**: tick "Count live matches in the table".
+
+**Accounts and setup**
+12. One Cloudflare sign-in with the website manager (about 2 minutes): unlocks A5, A10, A11, A12 and A14.
+13. Newsletter: Resend key, sender address, sponsor details (C14) and the send day.
+14. **A9** staff logins; **M1** Media Centre users; **M5** media desk code.
+15. **K2** kitchen Telegram channel link; **M6** club WhatsApp channel link.
+16. **A23**: free uptime monitor (uptimerobot.com).
+17. Delete the local "Secrets" file.
+
+**Facts and content to send**
+18. **B1–B7**: honours, founding year, CAF seasons, history, stadium.
+19. **C2 / C3 / C9**: real news, video links, gallery photos.
+20. **D1–D9**: shop prices, membership, shirt personalisation, hospitality, season tickets, Predict & Win prize.
+21. Logo files: **C19** Wikki Tourists (transparent), **C21** Zeva, **C29** Msendo, **C31** Grand Stand badge.
+22. **C23–C27** Rewards launch; **C22** ticket discounts.
+23. **E1 / E2**: legal review.
+
+**Waiting (nothing to do)**
+24. Google rankings ("almost top", homepage shown instead of /news/ and /fixtures/): usually 2–4 weeks.
+25. **A7**: stream URL, waiting for Aeson Radio's streaming service.
+
+---
+
 ## A. Accounts and keys (the website manager adds these in Cloudflare)
 
 | # | What | Why it matters | What to send / do |
