@@ -484,3 +484,27 @@
    on top of the list on phones. It scrolls with the page (no floating parts, owner rule). */
 .kd-stage { align-self: start; height: 430px; min-height: 0; }
 @media (min-width: 900px) { .kd-stage { height: clamp(440px, 64vh, 580px); } }
+/* The food turns with the table (--turn is set every frame from the belt's direction): drawn square, turned,
+   then flattened like the plate, so it turns in the plate's own plane. */
+.kb-dish .kb-food { inset: auto; left: 50%; top: 50%; width: 70%; height: auto; aspect-ratio: 1; transform: translate(-50%, -50%) scaleY(.8) rotate(var(--turn, 0deg)); }
+.kb-dish .kb-emoji { transform: scaleY(.8) rotate(var(--turn, 0deg)); }
+/* Drinks turn 180° in every direction by themselves (owner's request, 20 Nov 2026): once a drink is in view it
+   turns round to its back, tumbles head over heels and spins upright again, over and over. Each bottle or can has a
+   front and a back side (the back shows the other half of its label), so it never looks mirrored. */
+.kd-drink { transform-style: preserve-3d; }
+.kd-turner { position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: 50% 55%; }
+.kd-spin .kd-turner { animation: kd-tumble 9s ease-in-out infinite; }
+.kd-hold .kd-turner, .kd-paused .kd-turner { animation-play-state: paused; }
+.kd-side { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.kd-side-b { transform: rotateY(180deg); }
+.kd-side-b .kd-rollin { animation-delay: -3.25s; }
+@keyframes kd-tumble {
+  0%, 10% { transform: none; }
+  26%, 36% { transform: rotateY(180deg); }
+  52%, 62% { transform: rotateY(180deg) rotateX(180deg); }
+  78%, 100% { transform: rotateY(180deg) rotateX(180deg) rotateZ(180deg); }
+}
+/* The carton is a real 3D box: it does the same moves (its own slow turn is replaced). */
+.kd-spin .kd-box { animation: none; }
+.kd-bottom { width: 100%; height: calc(var(--kd-depth, 46px) * 2); top: 50%; margin-top: calc(var(--kd-depth, 46px) * -1); transform: rotateX(-90deg) translateZ(var(--kd-halfh, 110px)); filter: brightness(.7); }
+.kd-carton .kd-turner { transform-origin: 50% 50%; }

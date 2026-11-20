@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-20: MatchDay Kitchen: dishes turn with the table; drinks turn 180° in every direction
+
+**Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**
+
+- **The food table:** each dish now turns with the table as it goes round, like food on a real turning belt:
+  facing you along the front, swinging round on the bends, turned the other way along the back. **One tap**
+  on a plate (phone or computer) now opens the dish: its photo, description, price and **Add to order** (on
+  phones it used to take two taps).
+- **The drinks:** once a drink is in view, it keeps moving by itself: it turns round 180° to show its back
+  label, tumbles 180° head over heels, then spins 180° upright again, over and over. Every bottle and can has a
+  real back side (back label and barcode), so it never looks mirrored; the juice carton, a 3D box, does the
+  same moves showing all its sides. It pauses when pointed at or with the pause button, and is still for
+  visitors who prefer less motion.
+
 ## 2026-11-20: MatchDay Kitchen: the Drinks section comes alive
 
 **Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**

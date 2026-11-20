@@ -4821,7 +4821,8 @@ staff, shifts, handover notes and activity log (read-only).
 - **The ticket email** has an **Order food to your seat** button.
 - **The ticket confirmation and Find my tickets pages** link to the kitchen.
 - **The Drinks section** (20 Nov 2026): the drinks list beside a stage where each drink in turn drops,
-  appears, rises into view or pops its cap, then turns to show its other sides. It moves on by itself;
+  appears, rises into view or pops its cap, then by itself turns round, tumbles and spins (180° each way).
+  On the food table the dishes turn with the table, and one tap on a plate opens it with Add to order. It moves on by itself;
   fans tap a drink to see it, or press pause. Supervisors signed in to edit the menu see the drinks as
   normal cards (to change names and prices).
 - **Food photos** (20 Nov 2026): every standard dish has a real photo from a free photo library (credits

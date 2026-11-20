@@ -122,7 +122,7 @@ function slatPath(g: Geo, offset: number, shift: number) {
 function pose(g: Geo, offset: number, i: number) {
   const p = along(g, offset - i * g.pitch);
   const q = project(g, p.x, p.z);
-  return { x: q.x, y: q.y, k: q.k, depth: (p.z + g.r) / (2 * g.r) };
+  return { x: q.x, y: q.y, k: q.k, depth: (p.z + g.r) / (2 * g.r), turn: (Math.atan2(-p.tz, -p.tx) * 180) / Math.PI };
 }
 const centerOf = (g: Geo, offset: number) => ((Math.round((offset - g.s / 2) / g.pitch) % g.n) + g.n) % g.n;
 
@@ -187,6 +187,7 @@ export function mountBelt(root: HTMLElement, o: BeltOptions): { destroy(): void 
   const shades = plates.map(p => p.querySelector<HTMLElement>('.kb-shade')!);
   const shadows = plates.map(p => p.querySelector<HTMLElement>('.kb-shadow')!);
   const anchors = plates.map(p => p.querySelector<HTMLElement>('.kb-anchor')!);
+  const foods = plates.map(p => p.querySelector<HTMLElement>('.kb-food, .kb-emoji'));
   const capMain = root.querySelector<HTMLElement>('.kb-cap-main')!, capDesc = root.querySelector<HTMLElement>('.kb-cap-desc')!;
   const pauseBtn = root.querySelector<HTMLButtonElement>('[data-ctl="pause"]');
   let seam: SVGPathElement | null = null, glint: SVGPathElement | null = null;
@@ -231,6 +232,7 @@ ${label}</svg>`;
     const lane = q.depth >= 0.5 ? 'front' : 'back';
     if (sim.lane[i] !== lane) { sim.lane[i] = lane; button.dataset.lane = lane; }
     lifts[i].style.transform = `translateY(${(LIFT_Y * e).toFixed(3)}%) scale(${(1 + LIFT_SCALE * e).toFixed(4)})`;
+    foods[i]?.style.setProperty('--turn', `${q.turn.toFixed(1)}deg`);
     shades[i].style.opacity = (BACK_SHADE * 2.4 * clamp(1 - q.depth, 0, 1) * (1 - 0.7 * clamp(e, 0, 1))).toFixed(3);
     shadows[i].style.transform = `translate3d(0,${(g.d * TILT * 0.05 * e).toFixed(2)}px,0) scale(${(1 + 0.14 * e).toFixed(3)})`;
     shadows[i].style.opacity = (1 - 0.5 * clamp(e, 0, 1)).toFixed(3);
@@ -458,7 +460,8 @@ ${label}</svg>`;
     if (p.index < 0) { if (touch && active !== null) { stop(); setActive(null); } return; }
     stop();
     // On a phone the first tap lifts the plate, the second opens it; with a mouse one click opens it.
-    if (touch && active !== p.index) setActive(p.index); else pendingOpen = p.index;
+    if (touch) setActive(p.index);
+    pendingOpen = p.index;
   };
   stage.addEventListener('pointerup', e => finish(e, false));
   stage.addEventListener('pointercancel', e => finish(e, true));

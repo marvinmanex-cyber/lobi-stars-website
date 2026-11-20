@@ -50,7 +50,7 @@ function drawing(l: Look, id: string) {
     const side = (cls: string, inner: string) => `<div class="kd-face ${cls}" style="background:${l.label}">${inner}</div>`;
     const front = `<b style="color:${l.ink}">${esc(l.brand)}</b><span style="color:${l.ink}">${esc(l.sub)}</span><i class="kd-fruit" style="background:${l.accent}"></i><i class="kd-fruit kd-fruit2"></i>`;
     const back = `<span class="kd-lines"><i></i><i></i><i></i><i></i></span><span class="kd-bars"></span>`;
-    return `<div class="kd-carton" aria-hidden="true"><div class="kd-box">${side('kd-front', front)}${side('kd-back', back)}${side('kd-left', `<span class="kd-vert" style="color:${l.ink}">${esc(l.brand)}</span>`)}${side('kd-right', `<span class="kd-vert" style="color:${l.ink}">${esc(l.sub)}</span>`)}<div class="kd-face kd-top" style="background:${l.label}"></div></div><span class="kd-straw" style="background:${l.cap}"></span></div>`;
+    return `<div class="kd-carton" aria-hidden="true"><div class="kd-box">${side('kd-front', front)}${side('kd-back', back)}${side('kd-left', `<span class="kd-vert" style="color:${l.ink}">${esc(l.brand)}</span>`)}${side('kd-right', `<span class="kd-vert" style="color:${l.ink}">${esc(l.sub)}</span>`)}<div class="kd-face kd-top" style="background:${l.label}"></div><div class="kd-face kd-bottom" style="background:${l.label}"></div></div><span class="kd-straw" style="background:${l.cap}"></span></div>`;
   }
   const uid = `kd-${id.replace(/[^a-z0-9]/gi, '')}`;
   if (l.kind === 'can') {
@@ -109,7 +109,8 @@ export function mountDrinks(host: HTMLElement, o: { items: DrinkRow[]; ctrlHtml:
     const d = items[i], l = lookOf(d);
     rows.forEach((r, k) => { r.classList.toggle('on', k === i); r.querySelector('.kd-pick')!.setAttribute('aria-current', k === i ? 'true' : 'false'); });
     fig.className = `kd-fig kd-${l.kind}`;
-    fig.innerHTML = `<div class="kd-drink">${drawing(l, d.id)}<span class="kd-fizz" aria-hidden="true">${'<i></i>'.repeat(7)}</span></div><span class="kd-shadow" aria-hidden="true"></span><figcaption>${esc(d.name)}</figcaption>`;
+    const turner = l.kind === 'carton' ? drawing(l, d.id) : `<div class="kd-side kd-side-f">${drawing(l, `${d.id}-f`)}</div><div class="kd-side kd-side-b">${drawing(l, `${d.id}-b`)}</div>`;
+    fig.innerHTML = `<div class="kd-drink"><div class="kd-turner">${turner}</div><span class="kd-fizz" aria-hidden="true">${'<i></i>'.repeat(7)}</span></div><span class="kd-shadow" aria-hidden="true"></span><figcaption>${esc(d.name)}</figcaption>`;
     fig.setAttribute('aria-label', `${d.name}, ${d.price}`);
     if (reduced) { fig.classList.add('kd-in', 'kd-still'); return; }
     void fig.offsetWidth;

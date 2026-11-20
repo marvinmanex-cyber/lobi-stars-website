@@ -255,7 +255,7 @@ function renderBelt(): boolean {
     items: dishes,
     eyebrow: 'MatchDay Kitchen · On the table',
     heading: 'Pick your food as the table turns',
-    caption: 'Point at a plate (or tap it) to stop the table, flick it to spin, tap a plate again to order.',
+    caption: 'Tap a plate to see the dish and add it to your order. Flick the table to spin it.',
     legend,
     canAdd: !!menu?.open,
     closedText: 'Ordering opens on Lobi Stars home match days.',
