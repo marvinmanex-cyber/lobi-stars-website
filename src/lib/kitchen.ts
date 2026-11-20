@@ -7,6 +7,7 @@
 // Vanilla TypeScript, no libraries. The cart and seat are kept on the phone.
 import { mountRating } from './foodRating';
 import { mountBelt, type BeltDish } from './kitchenBelt';
+import { mountDrinks } from './kitchenDrinks';
 import { upcomingMatches } from '../../functions/api/_lib/tickets/rules.js';
 
 type Item = { id: string; name: string; description: string; priceKobo: number; photo: string | null; photoCredit?: { author: string; license: string; licenseUrl: string; page: string; source: string } | null; emoji?: string; soldOut: boolean; notReady?: boolean; maxPerOrder: number; adult: boolean; spice?: number; badge?: string | null; tags?: string[]; sponsor?: { slug: string; name: string; logo: string | null } | null };
@@ -78,6 +79,14 @@ function useStands(stands: string[]) {
 }
 
 // ── Menu ──
+/** The Add button, or the − n + stepper once it is in the cart. */
+function ctrlOf(f: Item) {
+  const q = qty[f.id] || 0, closed = !menu?.open;
+  const off = f.notReady ? 'Not ready' : 'Sold out';
+  return f.soldOut ? `<button type="button" class="kx-add" disabled>${off}</button>`
+    : q ? `<div class="kx-step" role="group" aria-label="${esc(f.name)} quantity"><button type="button" data-id="${esc(f.id)}" data-d="-1" aria-label="Remove one ${esc(f.name)}">−</button><output aria-live="polite">${q}</output><button type="button" data-id="${esc(f.id)}" data-d="1" aria-label="Add one more ${esc(f.name)}"${q >= f.maxPerOrder || closed ? ' disabled' : ''}>+</button></div>`
+      : `<button type="button" class="kx-add" data-id="${esc(f.id)}" data-d="1"${closed ? ' disabled' : ''} aria-label="Add ${esc(f.name)}, ${naira(f.priceKobo)}">${closed ? 'Kitchen closed' : 'Add'}</button>`;
+}
 function card(f: Item) {
   const q = qty[f.id] || 0, closed = !menu?.open;
   const spice = f.spice ? `<span class="kx-spice" aria-label="Spice level: ${SPICE[f.spice]}" title="${SPICE[f.spice]}">${[1, 2, 3].map(n => `<i class="${n <= (f.spice || 0) ? 'on' : ''}"></i>`).join('')}</span>` : '';
@@ -261,6 +270,21 @@ function photoCredits() {
   if (!list.length) return '';
   return `<details class="kx-credits"><summary>Food photo credits</summary><ul>${list.map(f => `<li>${esc(f.name)}: <a href="${esc(f.photoCredit!.page)}" target="_blank" rel="noopener">${esc(f.photoCredit!.author)}</a>, <a href="${esc(f.photoCredit!.licenseUrl)}" target="_blank" rel="noopener">${esc(f.photoCredit!.license)}</a> (${esc(f.photoCredit!.source)}). Photos may be cropped. Food served may look different.</li>`).join('')}</ul></details>`;
 }
+// ── The drinks showcase (owner's design, Nov 2026): kept between menu redraws, so a cart change never restarts it ──
+let drinks: { update(): void; destroy(): void } | null = null, drinksKey = '';
+const drinksHost = document.createElement('div');
+function placeDrinks(c: Cat | null) {
+  if (!c) { drinks?.destroy(); drinks = null; drinksKey = ''; return; }
+  const slot = document.querySelector<HTMLElement>(`#cat-${CSS.escape(c.id)} .kd-slot`);
+  if (!slot) return;
+  const key = JSON.stringify([menu?.open, c.items.map(f => [f.id, f.name, f.priceKobo, f.description, f.soldOut])]);
+  if (key !== drinksKey || !drinks) {
+    drinks?.destroy();
+    drinksKey = key;
+    drinks = mountDrinks(drinksHost, { items: c.items.map(f => ({ id: f.id, name: f.name, description: f.description, price: naira(f.priceKobo), adult: f.adult })), ctrlHtml: id => { const f = items.find(x => x.id === id); return f ? ctrlOf(f) : ''; } });
+  } else drinks.update();
+  slot.replaceWith(drinksHost);
+}
 function renderMenu() {
   const onTable = renderBelt();
   // With the table showing, "Popular now" is on the table (it comes first there), so not again below.
@@ -268,7 +292,9 @@ function renderMenu() {
   const cats = pop ? [pop, ...sortedCats()] : sortedCats();
   if (!cats.length) { $('kxMenu').innerHTML = '<p class="kx-empty">The menu will be ready on match day.</p>'; $('kxTabs').innerHTML = ''; return; }
   $('kxTabs').innerHTML = (onTable ? '<a class="kx-tab" href="#cat-table" data-cat="table" aria-current="true">🍽️ On the table</a>' : '') + cats.map((c, i) => `<a class="kx-tab" href="#cat-${esc(c.id)}" data-cat="${esc(c.id)}"${i === 0 && !onTable ? ' aria-current="true"' : ''}>${esc(c.name)}</a>`).join('');
-  $('kxMenu').innerHTML = cats.map(c => `<section class="kx-cat${c.id === 'popular' ? ' kx-cat--popular' : /combo/i.test(c.name) ? ' kx-cat--combo' : ''}" id="cat-${esc(c.id)}" aria-labelledby="h-${esc(c.id)}"><h2 id="h-${esc(c.id)}">${esc(c.name)}</h2><ul class="kx-grid">${c.items.map(card).join('')}</ul></section>`).join('') + photoCredits();
+  const isDrinks = (c: Cat) => !mgr && /drink/i.test(c.name) && c.items.length >= 2;
+  $('kxMenu').innerHTML = cats.map(c => isDrinks(c) ? `<section class="kx-cat kx-cat--drinks" id="cat-${esc(c.id)}" aria-labelledby="h-${esc(c.id)}"><h2 id="h-${esc(c.id)}">${esc(c.name)}</h2><div class="kd-slot"></div></section>` : `<section class="kx-cat${c.id === 'popular' ? ' kx-cat--popular' : /combo/i.test(c.name) ? ' kx-cat--combo' : ''}" id="cat-${esc(c.id)}" aria-labelledby="h-${esc(c.id)}"><h2 id="h-${esc(c.id)}">${esc(c.name)}</h2><ul class="kx-grid">${c.items.map(card).join('')}</ul></section>`).join('') + photoCredits();
+  placeDrinks(cats.find(isDrinks) || null);
   spy();
 }
 function renderCart() {

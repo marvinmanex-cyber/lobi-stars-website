@@ -382,3 +382,105 @@
 .kx-credits ul { margin: 8px 0 0; padding-left: 18px; line-height: 1.6; }
 .kb-dlg-credit { margin: 0; font-size: 12px; color: var(--kb-muted); }
 .kb-dlg-credit a { color: var(--kb-muted); text-decoration: underline; }
+
+/* ── Drinks showcase (src/lib/kitchenDrinks.ts), from the owner design document "Rotating 3D Drinks section" (Nov 2026) ── */
+.kd { display: grid; gap: 18px; align-items: stretch; margin-top: 6px; }
+@media (min-width: 900px) { .kd { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 28px; } }
+.kd-list { display: flex; flex-direction: column; gap: 6px; order: 2; }
+@media (min-width: 900px) { .kd-list { order: 0; } }
+.kd-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "pick price" "pick ctrl"; align-items: center; gap: 4px 12px; padding: 10px 12px; border-radius: 14px; border: 1px solid transparent; transition: background .3s, border-color .3s; }
+.kd-row.on { background: var(--kx-navy-2); border-color: rgba(255, 194, 26, .45); box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .8); }
+.kd-pick { grid-area: pick; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 44px; padding: 0; border: 0; background: none; color: #fff; text-align: left; cursor: pointer; }
+.kd-name { font: 700 italic 20px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .01em; }
+.kd-row:not(.on) .kd-name { color: #D9E0EE; }
+.kd-desc { font-size: 13px; color: var(--kx-muted); line-height: 1.35; }
+.kd-price { grid-area: price; justify-self: end; font: 700 18px/1 'Barlow Condensed', sans-serif; color: var(--kx-gold); font-variant-numeric: tabular-nums; }
+.kd-ctrl { grid-area: ctrl; justify-self: end; }
+.kd-ctrl .kx-add { min-width: 92px; min-height: 40px; padding: 0 16px; }
+.kd-bar { position: absolute; left: 12px; right: 12px; bottom: 4px; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, .08); overflow: hidden; opacity: 0; }
+.kd-row.on .kd-bar { opacity: 1; }
+.kd-bar i { display: block; height: 100%; background: var(--kx-gold); transform: scaleX(0); transform-origin: left; }
+/* The stage: a lit counter the drinks land on. */
+.kd-stage { position: relative; min-height: 440px; border-radius: 22px; overflow: hidden; isolation: isolate; background: radial-gradient(70% 60% at 50% 38%, #24438F 0%, #13295A 46%, #0A1730 100%); border: 1px solid rgba(255, 194, 26, .3); }
+@media (min-width: 900px) { .kd-stage { min-height: 560px; } }
+.kd-glow { position: absolute; inset: 0; z-index: -1; background: radial-gradient(40% 30% at 50% 78%, rgba(255, 194, 26, .22), transparent 70%); }
+.kd-counter { position: absolute; left: -10%; right: -10%; bottom: -36%; height: 52%; border-radius: 50%; background: radial-gradient(closest-side, #1D3672, #0E1F45 70%); border-top: 2px solid rgba(255, 194, 26, .45); box-shadow: inset 0 18px 30px -18px rgba(255, 255, 255, .25); }
+.kd-fig { position: absolute; inset: 0; margin: 0; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 13%; perspective: 900px; }
+.kd-fig figcaption { position: absolute; left: 18px; bottom: 14px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .28em; text-transform: uppercase; color: rgba(255, 255, 255, .7); }
+.kd-drink { position: relative; height: 74%; aspect-ratio: 200 / 460; transform-origin: 50% 100%; }
+.kd-svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 18px 18px rgba(0, 0, 0, .35)); }
+.kd-shadow { position: absolute; bottom: calc(13% - 10px); left: 50%; width: 30%; height: 22px; margin-left: -15%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, .55), transparent); }
+.kd-brand { font: 800 italic 30px/1 'Barlow Condensed', sans-serif; letter-spacing: .01em; }
+.kd-serif { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 700; }
+.kd-sub { font: 600 11px/1 'Barlow', sans-serif; letter-spacing: .06em; text-transform: uppercase; opacity: .9; }
+/* Turning: the label strip scrolls round behind the bottle's fixed shading. */
+.kd-rollin { animation: kd-roll 6.5s linear infinite; animation-play-state: paused; }
+.kd-spin .kd-rollin { animation-play-state: running; }
+.kd-hold .kd-rollin, .kd-paused .kd-rollin { animation-play-state: paused; }
+@keyframes kd-roll { from { transform: translateX(0); } to { transform: translateX(-272px); } }
+/* Entrances */
+.kd-enter-drop .kd-drink { animation: kd-drop .9s cubic-bezier(.55, 0, 1, .45) both, kd-land .5s .9s ease-out both; }
+.kd-enter-drop .kd-shadow { animation: kd-shadow .9s cubic-bezier(.55, 0, 1, .45) both; }
+@keyframes kd-drop { from { transform: translateY(-140%) rotate(-6deg); } to { transform: none; } }
+@keyframes kd-land { 0% { transform: scale(1.06, .92); } 45% { transform: scale(.97, 1.04) translateY(-3%); } 100% { transform: none; } }
+@keyframes kd-shadow { from { transform: scale(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+.kd-enter-appear .kd-drink { animation: kd-appear .45s ease-out both; }
+@keyframes kd-appear { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+.kd-enter-reveal .kd-drink { animation: kd-reveal 1s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes kd-reveal { from { clip-path: inset(100% -20% 0 -20%); transform: translateY(8%); } to { clip-path: inset(-20% -20% -20% -20%); transform: none; } }
+.kd-enter-pop .kd-drink { animation: kd-appear .35s ease-out both; }
+/* Cap pop and fizz */
+.kd-cap { transform-box: fill-box; transform-origin: 50% 100%; }
+.kd-open .kd-cap { animation: kd-cap .8s cubic-bezier(.2, .7, .4, 1) forwards; }
+@keyframes kd-cap { 0% { transform: none; } 18% { transform: translateY(-8px) rotate(-8deg); } 100% { transform: translate(70px, -150px) rotate(220deg); opacity: 0; } }
+.kd-tab { transform-origin: 0 100%; }
+.kd-open .kd-tab { animation: kd-tab .5s ease-out forwards; }
+@keyframes kd-tab { to { transform: rotate(-70deg) translateY(-2px); } }
+.kd-capgone .kd-cap:not(.kd-tab) { display: none; }
+.kd-capgone .kd-tab { transform: rotate(-70deg) translateY(-2px); }
+.kd-fizz { position: absolute; left: 50%; top: 2%; width: 0; height: 0; pointer-events: none; }
+.kd-fizz i { position: absolute; left: 0; top: 0; width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .85); opacity: 0; }
+.kd-open .kd-fizz i { animation: kd-fizz 1s ease-out forwards; }
+.kd-open .kd-fizz i:nth-child(2) { animation-delay: .05s; --x: -26px; } .kd-open .kd-fizz i:nth-child(3) { animation-delay: .1s; --x: 22px; }
+.kd-open .kd-fizz i:nth-child(4) { animation-delay: .15s; --x: -12px; } .kd-open .kd-fizz i:nth-child(5) { animation-delay: .2s; --x: 30px; }
+.kd-open .kd-fizz i:nth-child(6) { animation-delay: .25s; --x: -34px; } .kd-open .kd-fizz i:nth-child(7) { animation-delay: .3s; --x: 8px; }
+@keyframes kd-fizz { 0% { opacity: .9; transform: translate(0, 0) scale(.6); } 100% { opacity: 0; transform: translate(var(--x, 0), -90px) scale(1.2); } }
+.kd-bubbles circle { animation: kd-bubble 3.2s linear infinite; animation-delay: calc(var(--i) * -.35s); animation-play-state: paused; }
+.kd-in .kd-bubbles circle { animation-play-state: running; }
+@keyframes kd-bubble { from { transform: translateY(0); opacity: .6; } to { transform: translateY(-240px); opacity: 0; } }
+/* The juice carton: a real 3D box that turns. */
+.kd-carton .kd-drink { height: 58%; aspect-ratio: 1 / 1.6; }
+.kd-carton { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+.kd-box { position: absolute; inset: 14% 12% 0; transform-style: preserve-3d; transform: rotateX(-10deg) rotateY(-28deg); animation: kd-turn 7s linear infinite; animation-play-state: paused; }
+.kd-spin .kd-box { animation-play-state: running; }
+.kd-hold .kd-box, .kd-paused .kd-box { animation-play-state: paused; }
+@keyframes kd-turn { from { transform: rotateX(-10deg) rotateY(-28deg); } to { transform: rotateX(-10deg) rotateY(332deg); } }
+.kd-face { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; backface-visibility: hidden; box-shadow: inset 0 0 40px rgba(0, 0, 0, .18); overflow: hidden; }
+.kd-front, .kd-back { width: 100%; height: 100%; }
+.kd-front { transform: translateZ(calc(var(--kd-depth, 46px))); }
+.kd-back { transform: rotateY(180deg) translateZ(var(--kd-depth, 46px)); }
+.kd-left, .kd-right { width: calc(var(--kd-depth, 46px) * 2); height: 100%; left: 50%; margin-left: calc(var(--kd-depth, 46px) * -1); filter: brightness(.85); }
+.kd-left { transform: rotateY(-90deg) translateZ(var(--kd-half, 60px)); }
+.kd-right { transform: rotateY(90deg) translateZ(var(--kd-half, 60px)); }
+.kd-top { width: 100%; height: calc(var(--kd-depth, 46px) * 2); top: 50%; margin-top: calc(var(--kd-depth, 46px) * -1); transform: rotateX(90deg) translateZ(var(--kd-halfh, 110px)); filter: brightness(1.15); }
+.kd-front b { font: 800 italic 26px/1 'Barlow Condensed', sans-serif; text-align: center; text-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
+.kd-front span { font: 700 11px/1 'Barlow', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+.kd-fruit { width: 46px; height: 46px; border-radius: 50%; display: block; box-shadow: inset -6px -6px 0 rgba(0, 0, 0, .15); }
+.kd-fruit2 { position: absolute; right: 14%; top: 10%; width: 28px; height: 28px; background: #FFD23F; }
+.kd-lines { display: flex; flex-direction: column; gap: 6px; width: 70%; }
+.kd-lines i { display: block; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .7); }
+.kd-lines i:nth-child(2n) { width: 70%; }
+.kd-bars { width: 60%; height: 34px; background: repeating-linear-gradient(90deg, #fff 0 2px, transparent 2px 5px); opacity: .85; }
+.kd-vert { writing-mode: vertical-rl; font: 800 italic 18px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; }
+.kd-straw { position: absolute; top: 2%; left: 60%; width: 6px; height: 22%; border-radius: 3px; transform: translateY(40%) rotate(8deg); opacity: 0; transition: transform .5s cubic-bezier(.2, .9, .3, 1.4), opacity .2s; }
+.kd-open .kd-straw, .kd-capgone .kd-straw { transform: translateY(-30%) rotate(8deg); opacity: 1; }
+.kd-pause { position: absolute; right: 12px; top: 12px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25); background: rgba(10, 23, 48, .6); color: #fff; font-size: 13px; cursor: pointer; }
+.kd-pause:hover { border-color: var(--kx-gold); }
+@media (prefers-reduced-motion: reduce) { .kd *, .kd *::before, .kd *::after { animation: none !important; transition: none !important; } }
+/* Carton sizes: the 3D sides only meet at known sizes (box = 76% wide, 86% high of the drawing). */
+.kd-fig.kd-carton .kd-drink { height: auto; width: 160px; aspect-ratio: 1 / 1.6; --kd-half: 60.8px; --kd-halfh: 110px; --kd-depth: 46px; }
+@media (min-width: 900px) { .kd-fig.kd-carton .kd-drink { width: 200px; --kd-half: 76px; --kd-halfh: 137.6px; --kd-depth: 57px; } }
+/* The stage keeps its own size (it used to stretch to the length of the list): beside the list on wide screens,
+   on top of the list on phones. It scrolls with the page (no floating parts, owner rule). */
+.kd-stage { align-self: start; height: 430px; min-height: 0; }
+@media (min-width: 900px) { .kd-stage { height: clamp(440px, 64vh, 580px); } }

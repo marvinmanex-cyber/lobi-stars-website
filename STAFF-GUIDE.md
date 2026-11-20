@@ -4820,6 +4820,10 @@ staff, shifts, handover notes and activity log (read-only).
   ordering is open. Fans can close it for the day.
 - **The ticket email** has an **Order food to your seat** button.
 - **The ticket confirmation and Find my tickets pages** link to the kitchen.
+- **The Drinks section** (20 Nov 2026): the drinks list beside a stage where each drink in turn drops,
+  appears, rises into view or pops its cap, then turns to show its other sides. It moves on by itself;
+  fans tap a drink to see it, or press pause. Supervisors signed in to edit the menu see the drinks as
+  normal cards (to change names and prices).
 - **Food photos** (20 Nov 2026): every standard dish has a real photo from a free photo library (credits
   at the bottom of the menu). To use the kitchen's own photo instead, upload it in MatchDay Kitchen ›
   Menu and prices: an uploaded photo always wins. A new dish without a photo shows its emoji.

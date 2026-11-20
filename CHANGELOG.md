@@ -8,6 +8,24 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-20: MatchDay Kitchen: the Drinks section comes alive
+
+**Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**
+
+From the owner's design document ("Rotating 3D Drinks section", modelled on the Food Domain website):
+- The Drinks section now has the drinks list (name, description, price, Add) beside a stage where the drinks
+  appear one after another. In turn: the first drops from above, lands on the counter and its cap pops off
+  with a fizz; the next just appears; the next is revealed, rising into view; the next has its cap popped open.
+  The moment each is fully in view it turns, showing its other sides (bottles and cans turn their label round
+  to the back with its barcode; the juice carton turns in 3D).
+- A gold line under the drink on show fills up until the next one; tapping a drink in the list shows it at
+  once; pointing at the stage holds it; a pause button stops it. The show starts when the Drinks section comes
+  into view, scrolls with the page, and is still for visitors who prefer less motion.
+- The drinks are drawn (not photos), in each brand's colours with its name; no logos are copied. A drink the
+  drawing does not know gets a gold-labelled bottle with its own name.
+- Adding a drink uses the same cart as the rest of the menu; it never restarts the show. While a supervisor is
+  editing the menu, the drinks show as normal cards so names and prices can be changed.
+
 ## 2026-11-20: MatchDay Kitchen: real food photos instead of the cartoon pictures
 
 **Who it affects:** fans ordering at lobistarsfc.com/kitchen/, and kitchen staff. **Nothing to do.**
