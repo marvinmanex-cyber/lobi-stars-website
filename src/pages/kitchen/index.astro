@@ -81,6 +81,9 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
         <p class="kx-small">Fans can order it straight away. A photo can be added later in the website admin.</p>
       </form>
     </dialog>
+    <!-- The food table: dishes turning on a table (src/lib/kitchenBelt.ts), filled when the menu loads. -->
+    <section class="kx-wrap kx-cat kx-table" id="cat-table" hidden aria-label="Food on the table"></section>
+
     <section class="kx-wrap kx-menu" id="kxMenu" aria-label="Menu">
       <p class="kx-empty kx-loading">Loading the menu…</p>
     </section>

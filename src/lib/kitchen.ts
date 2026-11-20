@@ -6,6 +6,7 @@
 //   GET  /api/food/order?ref=&t=    order status (Received, Preparing, On the way, Delivered)
 // Vanilla TypeScript, no libraries. The cart and seat are kept on the phone.
 import { mountRating } from './foodRating';
+import { mountBelt, type BeltDish } from './kitchenBelt';
 import { upcomingMatches } from '../../functions/api/_lib/tickets/rules.js';
 
 type Item = { id: string; name: string; description: string; priceKobo: number; photo: string | null; emoji?: string; soldOut: boolean; notReady?: boolean; maxPerOrder: number; adult: boolean; spice?: number; badge?: string | null; tags?: string[]; sponsor?: { slug: string; name: string; logo: string | null } | null };
@@ -202,11 +203,64 @@ function renderAgain() {
     $('kxCartBtn').click();
   });
 }
+// ── The food table: the dishes turning on a table at the top of the menu (owner's design, Nov 2026) ──
+// Popular dishes first, then the rest of what is ready (up to 10 plates, so the whole table fits on a laptop). Rebuilt only when the menu
+// itself changes (names, prices, photos, sold out, open or closed), never on a cart change.
+let belt: { destroy(): void } | null = null, beltKey = '';
+function beltDishes(): Item[] {
+  const ready = items.filter(f => !f.soldOut);
+  const pop = (menu?.popular || []).map(id => ready.find(f => f.id === id)).filter((f): f is Item => !!f);
+  return [...pop, ...sortedCats().flatMap(c => c.items).filter(f => !f.soldOut && !pop.includes(f))].slice(0, 10);
+}
+/** Price bands 1–5 for the plate rings, from the prices on the table. */
+function priceBands(list: Item[]) {
+  const prices = [...new Set(list.map(f => f.priceKobo))].sort((a, b) => a - b);
+  const bands = Math.min(5, prices.length);
+  const bandOf = (k: number) => (prices.length <= 1 ? 1 : Math.min(bands, Math.floor((prices.indexOf(k) / prices.length) * bands) + 1));
+  const legend: { tier: number; label: string }[] = [];
+  for (let t = 1; t <= bands; t++) {
+    const inBand = prices.filter(k => bandOf(k) === t);
+    if (!inBand.length) continue;
+    const lo = inBand[0], hi = inBand[inBand.length - 1];
+    legend.push({ tier: t, label: lo === hi ? naira(lo) : `${naira(lo)}–${naira(hi)}` });
+  }
+  return { bandOf, legend };
+}
+function renderBelt(): boolean {
+  const box = document.getElementById('cat-table');
+  if (!box) return false;
+  const list = beltDishes();
+  if (list.length < 3) { belt?.destroy(); belt = null; beltKey = ''; box.hidden = true; return false; }
+  const key = JSON.stringify([menu?.open, list.map(f => [f.id, f.name, f.priceKobo, f.photo, f.emoji, f.description])]);
+  box.hidden = false;
+  if (key === beltKey && belt) return true;
+  belt?.destroy();
+  beltKey = key;
+  const { bandOf, legend } = priceBands(list);
+  const dishes: BeltDish[] = list.map(f => ({
+    id: f.id, name: f.name, price: naira(f.priceKobo), tier: bandOf(f.priceKobo), description: f.description || undefined, photo: f.photo, emoji: f.emoji,
+    details: [f.badge && BADGE[f.badge], f.spice ? SPICE[f.spice] : '', ...(f.tags || []).map(t => TAG_NAMES[t] || t), f.adult ? '18+ | Drink Responsibly' : '', f.sponsor ? `Sponsored by ${f.sponsor.name}` : ''].filter((x): x is string => !!x),
+  }));
+  belt = mountBelt(box, {
+    items: dishes,
+    eyebrow: 'MatchDay Kitchen · On the table',
+    heading: 'Pick your food as the table turns',
+    caption: 'Point at a plate (or tap it) to stop the table, flick it to spin, tap a plate again to order.',
+    legend,
+    canAdd: !!menu?.open,
+    closedText: 'Ordering opens on Lobi Stars home match days.',
+    onAdd: id => { const before = qty[id] || 0; change(id, 1); const ok = (qty[id] || 0) > before; if (ok) gaEvent('kitchen_belt_add', { item_id: id }); return ok; },
+    action: { href: '#kxMenu', text: 'See the full menu ↓' },
+  });
+  return true;
+}
 function renderMenu() {
-  const pop = popularCat();
+  const onTable = renderBelt();
+  // With the table showing, "Popular now" is on the table (it comes first there), so not again below.
+  const pop = onTable ? null : popularCat();
   const cats = pop ? [pop, ...sortedCats()] : sortedCats();
   if (!cats.length) { $('kxMenu').innerHTML = '<p class="kx-empty">The menu will be ready on match day.</p>'; $('kxTabs').innerHTML = ''; return; }
-  $('kxTabs').innerHTML = cats.map((c, i) => `<a class="kx-tab" href="#cat-${esc(c.id)}" data-cat="${esc(c.id)}"${i === 0 ? ' aria-current="true"' : ''}>${esc(c.name)}</a>`).join('');
+  $('kxTabs').innerHTML = (onTable ? '<a class="kx-tab" href="#cat-table" data-cat="table" aria-current="true">🍽️ On the table</a>' : '') + cats.map((c, i) => `<a class="kx-tab" href="#cat-${esc(c.id)}" data-cat="${esc(c.id)}"${i === 0 && !onTable ? ' aria-current="true"' : ''}>${esc(c.name)}</a>`).join('');
   $('kxMenu').innerHTML = cats.map(c => `<section class="kx-cat${c.id === 'popular' ? ' kx-cat--popular' : /combo/i.test(c.name) ? ' kx-cat--combo' : ''}" id="cat-${esc(c.id)}" aria-labelledby="h-${esc(c.id)}"><h2 id="h-${esc(c.id)}">${esc(c.name)}</h2><ul class="kx-grid">${c.items.map(card).join('')}</ul></section>`).join('');
   spy();
 }

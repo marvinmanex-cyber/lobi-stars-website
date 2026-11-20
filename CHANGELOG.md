@@ -8,6 +8,23 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-20: MatchDay Kitchen: the food table (dishes turning on a table)
+
+**Who it affects:** fans ordering food at lobistarsfc.com/kitchen/. **Nothing to do.**
+
+- At the top of the kitchen menu (under "Manage the menu"), up to 10 dishes now turn on a table, like
+  a sushi-restaurant belt, based on the owner's design document ("Turning Sushi belt for restaurant").
+  The most popular dishes come first.
+- Point at a plate (or tap it on a phone) to stop the table and see the name and price; flick to spin;
+  ‹ ⏸ › buttons and the arrow keys move plate by plate. Tapping the plate again (or Enter) lifts it into a
+  card with the description, labels, price and **Add to order** (the same cart as the menu).
+- Plate rings are coloured by price band, with a legend. "MatchDay Kitchen" is on the counter in the
+  middle. Kitchen navy and gold.
+- Sold-out dishes leave the table; while the kitchen is closed the card says ordering opens on match days.
+- The table stops when it is off screen and stays still for visitors who prefer less motion. The full
+  menu by category is underneath; the first menu tab is "On the table".
+- Built in plain code for this website (no extra software, no cost).
+
 ## 2026-11-18: Squad titles from the SEO Scanner reach the page; richer match pages; fairer duplicate check
 
 **Who it affects:** fans, Google and the Super Admins. **Nothing to do.**

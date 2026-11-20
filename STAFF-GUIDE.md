@@ -4820,6 +4820,14 @@ staff, shifts, handover notes and activity log (read-only).
   ordering is open. Fans can close it for the day.
 - **The ticket email** has an **Order food to your seat** button.
 - **The ticket confirmation and Find my tickets pages** link to the kitchen.
+- **The food table** (top of lobistarsfc.com/kitchen/, added 20 Nov 2026): up to 10 dishes
+  turn on a table like a sushi-restaurant belt, the most popular first. Fans point at a plate (or
+  tap it on a phone) to stop the table and see the name and price, flick it to spin, and tap the
+  plate again to open it and press **Add to order** (the same cart as the menu below). The plate
+  ring colour shows the price band (the legend says which). Sold-out dishes leave the table by
+  themselves; while the kitchen is closed the card says ordering opens on match days. A dish
+  photo shows on its plate (Menu and prices); without a photo its emoji is shown. The full menu,
+  by category, is still underneath ("See the full menu").
 - **Posters:** open **lobistarsfc.com/kitchen/poster/**.
   - **Print A4 poster** is for walls, kiosks and the programme page.
   - **Big screen: full screen** shows a 16:9 slide for the stadium screen
