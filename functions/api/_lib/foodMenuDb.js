@@ -9,6 +9,15 @@
 // their own copy of name and price, so menu changes never alter past orders.
 // The first time this runs, the original 8 items are copied in.
 import { FOOD_MENU } from './foodMenu.js';
+// Real food photos for the standard dishes (free licences; photographer and licence in the file). A photo uploaded
+// in MatchDay Kitchen › Menu and prices always comes first. Plain JSON import: Cloudflare's build doesn't accept 'with { type }'.
+import MENU_PHOTOS from '../../../src/data/menu-photos.json';
+/** The photo for a dish (uploaded first, else the built-in one) and, for a built-in one, its credit line. */
+export function dishPhoto(id, photoId) {
+  if (photoId) return { photo: photoUrl(photoId), photoCredit: null };
+  const p = MENU_PHOTOS[id];
+  return p ? { photo: p.src, photoCredit: { author: p.author, license: p.license, licenseUrl: p.licenseUrl, page: p.page, source: p.source } } : { photo: null, photoCredit: null };
+}
 import { KITCHEN_OPENING_SOON, KITCHEN_OPENING_SOON_MESSAGE } from './launchFlags.js';
 import { randomId } from './crypto.js';
 import { ensureFoodSchema, foodSettings } from './foodOrders.js';
@@ -161,7 +170,7 @@ export async function publicMenu(db, venueId = 'venue-main') {
   return cats.map(c => ({
     id: c.id, name: c.name,
     items: items.filter(i => i.category_id === c.id).map(i => ({
-      id: i.id, name: i.name, description: i.description || '', priceKobo: i.price_kobo, photo: photoUrl(i.photo_id),
+      id: i.id, name: i.name, description: i.description || '', priceKobo: i.price_kobo, ...dishPhoto(i.id, i.photo_id),
       emoji: i.emoji || '', soldOut: !!i.sold_out || i.stock === 0, notReady: !!i.sold_out && i.stock !== 0, maxPerOrder: i.max_per_order || 20, adult: !!i.adult,
       spice: i.spice || 0, badge: i.badge || null, tags: parseTags(i.tags), sponsor: i.sponsor || null,
     })),

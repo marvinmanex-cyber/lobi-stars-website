@@ -1,6 +1,6 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { logAdminAction } from '../_lib/adminSession.js';
-import { ensureMenuSchema, parseItem, history, wasOrdered, photoUrl, naira, orderingState, parseTags } from '../_lib/foodMenuDb.js';
+import { ensureMenuSchema, parseItem, history, wasOrdered, photoUrl, naira, orderingState, parseTags, dishPhoto } from '../_lib/foodMenuDb.js';
 import { foodSettings, saveFoodSetting, WA_TEMPLATES } from '../_lib/foodOrders.js';
 import { randomId } from '../_lib/crypto.js';
 
@@ -17,7 +17,7 @@ async function state(env) {
     categories: categories.map(c => ({ id: c.id, name: c.name, count: items.filter(i => i.category_id === c.id && !i.archived).length })),
     items: items.map(i => ({
       id: i.id, name: i.name, description: i.description || '', price: i.price_kobo / 100, category: i.category_id,
-      photoId: i.photo_id, photo: photoUrl(i.photo_id), emoji: i.emoji || '', available: !!i.available, soldOut: !!i.sold_out,
+      photoId: i.photo_id, photo: dishPhoto(i.id, i.photo_id).photo, emoji: i.emoji || '', available: !!i.available, soldOut: !!i.sold_out,
       archived: !!i.archived, maxPerOrder: i.max_per_order, stock: i.stock, adult: !!i.adult, spice: i.spice || 0, badge: i.badge || '', tags: parseTags(i.tags), sponsor: i.sponsor || '', updatedAt: i.updated_at,
       history: hist.filter(h => h.item_id === i.id).slice(0, 8),
     })),

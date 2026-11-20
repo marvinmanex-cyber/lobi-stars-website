@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-20: MatchDay Kitchen: real food photos instead of the cartoon pictures
+
+**Who it affects:** fans ordering at lobistarsfc.com/kitchen/, and kitchen staff. **Nothing to do.**
+
+- All 22 dishes and drinks on the menu now show a real photo (suya, chicken suya, wings, chicken quarter,
+  gizzard, meat pie, chicken pie, Gala, puff-puff, small chops, plantain chips, burger, shawarma, popcorn,
+  water, Coca-Cola, Fanta, Sprite, Maltina, juice, energy drink) on the menu cards, on the turning food table
+  and in the dish card. Where possible the photos are Nigerian (suya, puff-puff, small chops, meat pie, Maltina).
+- The photos come from free photo libraries (Wikimedia Commons and Openverse) whose licences allow use by a
+  business at no cost; each photo's photographer and licence are shown in the dish card and in "Food photo
+  credits" at the bottom of the menu, as the licences ask. Photos may be cropped; the food served may look
+  different.
+- A photo uploaded in MatchDay Kitchen › Menu and prices always replaces the built-in one (the club's own
+  photos of its own food are best). New dishes without an uploaded photo keep their emoji.
+- The photos are small (about 35 KB each) so the menu stays quick on phones.
+
 ## 2026-11-20: MatchDay Kitchen: the food table (dishes turning on a table)
 
 **Who it affects:** fans ordering food at lobistarsfc.com/kitchen/. **Nothing to do.**

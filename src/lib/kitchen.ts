@@ -9,7 +9,7 @@ import { mountRating } from './foodRating';
 import { mountBelt, type BeltDish } from './kitchenBelt';
 import { upcomingMatches } from '../../functions/api/_lib/tickets/rules.js';
 
-type Item = { id: string; name: string; description: string; priceKobo: number; photo: string | null; emoji?: string; soldOut: boolean; notReady?: boolean; maxPerOrder: number; adult: boolean; spice?: number; badge?: string | null; tags?: string[]; sponsor?: { slug: string; name: string; logo: string | null } | null };
+type Item = { id: string; name: string; description: string; priceKobo: number; photo: string | null; photoCredit?: { author: string; license: string; licenseUrl: string; page: string; source: string } | null; emoji?: string; soldOut: boolean; notReady?: boolean; maxPerOrder: number; adult: boolean; spice?: number; badge?: string | null; tags?: string[]; sponsor?: { slug: string; name: string; logo: string | null } | null };
 const TAG_NAMES: Record<string, string> = { halal: 'Halal', veg: 'Vegetarian', kids: "Kids' portion" };
 type Cat = { id: string; name: string; items: Item[] };
 type Menu = { payTransfer?: boolean; halftimeSlots?: { id: string; label: string; at: string; left: number | null; full: boolean }[]; goalDeal?: { percent: number; until: string } | null; message?: string | null; popular?: string[]; pickupPoints?: string[]; open: boolean; reason: string; match: string | null; opensAt: string | null; closesAt: string | null; categories: Cat[]; stands: string[]; minOrderKobo: number; paymentExpiryMinutes: number; whatsapp: { number: string; display: string } | null };
@@ -239,6 +239,7 @@ function renderBelt(): boolean {
   const { bandOf, legend } = priceBands(list);
   const dishes: BeltDish[] = list.map(f => ({
     id: f.id, name: f.name, price: naira(f.priceKobo), tier: bandOf(f.priceKobo), description: f.description || undefined, photo: f.photo, emoji: f.emoji,
+    credit: f.photoCredit ? { text: `Photo: ${f.photoCredit.author}, ${f.photoCredit.license} (${f.photoCredit.source})`, href: f.photoCredit.page } : null,
     details: [f.badge && BADGE[f.badge], f.spice ? SPICE[f.spice] : '', ...(f.tags || []).map(t => TAG_NAMES[t] || t), f.adult ? '18+ | Drink Responsibly' : '', f.sponsor ? `Sponsored by ${f.sponsor.name}` : ''].filter((x): x is string => !!x),
   }));
   belt = mountBelt(box, {
@@ -254,6 +255,12 @@ function renderBelt(): boolean {
   });
   return true;
 }
+// Credits for the free-licence food photos (the licences ask for the photographer's name and the licence).
+function photoCredits() {
+  const list = items.filter(f => f.photoCredit);
+  if (!list.length) return '';
+  return `<details class="kx-credits"><summary>Food photo credits</summary><ul>${list.map(f => `<li>${esc(f.name)}: <a href="${esc(f.photoCredit!.page)}" target="_blank" rel="noopener">${esc(f.photoCredit!.author)}</a>, <a href="${esc(f.photoCredit!.licenseUrl)}" target="_blank" rel="noopener">${esc(f.photoCredit!.license)}</a> (${esc(f.photoCredit!.source)}). Photos may be cropped. Food served may look different.</li>`).join('')}</ul></details>`;
+}
 function renderMenu() {
   const onTable = renderBelt();
   // With the table showing, "Popular now" is on the table (it comes first there), so not again below.
@@ -261,7 +268,7 @@ function renderMenu() {
   const cats = pop ? [pop, ...sortedCats()] : sortedCats();
   if (!cats.length) { $('kxMenu').innerHTML = '<p class="kx-empty">The menu will be ready on match day.</p>'; $('kxTabs').innerHTML = ''; return; }
   $('kxTabs').innerHTML = (onTable ? '<a class="kx-tab" href="#cat-table" data-cat="table" aria-current="true">🍽️ On the table</a>' : '') + cats.map((c, i) => `<a class="kx-tab" href="#cat-${esc(c.id)}" data-cat="${esc(c.id)}"${i === 0 && !onTable ? ' aria-current="true"' : ''}>${esc(c.name)}</a>`).join('');
-  $('kxMenu').innerHTML = cats.map(c => `<section class="kx-cat${c.id === 'popular' ? ' kx-cat--popular' : /combo/i.test(c.name) ? ' kx-cat--combo' : ''}" id="cat-${esc(c.id)}" aria-labelledby="h-${esc(c.id)}"><h2 id="h-${esc(c.id)}">${esc(c.name)}</h2><ul class="kx-grid">${c.items.map(card).join('')}</ul></section>`).join('');
+  $('kxMenu').innerHTML = cats.map(c => `<section class="kx-cat${c.id === 'popular' ? ' kx-cat--popular' : /combo/i.test(c.name) ? ' kx-cat--combo' : ''}" id="cat-${esc(c.id)}" aria-labelledby="h-${esc(c.id)}"><h2 id="h-${esc(c.id)}">${esc(c.name)}</h2><ul class="kx-grid">${c.items.map(card).join('')}</ul></section>`).join('') + photoCredits();
   spy();
 }
 function renderCart() {

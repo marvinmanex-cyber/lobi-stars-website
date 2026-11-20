@@ -4820,6 +4820,9 @@ staff, shifts, handover notes and activity log (read-only).
   ordering is open. Fans can close it for the day.
 - **The ticket email** has an **Order food to your seat** button.
 - **The ticket confirmation and Find my tickets pages** link to the kitchen.
+- **Food photos** (20 Nov 2026): every standard dish has a real photo from a free photo library (credits
+  at the bottom of the menu). To use the kitchen's own photo instead, upload it in MatchDay Kitchen ›
+  Menu and prices: an uploaded photo always wins. A new dish without a photo shows its emoji.
 - **The food table** (top of lobistarsfc.com/kitchen/, added 20 Nov 2026): up to 10 dishes
   turn on a table like a sushi-restaurant belt, the most popular first. Fans point at a plate (or
   tap it on a phone) to stop the table and see the name and price, flick it to spin, and tap the

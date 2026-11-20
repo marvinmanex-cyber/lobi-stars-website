@@ -2,7 +2,7 @@ import { freshCodeCheck, exportName } from '../_lib/exportGuard.js';
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { logAdminAction } from '../_lib/adminSession.js';
 import { ensureFoodSchema, expireStale } from '../_lib/foodOrders.js';
-import { ensureMenuSchema, photoUrl } from '../_lib/foodMenuDb.js';
+import { ensureMenuSchema, dishPhoto } from '../_lib/foodMenuDb.js';
 import { buildXlsx } from '../_lib/xlsx.js';
 
 // GET /api/admin/food-analytics?range=7d|30d|season|all|custom&from=&to=&event=<match id>
@@ -56,7 +56,7 @@ export async function onRequestGet({ request, env }) {
   const totalQty = [...items.values()].reduce((s, r) => s + r.qty, 0);
   const totalRev = paid.reduce((s, o) => s + o.total_kobo, 0);
   const itemRows = [...items.values()].sort((a, b) => b.qty - a.qty || b.revenueKobo - a.revenueKobo).map(r => ({
-    ...r, photo: photoUrl(info.get(r.id)?.photo_id), emoji: info.get(r.id)?.emoji || '', category: info.get(r.id)?.category || 'Other',
+    ...r, photo: dishPhoto(r.id, info.get(r.id)?.photo_id).photo, emoji: info.get(r.id)?.emoji || '', category: info.get(r.id)?.category || 'Other',
     qtyPct: pct(r.qty, totalQty), revenuePct: pct(r.revenueKobo, totalRev),
   }));
   // Make the item percentages add up to exactly 100 (largest-remainder rounding).

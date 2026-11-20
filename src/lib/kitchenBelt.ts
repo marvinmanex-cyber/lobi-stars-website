@@ -20,6 +20,8 @@ export type BeltDish = {
   details?: string[];
   photo?: string | null;
   emoji?: string;
+  /** Photo credit (free-licence photos need the photographer's name and the licence). */
+  credit?: { text: string; href?: string } | null;
 };
 export type BeltOptions = {
   items: BeltDish[];
@@ -508,6 +510,7 @@ ${label}</svg>`;
     ${item.details?.length ? `<ul class="kb-dlg-tags">${item.details.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
     <div class="kb-dlg-buy"><p class="kb-dlg-price">${esc(item.price)}</p>${o.canAdd ? `<button type="button" class="kb-dlg-add">${ICON.plus}<span>Add to order</span></button>` : `<p class="kb-dlg-closed">${esc(o.closedText)}</p>`}</div>
     <p class="kb-dlg-msg" role="status"></p>
+    ${item.credit ? `<p class="kb-dlg-credit">${item.credit.href ? `<a href="${esc(item.credit.href)}" target="_blank" rel="noopener">${esc(item.credit.text)}</a>` : esc(item.credit.text)}</p>` : ''}
   </div>
 </div>`;
     document.body.appendChild(box);
