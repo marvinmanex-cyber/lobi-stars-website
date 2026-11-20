@@ -16,7 +16,7 @@ import MENU_PHOTOS from '../../../src/data/menu-photos.json';
 export function dishPhoto(id, photoId) {
   if (photoId) return { photo: photoUrl(photoId), photoCredit: null };
   const p = MENU_PHOTOS[id];
-  return p ? { photo: p.src, photoCredit: { author: p.author, license: p.license, licenseUrl: p.licenseUrl, page: p.page, source: p.source } } : { photo: null, photoCredit: null };
+  return p ? { photo: p.src, photoCredit: p.license ? { author: p.author, license: p.license, licenseUrl: p.licenseUrl, page: p.page, source: p.source } : null } : { photo: null, photoCredit: null };
 }
 import { KITCHEN_OPENING_SOON, KITCHEN_OPENING_SOON_MESSAGE } from './launchFlags.js';
 import { randomId } from './crypto.js';

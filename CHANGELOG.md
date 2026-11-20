@@ -8,6 +8,18 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-20: MatchDay Kitchen: the club's own drink pictures; the food table never stops by itself
+
+**Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**
+
+- **The club's drink pictures** (Coca-Cola, Fanta, Sprite, Malta Guinness, Monster Energy, orange juice, saved in
+  public/images) are now used: cut out of their backgrounds on the Drinks stage (they still drop, appear, rise,
+  fizz, then turn, tumble and spin by themselves), and on white for the menu cards and the food table. They need
+  no photo credit. Water keeps its drawing until a water picture is saved.
+- **The food table turns on its own all the time**, a little faster: no more automatic stops to lift a plate.
+  Pointing at a plate shows its name and price while the table keeps turning; it only stops while a dish is
+  open or when the pause button is pressed. One tap on a plate opens the dish with Add to order.
+
 ## 2026-11-20: MatchDay Kitchen: dishes turn with the table; drinks turn 180° in every direction
 
 **Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**

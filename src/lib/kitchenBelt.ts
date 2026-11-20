@@ -39,7 +39,7 @@ export type BeltOptions = {
 };
 
 const SPACING = 1.35, CURVE = 0.95, BAND = 1.22, TILT = 0.8, SLAT = 0.34, LIFT_Y = -6, LIFT_SCALE = 0.08, BACK_SHADE = 0.15, CHIP_ROOM = 34;
-const WIDE = 1024, HOLD = 1400, RUN = 0, SEEK = 1, DRAG = 2;
+const WIDE = 1024, HOLD = 1400, RUN = 0, SEEK = 1, DRAG = 2, SPEED = 40; // px a second on the front lane
 type Geo = { width: number; height: number; d: number; r: number; s: number; l: number; pitch: number; n: number; kb: number; cx: number; ym: number; a: number; b: number; band: number; slats: number; side: number; edgeTop: number };
 type Point = { x: number; z: number; nx: number; nz: number; tx: number; tz: number };
 
@@ -153,7 +153,7 @@ export function mountBelt(root: HTMLElement, o: BeltOptions): { destroy(): void 
   // State (what React kept in useState / useRef in the original).
   const sim = { offset: 0, v: 0, mode: RUN, target: 0, lift: [] as number[], vlift: [] as number[], z: [] as number[], lane: [] as string[], raf: 0, last: 0, visible: true, init: false, touched: false, l: 0, center: -1, published: '', px: 0, py: 0, inside: false, lock: false, lockX: 0, lockY: 0 };
   let pointer = { id: -1, index: -1, x: 0, y: 0, moved: false, start: 0, lane: 1, lastX: 0, lastT: 0, v: 0 };
-  let geo: Geo | null = null, active: number | null = null, paused = false, openIndex: number | null = null, playing = !reduced;
+  let geo: Geo | null = null, active: number | null = null, paused = false, openIndex: number | null = null, playing = false; // no automatic lifting: the table just keeps turning
   let pendingOpen = -1, autoActive: number | null = null, autoLast: number | null = null, autoTimer = 0;
   let wide = false, narrow = false;
 
@@ -283,8 +283,9 @@ ${label}</svg>`;
     const dt = sim.last ? clamp((now - sim.last) / 1000, 0, 0.25) : 1 / 60;
     sim.last = now;
     const steps = Math.max(1, Math.ceil(dt / 0.017)), h = dt / steps;
-    const stopped = paused || active !== null || openIndex !== null;
-    const cruise = reduced ? 0 : 26;
+    // It keeps turning on its own; it stops only while a dish is open or the pause button is pressed.
+    const stopped = paused || openIndex !== null;
+    const cruise = reduced ? 0 : SPEED;
     for (let step = 0; step < steps; step++) {
       if (sim.mode === SEEK) {
         const w = 5.6;
@@ -370,7 +371,7 @@ ${label}</svg>`;
     const show = () => {
       const g = geo;
       if (!g || !playing || paused || openIndex !== null) return;
-      const index = autoLast === null ? centerOf(g, sim.offset + 26 * 0.25) : (autoLast + 1) % count;
+      const index = autoLast === null ? centerOf(g, sim.offset + SPEED * 0.25) : (autoLast + 1) % count;
       autoLast = index; autoActive = index;
       setActive(index); seekTo(index);
       autoTimer = window.setTimeout(() => {
@@ -398,8 +399,8 @@ ${label}</svg>`;
     geo = next;
     if (!sim.init) {
       sim.init = true;
-      sim.offset = next.s / 2 - Math.min(26 * 1.62, next.pitch * 0.45);
-      sim.v = reduced ? 0 : 26;
+      sim.offset = next.s / 2 - Math.min(SPEED * 1.62, next.pitch * 0.45);
+      sim.v = reduced ? 0 : SPEED;
       if (reduced) sim.offset = next.s / 2;
     } else if (old && old.l !== next.l) { const f = next.l / old.l; sim.offset *= f; sim.target *= f; }
     sim.z = []; sim.lane = [];

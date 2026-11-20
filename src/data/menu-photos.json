@@ -81,31 +81,22 @@
   "source": "Flickr"
  },
  "mk-sprite": {
-  "src": "/images/kitchen/menu/mk-sprite.webp",
-  "title": "Sprite bottle",
-  "author": "afiler",
-  "license": "CC BY-SA 2.0",
-  "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
-  "page": "https://www.flickr.com/photos/99909734@N00/861344746",
-  "source": "Flickr"
+  "src": "/images/kitchen/drinks/sprite-card.webp",
+  "title": "Club photo",
+  "author": "Lobi Stars FC",
+  "own": true
  },
  "mk-juice": {
-  "src": "/images/kitchen/menu/mk-juice.webp",
-  "title": "orange juice",
-  "author": "Mervi Emilia",
-  "license": "CC BY 2.0",
-  "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-  "page": "https://www.flickr.com/photos/14394039@N00/5563590861",
-  "source": "Flickr"
+  "src": "/images/kitchen/drinks/juice-card.webp",
+  "title": "Club photo",
+  "author": "Lobi Stars FC",
+  "own": true
  },
  "mk-energy": {
-  "src": "/images/kitchen/menu/mk-energy.webp",
-  "title": "Monster Energy Drinks",
-  "author": "JeepersMedia",
-  "license": "CC BY 2.0",
-  "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-  "page": "https://www.flickr.com/photos/39160147@N03/13100205093",
-  "source": "Flickr"
+  "src": "/images/kitchen/drinks/energy-card.webp",
+  "title": "Club photo",
+  "author": "Lobi Stars FC",
+  "own": true
  },
  "mk-suya-1": {
   "src": "/images/kitchen/menu/mk-suya-1.webp",
@@ -153,31 +144,22 @@
   "source": "Wikimedia Commons"
  },
  "mk-fanta": {
-  "src": "/images/kitchen/menu/mk-fanta.webp",
-  "title": "Fanta orang 1",
-  "author": "Connor J Williams",
-  "license": "CC BY 2.0",
-  "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
-  "page": "https://commons.wikimedia.org/wiki/File:Fanta_orang_1.jpg",
-  "source": "Wikimedia Commons"
+  "src": "/images/kitchen/drinks/fanta-card.webp",
+  "title": "Club photo",
+  "author": "Lobi Stars FC",
+  "own": true
  },
  "mk-malt": {
-  "src": "/images/kitchen/menu/mk-malt.webp",
-  "title": "Maltina Soft Drink",
-  "author": "Marwan Bello",
-  "license": "CC BY-SA 4.0",
-  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-  "page": "https://commons.wikimedia.org/wiki/File:Maltina_Soft_Drink.jpg",
-  "source": "Wikimedia Commons"
+  "src": "/images/kitchen/drinks/malt-card.webp",
+  "title": "Club photo",
+  "author": "Lobi Stars FC",
+  "own": true
  },
  "mk-coke": {
-  "src": "/images/kitchen/menu/mk-coke.webp",
-  "title": "Coca-Cola glass bottle",
-  "author": "Oleg Yunakov",
-  "license": "CC BY-SA 4.0",
-  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-  "page": "https://commons.wikimedia.org/wiki/File:Coca-Cola_glass_bottle.jpg",
-  "source": "Wikimedia Commons"
+  "src": "/images/kitchen/drinks/coca-cola-card.webp",
+  "title": "Club photo",
+  "author": "Lobi Stars FC",
+  "own": true
  },
  "mk-small-chops": {
   "src": "/images/kitchen/menu/mk-small-chops.webp",

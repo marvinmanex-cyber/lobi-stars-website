@@ -508,3 +508,6 @@
 .kd-spin .kd-box { animation: none; }
 .kd-bottom { width: 100%; height: calc(var(--kd-depth, 46px) * 2); top: 50%; margin-top: calc(var(--kd-depth, 46px) * -1); transform: rotateX(-90deg) translateZ(var(--kd-halfh, 110px)); filter: brightness(.7); }
 .kd-carton .kd-turner { transform-origin: 50% 50%; }
+/* The club's own drink pictures on the stage (cut out), standing on the counter. */
+.kd-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; filter: drop-shadow(0 18px 18px rgba(0, 0, 0, .4)); user-select: none; -webkit-user-drag: none; }
+.kd-photofig .kd-drink { height: 70%; max-width: 78%; }

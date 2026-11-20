@@ -12,14 +12,18 @@
 
 export type DrinkRow = { id: string; name: string; description: string; price: string; adult: boolean };
 type Kind = 'glass' | 'pet' | 'can' | 'carton';
-type Look = { kind: Kind; liquid: string; glass: string; label: string; ink: string; cap: string; brand: string; sub: string; serif?: boolean; accent?: string };
+type Look = { photo?: { src: string; ratio: number }; kind: Kind; liquid: string; glass: string; label: string; ink: string; cap: string; brand: string; sub: string; serif?: boolean; accent?: string };
 
 const DWELL = 5200;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
 /** How each drink is drawn (by its name). Brand colours and names only: no logos are copied. */
+// The club's own drink pictures (cut out of their backgrounds): public/images/kitchen/drinks/.
+const PHOTOS: [RegExp, string, number][] = [[/coca|coke/, 'coca-cola', 150 / 538], [/fanta/, 'fanta', 262 / 848], [/sprite/, 'sprite', 208 / 699], [/malt/, 'malt', 378 / 633], [/energy/, 'energy', 696 / 1685], [/juice/, 'juice', 768 / 1045]];
 function lookOf(d: DrinkRow): Look {
   const n = `${d.id} ${d.name}`.toLowerCase();
+  const ph = PHOTOS.find(([re]) => re.test(n));
+  if (ph) return { photo: { src: `/images/kitchen/drinks/${ph[1]}.webp`, ratio: ph[2] }, kind: 'glass', liquid: '', glass: '', label: '', ink: '', cap: '', brand: d.name, sub: '' };
   const size = d.name.match(/\(([^)]*\d[^)]*)\)/)?.[1] || '';
   if (/coca|coke/.test(n)) return { kind: 'glass', liquid: '#2B120A', glass: 'rgba(225,235,240,.32)', label: '#E41E2B', ink: '#FFFFFF', cap: '#D81E2A', brand: 'Coca-Cola', sub: size || 'Ice-cold', serif: true };
   if (/fanta/.test(n)) return { kind: 'pet', liquid: '#FF7A00', glass: 'rgba(255,190,120,.25)', label: '#1D3FA8', ink: '#FF8A1C', cap: '#FF7A00', brand: 'Fanta', sub: size || 'Orange', accent: '#7ED957' };
@@ -46,6 +50,7 @@ ${Array.from({ length: 14 }, (_, i) => `<rect x="${x + 70 + i * 4}" y="${h * 0.6
 
 /** The drink drawing (SVG), or the 3D carton (CSS). */
 function drawing(l: Look, id: string) {
+  if (l.photo) return `<img class="kd-photo" src="${esc(l.photo.src)}" alt="" draggable="false" decoding="async">`;
   if (l.kind === 'carton') {
     const side = (cls: string, inner: string) => `<div class="kd-face ${cls}" style="background:${l.label}">${inner}</div>`;
     const front = `<b style="color:${l.ink}">${esc(l.brand)}</b><span style="color:${l.ink}">${esc(l.sub)}</span><i class="kd-fruit" style="background:${l.accent}"></i><i class="kd-fruit kd-fruit2"></i>`;
@@ -108,9 +113,9 @@ export function mountDrinks(host: HTMLElement, o: { items: DrinkRow[]; ctrlHtml:
     index = i; elapsed = 0;
     const d = items[i], l = lookOf(d);
     rows.forEach((r, k) => { r.classList.toggle('on', k === i); r.querySelector('.kd-pick')!.setAttribute('aria-current', k === i ? 'true' : 'false'); });
-    fig.className = `kd-fig kd-${l.kind}`;
-    const turner = l.kind === 'carton' ? drawing(l, d.id) : `<div class="kd-side kd-side-f">${drawing(l, `${d.id}-f`)}</div><div class="kd-side kd-side-b">${drawing(l, `${d.id}-b`)}</div>`;
-    fig.innerHTML = `<div class="kd-drink"><div class="kd-turner">${turner}</div><span class="kd-fizz" aria-hidden="true">${'<i></i>'.repeat(7)}</span></div><span class="kd-shadow" aria-hidden="true"></span><figcaption>${esc(d.name)}</figcaption>`;
+    fig.className = `kd-fig ${l.photo ? 'kd-photofig' : `kd-${l.kind}`}`;
+    const turner = l.kind === 'carton' && !l.photo ? drawing(l, d.id) : `<div class="kd-side kd-side-f">${drawing(l, `${d.id}-f`)}</div><div class="kd-side kd-side-b">${drawing(l, `${d.id}-b`)}</div>`;
+    fig.innerHTML = `<div class="kd-drink"${l.photo ? ` style="aspect-ratio:${l.photo.ratio.toFixed(4)}"` : ''}><div class="kd-turner">${turner}</div><span class="kd-fizz" aria-hidden="true">${'<i></i>'.repeat(7)}</span></div><span class="kd-shadow" aria-hidden="true"></span><figcaption>${esc(d.name)}</figcaption>`;
     fig.setAttribute('aria-label', `${d.name}, ${d.price}`);
     if (reduced) { fig.classList.add('kd-in', 'kd-still'); return; }
     void fig.offsetWidth;
