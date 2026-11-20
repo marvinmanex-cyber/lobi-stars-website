@@ -135,13 +135,10 @@
   "source": "Wikimedia Commons"
  },
  "mk-water": {
-  "src": "/images/kitchen/menu/mk-water.webp",
-  "title": "Bottled water",
-  "author": "H.A.W.C 101",
-  "license": "CC BY-SA 4.0",
-  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-  "page": "https://commons.wikimedia.org/wiki/File:Bottled_water.jpg",
-  "source": "Wikimedia Commons"
+  "src": "/images/kitchen/drinks/water-card.webp",
+  "title": "Club photo",
+  "author": "Lobi Stars FC",
+  "own": true
  },
  "mk-fanta": {
   "src": "/images/kitchen/drinks/fanta-card.webp",

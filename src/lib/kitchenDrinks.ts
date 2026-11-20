@@ -12,18 +12,19 @@
 
 export type DrinkRow = { id: string; name: string; description: string; price: string; adult: boolean };
 type Kind = 'glass' | 'pet' | 'can' | 'carton';
-type Look = { photo?: { src: string; ratio: number }; kind: Kind; liquid: string; glass: string; label: string; ink: string; cap: string; brand: string; sub: string; serif?: boolean; accent?: string };
+type Look = { photo?: { src: string; ratio: number; mode: 'lathe' | 'card'; metal: boolean }; kind: Kind; liquid: string; glass: string; label: string; ink: string; cap: string; brand: string; sub: string; serif?: boolean; accent?: string };
 
 const DWELL = 5200;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
 /** How each drink is drawn (by its name). Brand colours and names only: no logos are copied. */
 // The club's own drink pictures (cut out of their backgrounds): public/images/kitchen/drinks/.
-const PHOTOS: [RegExp, string, number][] = [[/coca|coke/, 'coca-cola', 150 / 538], [/fanta/, 'fanta', 262 / 848], [/sprite/, 'sprite', 208 / 699], [/malt/, 'malt', 378 / 633], [/energy/, 'energy', 696 / 1685], [/juice/, 'juice', 768 / 1045]];
+// [name test, file, width/height, 3D: 'lathe' = round body turned in 3D, 'card' = a group or a glass that sways, metal]
+const PHOTOS: [RegExp, string, number, 'lathe' | 'card', boolean][] = [[/coca|coke/, 'coca-cola', 150 / 538, 'lathe', false], [/fanta/, 'fanta', 198 / 640, 'lathe', false], [/sprite/, 'sprite', 190 / 640, 'lathe', false], [/malt/, 'malt', 378 / 633, 'card', false], [/energy/, 'energy', 265 / 640, 'lathe', true], [/juice/, 'juice', 470 / 640, 'card', false], [/water/, 'water', 267 / 640, 'lathe', false]];
 function lookOf(d: DrinkRow): Look {
   const n = `${d.id} ${d.name}`.toLowerCase();
   const ph = PHOTOS.find(([re]) => re.test(n));
-  if (ph) return { photo: { src: `/images/kitchen/drinks/${ph[1]}.webp`, ratio: ph[2] }, kind: 'glass', liquid: '', glass: '', label: '', ink: '', cap: '', brand: d.name, sub: '' };
+  if (ph) return { photo: { src: `/images/kitchen/drinks/${ph[1]}.webp`, ratio: ph[2], mode: ph[3], metal: ph[4] }, kind: 'glass', liquid: '', glass: '', label: '', ink: '', cap: '', brand: d.name, sub: '' };
   const size = d.name.match(/\(([^)]*\d[^)]*)\)/)?.[1] || '';
   if (/coca|coke/.test(n)) return { kind: 'glass', liquid: '#2B120A', glass: 'rgba(225,235,240,.32)', label: '#E41E2B', ink: '#FFFFFF', cap: '#D81E2A', brand: 'Coca-Cola', sub: size || 'Ice-cold', serif: true };
   if (/fanta/.test(n)) return { kind: 'pet', liquid: '#FF7A00', glass: 'rgba(255,190,120,.25)', label: '#1D3FA8', ink: '#FF8A1C', cap: '#FF7A00', brand: 'Fanta', sub: size || 'Orange', accent: '#7ED957' };
@@ -94,6 +95,9 @@ export function mountDrinks(host: HTMLElement, o: { items: DrinkRow[]; ctrlHtml:
   // Always moving, whatever the computer's "less motion" setting (owner's request); the pause button stops it.
   const reduced = false;
   const ENTRANCES = ['drop', 'appear', 'reveal', 'pop'] as const;
+  // The real 3D drink on the stage (src/lib/drink3d.ts, loaded only when needed).
+  let solid: { destroy(): void } | null = null, showId = 0;
+  const running = () => !paused && !hover && inView && !document.hidden && !stopped;
   let index = 0, step = 0, elapsed = 0, last = 0, raf = 0, paused = false, hover = false, stopped = false, inView = true;
   const timers: number[] = [];
   host.className = 'kd';
@@ -118,6 +122,11 @@ export function mountDrinks(host: HTMLElement, o: { items: DrinkRow[]; ctrlHtml:
     const turner = l.kind === 'carton' && !l.photo ? drawing(l, d.id) : `<div class="kd-side kd-side-f">${drawing(l, `${d.id}-f`)}</div><div class="kd-side kd-side-b">${drawing(l, `${d.id}-b`)}</div>`;
     fig.innerHTML = `<div class="kd-drink"${l.photo ? ` style="aspect-ratio:${l.photo.ratio.toFixed(4)}"` : ''}><div class="kd-turner">${turner}</div><span class="kd-fizz" aria-hidden="true">${'<i></i>'.repeat(7)}</span></div><span class="kd-shadow" aria-hidden="true"></span><figcaption>${esc(d.name)}</figcaption>`;
     fig.setAttribute('aria-label', `${d.name}, ${d.price}`);
+    solid?.destroy(); solid = null;
+    if (l.photo) {
+      const id = ++showId, ph = l.photo, side = fig.querySelector<HTMLElement>('.kd-side-f');
+      import('./drink3d').then(m => side ? m.mount3D(side, ph.src, ph.mode, running, ph.metal) : null).then(h => { if (id === showId) solid = h; else h?.destroy(); }).catch(() => {});
+    }
     if (reduced) { fig.classList.add('kd-in', 'kd-still'); return; }
     void fig.offsetWidth;
     fig.classList.add(`kd-enter-${entrance}`);
@@ -172,6 +181,6 @@ export function mountDrinks(host: HTMLElement, o: { items: DrinkRow[]; ctrlHtml:
   return {
     /** Redraws the Add / quantity controls (after a cart change) without restarting the show. */
     update() { for (const d of items) { const c = host.querySelector<HTMLElement>(`[data-ctrl="${CSS.escape(d.id)}"]`); if (c) c.innerHTML = o.ctrlHtml(d.id); } },
-    destroy() { stopped = true; clear(); if (raf) cancelAnimationFrame(raf); io.disconnect(); host.innerHTML = ''; },
+    destroy() { stopped = true; solid?.destroy(); clear(); if (raf) cancelAnimationFrame(raf); io.disconnect(); host.innerHTML = ''; },
   };
 }

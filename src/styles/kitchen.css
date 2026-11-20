@@ -511,3 +511,10 @@
 /* The club's own drink pictures on the stage (cut out), standing on the counter. */
 .kd-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; filter: drop-shadow(0 18px 18px rgba(0, 0, 0, .4)); user-select: none; -webkit-user-drag: none; }
 .kd-photofig .kd-drink { height: 70%; max-width: 78%; }
+/* Real 3D drinks (src/lib/drink3d.ts): the canvas replaces the flat photo; they turn round, never upside down. */
+.kd-photofig .kd-turner { animation: none !important; transform: none !important; }
+.kd-photofig .kd-side-b { display: none; }
+.kd-3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; filter: drop-shadow(0 22px 18px rgba(0, 0, 0, .45)); }
+.kd-3d .kd-photo { visibility: hidden; }
+/* Drawn drinks (if any) only turn round now: no tumbling, never upside down. */
+@keyframes kd-tumble { 0%, 10% { transform: none; } 40%, 55% { transform: rotateY(180deg); } 85%, 100% { transform: rotateY(360deg); } }

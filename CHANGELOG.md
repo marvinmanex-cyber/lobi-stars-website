@@ -8,6 +8,18 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-20: MatchDay Kitchen: real 3D drinks; Msendo water
+
+**Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**
+
+- **The drinks are now real 3D objects.** Each bottle and can is built from its photo: the outline is read from the
+  picture and turned into a solid body, the photo wraps round it as its label, with studio lighting, shine on
+  plastic and a metal sheen on the can. They turn slowly round, always upright (never upside down), and float
+  gently. The Malta Guinness group and the juice glass sway in 3D. Built with the browser's own 3D (WebGL): no
+  extra software, no cost; a phone that cannot do 3D shows the flat picture.
+- **Water** is now the Msendo Table Water bottle ("Official Water Partners of Lobi Stars FC") on the Drinks stage,
+  the menu card and the food table.
+
 ## 2026-11-20: MatchDay Kitchen: the food table and the drinks always move
 
 **Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**
