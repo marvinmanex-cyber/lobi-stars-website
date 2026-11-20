@@ -91,7 +91,8 @@ function drawing(l: Look, id: string) {
 
 export function mountDrinks(host: HTMLElement, o: { items: DrinkRow[]; ctrlHtml: (id: string) => string }): { update(): void; destroy(): void } {
   const items = o.items;
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Always moving, whatever the computer's "less motion" setting (owner's request); the pause button stops it.
+  const reduced = false;
   const ENTRANCES = ['drop', 'appear', 'reveal', 'pop'] as const;
   let index = 0, step = 0, elapsed = 0, last = 0, raf = 0, paused = false, hover = false, stopped = false, inView = true;
   const timers: number[] = [];

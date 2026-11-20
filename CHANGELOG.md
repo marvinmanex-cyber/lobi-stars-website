@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-20: MatchDay Kitchen: the food table and the drinks always move
+
+**Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**
+
+- On computers and phones set to show less motion (for example Windows with "Show animations in Windows"
+  switched off), the food table and the drinks stood still. At the owner's request they now always turn and
+  tumble, whatever that setting; each has a pause button for anyone who wants them still. The rest of the
+  kitchen page still respects the setting.
+
 ## 2026-11-20: MatchDay Kitchen: the club's own drink pictures; the food table never stops by itself
 
 **Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**

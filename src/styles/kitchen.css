@@ -189,8 +189,10 @@
   .kx-logo { width: 84px; height: 84px; }
   .kx-seat .kx-wrap { grid-template-columns: auto minmax(0, 260px) 120px 120px 1fr; }
 }
+/* "Less motion" (e.g. Windows' Show animations off): the page keeps still, except the food table and the drinks,
+   which the owner wants always moving (each has a pause button). */
 @media (prefers-reduced-motion: reduce) {
-  .kx *, .kx *::before { animation: none !important; transition: none !important; }
+  .kx *:not(.kb, .kb *, .kd, .kd *), .kx *:not(.kb, .kb *, .kd, .kd *)::before { animation: none !important; transition: none !important; }
   .kx-card:hover { transform: none; }
 }
 /* The page has its own WhatsApp ordering and a cart bar at the bottom. */
@@ -367,7 +369,6 @@
 .kb-dlg-add:focus-visible, .kb-dlg-x:focus-visible, .kb-ctl:focus-visible { outline: 3px solid var(--kb-gold); outline-offset: 2px; }
 .kb-dlg-closed { margin: 0; padding: 10px 14px; border-radius: 12px; background: rgba(224, 32, 32, .16); color: #FFD0D0; font-size: 14px; }
 .kb-dlg-msg { margin: 0; min-height: 1.2em; font-size: 14px; color: var(--kb-muted); }
-@media (prefers-reduced-motion: reduce) { .kb-chip, .kb-dlg-bg, .kb-dlg-panel, .kb-dlg-text { transition: none; } }
 /* Phones and tablets: title and price colours, then the table, then the caption and the full-menu link. */
 .kb:not([data-layout="wide"]) .kb-side { display: contents; }
 .kb:not([data-layout="wide"]) .kb-eyebrow { order: 1; }
@@ -476,7 +477,6 @@
 .kd-open .kd-straw, .kd-capgone .kd-straw { transform: translateY(-30%) rotate(8deg); opacity: 1; }
 .kd-pause { position: absolute; right: 12px; top: 12px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25); background: rgba(10, 23, 48, .6); color: #fff; font-size: 13px; cursor: pointer; }
 .kd-pause:hover { border-color: var(--kx-gold); }
-@media (prefers-reduced-motion: reduce) { .kd *, .kd *::before, .kd *::after { animation: none !important; transition: none !important; } }
 /* Carton sizes: the 3D sides only meet at known sizes (box = 76% wide, 86% high of the drawing). */
 .kd-fig.kd-carton .kd-drink { height: auto; width: 160px; aspect-ratio: 1 / 1.6; --kd-half: 60.8px; --kd-halfh: 110px; --kd-depth: 46px; }
 @media (min-width: 900px) { .kd-fig.kd-carton .kd-drink { width: 200px; --kd-half: 76px; --kd-halfh: 137.6px; --kd-depth: 57px; } }

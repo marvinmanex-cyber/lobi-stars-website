@@ -148,8 +148,10 @@ let uidCount = 0;
 export function mountBelt(root: HTMLElement, o: BeltOptions): { destroy(): void } {
   const uid = `kb${++uidCount}`;
   const items = o.items, count = items.length;
+  // Always moving, whatever the computer's "less motion" setting (owner's request, 20 Nov 2026): the pause button
+  // stops it for anyone who wants it still.
   const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let reduced = media.matches;
+  let reduced = false;
   // State (what React kept in useState / useRef in the original).
   const sim = { offset: 0, v: 0, mode: RUN, target: 0, lift: [] as number[], vlift: [] as number[], z: [] as number[], lane: [] as string[], raf: 0, last: 0, visible: true, init: false, touched: false, l: 0, center: -1, published: '', px: 0, py: 0, inside: false, lock: false, lockX: 0, lockY: 0 };
   let pointer = { id: -1, index: -1, x: 0, y: 0, moved: false, start: 0, lane: 1, lastX: 0, lastT: 0, v: 0 };
@@ -600,7 +602,7 @@ ${label}</svg>`;
   const io = new IntersectionObserver(es => { inView = es.some(x => x.isIntersecting); vis(); });
   io.observe(root);
   document.addEventListener('visibilitychange', vis);
-  const onMotion = () => { reduced = media.matches; if (reduced) { playing = false; window.clearTimeout(autoTimer); sim.v = 0; } kick(); };
+  const onMotion = () => { kick(); };
   media.addEventListener('change', onMotion);
 
   caption(); measure();
