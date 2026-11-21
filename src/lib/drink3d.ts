@@ -51,25 +51,59 @@ function compile(gl: WebGLRenderingContext) {
 }
 
 /** The outline of the drink, row by row, from the photo's transparency: [y (0 top..1 bottom), half width (px)]. */
-function profile(img: HTMLImageElement) {
+/**
+ * Reads the drink from its cut-out photo and repairs it for 3D:
+ *  - holes inside the outline (clear plastic necks that came out see-through) are filled with the colour beside them,
+ *  - the leftover base under the bottle (white splash, grey shadow, white rim) is cut off,
+ *  - the outline is pulled in a little so the thin white fringe of the cut-out does not show.
+ * Returns the outline rows [y (0 top..1 bottom), half width (px), centre x (px)] and the repaired picture.
+ */
+function prepare(img: HTMLImageElement, fill = true) {
   const w = img.naturalWidth, h = img.naturalHeight, cv = document.createElement('canvas');
   cv.width = w; cv.height = h;
-  const cx2 = cv.getContext('2d', { willReadFrequently: true })!;
-  cx2.drawImage(img, 0, 0);
-  const data = cx2.getImageData(0, 0, w, h).data, ROWS = 140, rows: [number, number, number][] = [];
-  for (let j = 0; j <= ROWS; j++) {
-    const y = Math.min(h - 1, Math.round((j / ROWS) * (h - 1)));
-    let l = -1, r = -1;
-    for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] > 110) { if (l < 0) l = x; r = x; }
-    if (l >= 0) rows.push([y / (h - 1), (r - l) / 2, (l + r) / 2]);
+  const ctx = cv.getContext('2d', { willReadFrequently: true })!;
+  ctx.drawImage(img, 0, 0);
+  const im = ctx.getImageData(0, 0, w, h), data = im.data;
+  const lo = new Int32Array(h).fill(-1), hi = new Int32Array(h).fill(-1), bright = new Float32Array(h);
+  for (let y = 0; y < h; y++) {
+    // Groups and glasses (no hole filling): the white puddle or reflection under them is made see-through.
+    if (!fill && y > h * 0.78) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4, mn = Math.min(data[i], data[i + 1], data[i + 2]), mx = Math.max(data[i], data[i + 1], data[i + 2]); if (mn > 196 && mx - mn < 28) data[i + 3] = 0; }
+    let n = 0, sum = 0;
+    for (let x = 0; x < w; x++) { const i = (y * w + x) * 4; if (data[i + 3] > 110) { if (lo[y] < 0) lo[y] = x; hi[y] = x; n++; sum += (data[i] + data[i + 1] + data[i + 2]) / 3; } }
+    bright[y] = n ? sum / n : 255;
+    // Fill see-through gaps inside the outline with the colour to their left (so the shape is solid).
+    if (fill && lo[y] >= 0) {
+      let r = data[(y * w + lo[y]) * 4], g = data[(y * w + lo[y]) * 4 + 1], b = data[(y * w + lo[y]) * 4 + 2];
+      for (let x = lo[y]; x <= hi[y]; x++) {
+        const i = (y * w + x) * 4;
+        if (data[i + 3] > 110) { r = data[i]; g = data[i + 1]; b = data[i + 2]; data[i + 3] = 255; }
+        else { data[i] = r; data[i + 1] = g; data[i + 2] = b; data[i + 3] = 255; }
+      }
+    }
   }
-  // Smooth the outline a little (no ragged edges from splashes or droplets).
-  return rows.map((row, i) => { const a = rows[Math.max(0, i - 1)], b = rows[Math.min(rows.length - 1, i + 1)]; return [row[0], (a[1] + row[1] * 2 + b[1]) / 4, row[2]] as [number, number, number]; });
+  ctx.putImageData(im, 0, 0);
+  // The base under the bottle: rows near the bottom that are much lighter than the bottle, or wider than its body.
+  const widths: number[] = [];
+  for (let y = Math.round(h * 0.3); y < Math.round(h * 0.8); y++) if (lo[y] >= 0) widths.push(hi[y] - lo[y]);
+  widths.sort((a, b) => a - b);
+  const body = widths[Math.floor(widths.length / 2)] || w, bodyBright = (() => { let s = 0, n = 0; for (let y = Math.round(h * 0.4); y < Math.round(h * 0.8); y++) if (lo[y] >= 0) { s += bright[y]; n++; } return n ? s / n : 128; })();
+  let bottom = h - 1;
+  while (bottom > h * 0.85 && (lo[bottom] < 0 || (fill && hi[bottom] - lo[bottom] > body * 1.04) || (bright[bottom] > 200 && bright[bottom] > bodyBright + 25))) bottom--;
+  let top = 0;
+  while (top < h * 0.1 && lo[top] < 0) top++;
+  const ROWS = 150, rows: [number, number, number][] = [];
+  for (let j = 0; j <= ROWS; j++) {
+    const y = Math.round(top + (j / ROWS) * (bottom - top));
+    if (lo[y] >= 0) rows.push([y / (h - 1), Math.max(0, (hi[y] - lo[y]) / 2 - Math.max(1.5, w * 0.012)), (lo[y] + hi[y]) / 2]);
+  }
+  // Smooth the outline a little (no ragged edges from droplets).
+  const smooth = rows.map((row, i) => { const a = rows[Math.max(0, i - 1)], b = rows[Math.min(rows.length - 1, i + 1)]; return [row[0], (a[1] + row[1] * 2 + b[1]) / 4, row[2]] as [number, number, number]; });
+  return { rows: smooth, canvas: cv, bottom: bottom / (h - 1) };
 }
 
 function latheMesh(img: HTMLImageElement) {
   const W = img.naturalWidth, H = img.naturalHeight, s = 2 / H; // world height 2
-  const rows = profile(img), SEG = 48;
+  const { rows, canvas } = prepare(img), SEG = 48;
   const cx = rows.reduce((a, r) => a + r[2], 0) / rows.length;
   const pos: number[] = [], nor: number[] = [], uv: number[] = [], idx: number[] = [];
   // Two half shells (front as photographed, back the same label read the right way round), so there is no seam
@@ -103,11 +137,13 @@ function latheMesh(img: HTMLImageElement) {
     for (let i = 0; i <= SEG * 2; i++) { const f = (i / (SEG * 2)) * Math.PI * 2; pos.push(r * Math.sin(f), y, r * Math.cos(f)); nor.push(0, top ? 1 : -1, 0); uv.push(cx / W, row[0]); }
     for (let i = 0; i < SEG * 2; i++) idx.push(centre, centre + 1 + i, centre + 2 + i);
   }
-  return { pos, nor, uv, idx, halfW: (W / 2) * s };
+  return { pos, nor, uv, idx, halfW: (W / 2) * s, picture: canvas as TexImageSource };
 }
 function cardMesh(img: HTMLImageElement) {
-  const a = img.naturalWidth / img.naturalHeight, w = a; // height 2, width 2a
-  return { pos: [-w, 1, 0, w, 1, 0, -w, -1, 0, w, -1, 0], nor: [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], uv: [0, 0, 1, 0, 0, 1, 1, 1], idx: [0, 2, 1, 1, 2, 3], halfW: w };
+  // The picture without the light base under it (splash, shadow).
+  const { canvas, bottom } = prepare(img, false);
+  const a = img.naturalWidth / (img.naturalHeight * bottom), w = a; // height 2, width 2a
+  return { pos: [-w, 1, 0, w, 1, 0, -w, -1, 0, w, -1, 0], nor: [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], uv: [0, 0, 1, 0, 0, bottom, 1, bottom], idx: [0, 2, 1, 1, 2, 3], halfW: w, picture: canvas as TexImageSource };
 }
 
 /** Puts the turning 3D drink into `box` (over the flat photo). isRunning() false = hold still (pause, hover, off screen). */
@@ -132,7 +168,7 @@ export function mount3D(box: HTMLElement, src: string, mode: Mode, isRunning: ()
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, big ? new Uint32Array(m.idx) : new Uint16Array(m.idx), gl.STATIC_DRAW);
     const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, m.picture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     const U = (n: string) => gl.getUniformLocation(prog, n);

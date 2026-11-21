@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-21: MatchDay Kitchen: 3D drinks without the white base; Fanta's neck
+
+**Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**
+
+- The 3D drinks no longer stand on a white base: the splash, shadow and white rim left under the bottles from the
+  original photos are cut off, and the white puddle under the Malta Guinness group and the juice glass is removed.
+- Fanta's neck and clear plastic shoulder show again (the cut-out had removed them with the white background);
+  see-through gaps inside any bottle are filled, and the thin white fringe around the cut-outs is gone.
+
 ## 2026-11-20: MatchDay Kitchen: real 3D drinks; Msendo water
 
 **Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**
