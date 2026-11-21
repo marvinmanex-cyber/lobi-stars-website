@@ -30,7 +30,7 @@ const FS = `precision mediump float;
 uniform sampler2D tex; uniform vec3 eye; uniform float metal; varying vec3 vn; varying vec2 vt; varying vec3 vp;
 void main() {
   vec4 c = texture2D(tex, vt);
-  if (c.a < 0.45) discard;
+  if (c.a < 0.06) discard;
   vec3 N = normalize(vn), V = normalize(eye - vp);
   if (dot(N, V) < 0.0) N = -N;
   vec3 key = normalize(vec3(0.55, 0.55, 0.65)), fill = normalize(vec3(-0.7, 0.2, 0.4));
@@ -40,7 +40,10 @@ void main() {
   float stripe = pow(max(dot(N, normalize(vec3(-0.35, 0.1, 1.0))), 0.0), 60.0) * 0.25;
   float rim = pow(1.0 - max(dot(N, V), 0.0), 3.0) * 0.35;
   vec3 col = c.rgb * (0.66 + d) + vec3(spec + stripe) + rim * vec3(1.0, 0.82, 0.35);
-  gl_FragColor = vec4(min(col, vec3(1.0)), 1.0);
+  float a = c.a;
+  // Clear plastic keeps a little shine even where it is see-through.
+  a = max(a, min(1.0, spec + stripe) * 0.8);
+  gl_FragColor = vec4(min(col, vec3(1.0)) * a, a);
 }`;
 
 function compile(gl: WebGLRenderingContext) {
@@ -67,17 +70,27 @@ function prepare(img: HTMLImageElement, fill = true) {
   const lo = new Int32Array(h).fill(-1), hi = new Int32Array(h).fill(-1), bright = new Float32Array(h);
   for (let y = 0; y < h; y++) {
     // Groups and glasses (no hole filling): the white puddle or reflection under them is made see-through.
-    if (!fill && y > h * 0.78) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4, mn = Math.min(data[i], data[i + 1], data[i + 2]), mx = Math.max(data[i], data[i + 1], data[i + 2]); if (mn > 196 && mx - mn < 28) data[i + 3] = 0; }
+    if (!fill && y > h * 0.76) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4, mn = Math.min(data[i], data[i + 1], data[i + 2]), mx = Math.max(data[i], data[i + 1], data[i + 2]); if (mn > 135 && mx - mn < 26) data[i + 3] = 0; }
     let n = 0, sum = 0;
     for (let x = 0; x < w; x++) { const i = (y * w + x) * 4; if (data[i + 3] > 110) { if (lo[y] < 0) lo[y] = x; hi[y] = x; n++; sum += (data[i] + data[i + 1] + data[i + 2]) / 3; } }
     bright[y] = n ? sum / n : 255;
     // Fill see-through gaps inside the outline with the colour to their left (so the shape is solid).
+    // A label band (lots of colour across the row) stays solid, white parts and lettering included.
+    let colourful = 0;
+    if (fill && lo[y] >= 0) for (let x = lo[y]; x <= hi[y]; x++) { const i = (y * w + x) * 4; if (Math.max(data[i], data[i + 1], data[i + 2]) - Math.min(data[i], data[i + 1], data[i + 2]) > 70) colourful++; }
+    const labelRow = lo[y] >= 0 && colourful > (hi[y] - lo[y] + 1) * 0.28;
     if (fill && lo[y] >= 0) {
       let r = data[(y * w + lo[y]) * 4], g = data[(y * w + lo[y]) * 4 + 1], b = data[(y * w + lo[y]) * 4 + 2];
       for (let x = lo[y]; x <= hi[y]; x++) {
         const i = (y * w + x) * 4;
         if (data[i + 3] > 110) { r = data[i]; g = data[i + 1]; b = data[i + 2]; data[i + 3] = 255; }
-        else { data[i] = r; data[i + 1] = g; data[i + 2] = b; data[i + 3] = 255; }
+        else { data[i] = r; data[i + 1] = g; data[i + 2] = b; data[i + 3] = 70; }
+        const mn = Math.min(data[i], data[i + 1], data[i + 2]), mx = Math.max(data[i], data[i + 1], data[i + 2]);
+        // Not white lettering on a coloured label: no strong colour within a few pixels either side or above/below.
+        const sat = (j) => (j < 0 || j >= data.length) ? 0 : Math.max(data[j], data[j + 1], data[j + 2]) - Math.min(data[j], data[j + 1], data[j + 2]);
+        const onLabel = sat(i - 24) > 70 || sat(i + 24) > 70 || sat(i - w * 24) > 70 || sat(i + w * 24) > 70 || sat(i - 12) > 70 || sat(i + 12) > 70;
+        if (y > h * 0.9 && mx - mn < 34 && mn > 110) data[i + 3] = 0; // the white floor, shadow and reflection under the bottle
+        else if (!labelRow && !onLabel && mx - mn < 30 && mn > 150) data[i + 3] = Math.min(data[i + 3], 170); // clear plastic: evenly see-through, still shiny
       }
     }
   }
@@ -174,6 +187,7 @@ export function mount3D(box: HTMLElement, src: string, mode: Mode, isRunning: ()
     const U = (n: string) => gl.getUniformLocation(prog, n);
     gl.uniform1f(U('metal'), metal ? 1 : 0);
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     box.appendChild(canvas);
     box.classList.add('kd-3d');
     let raf = 0, angle = mode === 'lathe' ? -0.5 : 0, t = 0, last = 0, alive = true;

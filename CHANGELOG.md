@@ -14,6 +14,9 @@ in HANDOVER-TODO.md.
 
 - The 3D drinks no longer stand on a white base: the splash, shadow and white rim left under the bottles from the
   original photos are cut off, and the white puddle under the Malta Guinness group and the juice glass is removed.
+- Clear plastic now looks like clear plastic: see-through with its shine (Fanta's neck, the tops of the Coca-Cola and
+  Sprite bottles, the Msendo water bottle), while labels and their lettering stay solid. The white floor, shadow and
+  reflection at the very bottom of each photo are removed (Coca-Cola, Sprite, the Malta group).
 - Fanta's neck and clear plastic shoulder show again (the cut-out had removed them with the white background);
   see-through gaps inside any bottle are filled, and the thin white fringe around the cut-outs is gone.
 
