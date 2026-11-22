@@ -215,6 +215,7 @@ Suggested start: 1, then 2.
 | K6 | **Choose the goal deal and half-time slots** (added 9 Nov 2026) | MatchDay Kitchen › **Menu and prices**: **⚽ Goal deal** (on/off, percent, minutes; off until you switch it on) and **⏱ Half-time slots** (orders per slot; 40 now). |
 | K7 | **Collection board TV** (added 9 Nov 2026) | On the computer or smart TV at the pickup point, open **lobistarsfc.com/kitchen/board/** and tap the screen once. Only useful when pickup points are set. |
 | K8 | **Labels and sponsored dishes** (added 9 Nov 2026) | MatchDay Kitchen › **Menu and prices** › **Labels** on each dish: tick Halal / Vegetarian / Kids' portion where true, and choose a sponsor if a partner has paid for one. |
+| K9 | **Kitchen registered address** (added 22 Nov 2026) | The new Contact Us and Refund Policy pages (lobistarsfc.com/kitchen/contact/ and /kitchen/refund-policy/) show **McCarthy Stadium, Makurdi** as the address of Aeson Sports Management Limited. Send the company's CAC registered address (and a kitchen email if you want one other than info@lobistarsfc.com) to the website manager. |
 
 ## S. Free SEO steps (added 16 Nov 2026, no cost)
 

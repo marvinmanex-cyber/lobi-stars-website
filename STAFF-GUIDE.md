@@ -1024,6 +1024,13 @@ admin, the Kitchen Screen and Telegram exactly as before. A fan who wants it
 at half-time chooses "At half-time" and the order note starts with "Deliver at
 half-time."
 
+**Kitchen Contact Us and Refund Policy (22 Nov 2026):** lobistarsfc.com/kitchen/contact/
+and lobistarsfc.com/kitchen/refund-policy/. Fans are told they can cancel free
+before the kitchen starts preparing, must report problems within 24 hours of the
+end of the match with their order number, get a reply within 1 working day and a
+refund (through Paystack, never cash) within 7 working days. Staff handling a
+refund follow those promises. The details shown come from `src/data/kitchenContact.ts`.
+
 **Seat QR codes:** a QR code on a seat can open
 `lobistarsfc.com/kitchen/?section=Cover%20Stand&row=12&seat=34`; the seat is
 then filled in for the fan. Use the stand names exactly as in Food Menu &

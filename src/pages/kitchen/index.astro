@@ -81,6 +81,9 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
         <p class="kx-small">Fans can order it straight away. A photo can be added later in the website admin.</p>
       </form>
     </dialog>
+    <!-- Delivery & refunds (22 Nov 2026). No delivery fee is charged today, hence "any". -->
+    <p class="kx-wrap kx-terms-note"><b>Delivery &amp; refunds:</b> Any seat delivery fee is shown at checkout. Cancel free before we start preparing your order. See our <a href="/kitchen/refund-policy/">Refund Policy</a>.</p>
+
     <!-- The food table: dishes turning on a table (src/lib/kitchenBelt.ts), filled when the menu loads. -->
     <section class="kx-wrap kx-cat kx-table" id="cat-table" hidden aria-label="Food on the table"></section>
 
@@ -153,6 +156,7 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
         </fieldset>
 
         <p class="kx-err" id="kxErr" role="alert" hidden></p>
+        <p class="kx-agree">By paying, you agree to our <a href="/kitchen/refund-policy/">Refund &amp; Cancellation Policy</a>.</p>
         <div class="kx-pay">
           <button type="submit" class="kx-btn kx-btn--pay" id="kxPayBtn">Pay online</button>
           <button type="button" class="kx-btn kx-btn--ghost" id="kxTrBtn" hidden style="width:100%">Pay by bank transfer</button>
@@ -164,6 +168,10 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
         <p class="kx-small" id="kxSmall">Pay online with card, bank transfer or USSD (Paystack). Your order goes to the kitchen as soon as payment is confirmed.</p>
       </form>
     </dialog>
+    <nav class="kx-wrap kxi-foot" aria-label="MatchDay Kitchen">
+      <a href="/kitchen/contact/">Contact Us</a>
+      <a href="/kitchen/refund-policy/">Refund Policy</a>
+    </nav>
   </div>
   <CheckoutRewards />
 </Layout>

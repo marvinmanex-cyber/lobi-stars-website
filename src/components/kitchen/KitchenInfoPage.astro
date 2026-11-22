@@ -1,0 +1,34 @@
+---
+// The frame for MatchDay Kitchen information pages (/kitchen/contact/, /kitchen/refund-policy/): the kitchen's own
+// header, colours and fonts (src/styles/kitchen.css), a back link to the menu and the kitchen footer links.
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/kitchen.css';
+interface Props { title: string; description: string; heading: string; current: 'contact' | 'refund' }
+const { title, description, heading, current } = Astro.props;
+---
+<Layout title={title} description={description} image="/images/og-kitchen.jpg" imageAlt="MatchDay Kitchen: great food, every match">
+  <Fragment slot="head">
+    <link rel="icon" type="image/png" sizes="32x32" href="/kitchen-favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/kitchen-touch-icon.png" />
+  </Fragment>
+  <div class="kx kxi">
+    <header class="kx-head">
+      <div class="kx-wrap">
+        <a href="/kitchen/" class="kxi-logo-link"><img class="kx-logo" src="/images/matchday-kitchen/logo-192.webp" alt="MatchDay Kitchen" width="84" height="84" /></a>
+        <div class="kx-brand">
+          <p class="kxi-kicker"><a href="/kitchen/">MatchDay Kitchen</a></p>
+          <h1>{heading}</h1>
+        </div>
+        <a class="kx-btn kx-btn--ghost kxi-back" href="/kitchen/">← Back to the menu</a>
+      </div>
+    </header>
+    <div class="kx-wrap kxi-body">
+      <slot />
+    </div>
+    <nav class="kx-wrap kxi-foot" aria-label="MatchDay Kitchen">
+      <a href="/kitchen/">Order food</a>
+      <a href="/kitchen/contact/" aria-current={current === 'contact' ? 'page' : undefined}>Contact Us</a>
+      <a href="/kitchen/refund-policy/" aria-current={current === 'refund' ? 'page' : undefined}>Refund Policy</a>
+    </nav>
+  </div>
+</Layout>

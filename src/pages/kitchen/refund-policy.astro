@@ -1,0 +1,102 @@
+---
+// /kitchen/refund-policy/: MatchDay Kitchen Refund & Cancellation Policy (owner's text, 22 Nov 2026).
+// Details (operator, address, phone, WhatsApp, email, date) come from src/data/kitchenContact.ts.
+// No delivery fee is charged today, so the policy says "any delivery fee" (owner's choice).
+import KitchenInfoPage from '../../components/kitchen/KitchenInfoPage.astro';
+import { KITCHEN as K } from '../../data/kitchenContact';
+const sections = [
+  ['cancel', '1. Cancelling your order'], ['full', '2. When you will get a full refund'], ['partial', '3. When you will get a partial refund'],
+  ['no-refund', '4. When we cannot give a refund'], ['request', '5. How to request a refund'], ['time', '6. How long refunds take'],
+  ['how', '7. How you will be refunded'], ['disputes', '8. Disputed payments'], ['changes', '9. Changes to this policy'], ['contact', '10. Contact us'],
+];
+---
+<KitchenInfoPage title="Refund & Cancellation Policy | MatchDay Kitchen" description="When and how you can cancel a MatchDay Kitchen order at McCarthy Stadium and get your money back: full and partial refunds, how to ask and how long it takes." heading="Refund & Cancellation Policy" current="refund">
+  <article class="kxi-doc">
+    <p class="kxi-updated">Last updated: <time datetime={K.lastUpdatedIso}>{K.lastUpdated}</time></p>
+    <p>This policy explains when and how you can cancel a {K.business} order and get your money back. {K.business} is operated by {K.operator}, {K.address}. It applies to all food and drink ordered and paid for through {K.business} for delivery to your seat at {K.venue}.</p>
+
+    <nav class="kxi-toc" aria-labelledby="toc-h">
+      <h2 id="toc-h">On this page</h2>
+      <ol>{sections.map(([id, t]) => <li><a href={`#${id}`}>{t.replace(/^\d+\.\s*/, '')}</a></li>)}</ol>
+    </nav>
+
+    <h2 id="cancel">1. Cancelling your order</h2>
+    <ul>
+      <li>You can cancel for a full refund, including any delivery fee, at any time before the kitchen starts preparing your order.</li>
+      <li>To cancel, message us on <a href={K.whatsappHref}>WhatsApp</a> or call <a href={K.phoneHref}>{K.phone}</a> with your order number as soon as possible.</li>
+      <li>Once the kitchen has started preparing your order, it can no longer be cancelled, because the food has been cooked for you.</li>
+    </ul>
+
+    <h2 id="full">2. When you will get a full refund</h2>
+    <p>We will refund the full amount you paid, including any delivery fee, if:</p>
+    <ul>
+      <li>your order was not delivered;</li>
+      <li>we cancelled your order, for example because an item ran out or the kitchen had to close;</li>
+      <li>the match was postponed, cancelled or abandoned before your order was delivered;</li>
+      <li>the food was spoiled, unsafe to eat, or not what you ordered; or</li>
+      <li>you were charged more than once for the same order.</li>
+    </ul>
+
+    <h2 id="partial">3. When you will get a partial refund</h2>
+    <ul>
+      <li>If one or more items were missing from your order, we will refund the price of the missing items.</li>
+      <li>If an item was wrong or of poor quality, we will offer a replacement (if the kitchen is still open) or a refund for that item.</li>
+      <li>Any delivery fee is refunded only when the whole order was not delivered.</li>
+    </ul>
+
+    <h2 id="no-refund">4. When we cannot give a refund</h2>
+    <p>We are unable to refund an order when:</p>
+    <ul>
+      <li>you change your mind after the kitchen has started preparing it;</li>
+      <li>you entered the wrong section, row or seat number, and our runner could not find you after a reasonable attempt;</li>
+      <li>you were not at your seat and could not be reached on your WhatsApp number when our runner arrived;</li>
+      <li>the food has been mostly or fully eaten before a complaint is made, except where it was unsafe to eat; or</li>
+      <li>the problem is reported more than 24 hours after the end of the match.</li>
+    </ul>
+
+    <h2 id="request">5. How to request a refund</h2>
+    <p>Contact us within 24 hours of the end of the match by:</p>
+    <ul>
+      <li>WhatsApp: <a href={K.whatsappHref}>{K.whatsapp}</a></li>
+      <li>Phone: <a href={K.phoneHref}>{K.phone}</a></li>
+      <li>Email: <a href={`mailto:${K.email}`}>{K.email}</a></li>
+    </ul>
+    <p>Please include:</p>
+    <ul>
+      <li>your order number (for example, MK-1042);</li>
+      <li>your name and the phone number used for the order;</li>
+      <li>your section, row and seat number;</li>
+      <li>what went wrong; and</li>
+      <li>a photo of the item, if the problem is with the food.</li>
+    </ul>
+    <p>On match days you can also speak to a member of the {K.business} team at the stadium.</p>
+
+    <h2 id="time">6. How long refunds take</h2>
+    <ul>
+      <li>We will reply to your request within 1 working day.</li>
+      <li>If your refund is approved, we will process it within 7 working days.</li>
+      <li>After we process it, your bank may take a few more working days to show the money in your account. This timing depends on your bank, not on us.</li>
+    </ul>
+
+    <h2 id="how">7. How you will be refunded</h2>
+    <ul>
+      <li>Refunds are paid back through Paystack to the card or account you paid with.</li>
+      <li>If you paid by bank transfer or USSD, we may ask you for the name and number of the account to refund. We will never ask for your card PIN, password or OTP.</li>
+      <li>We do not give refunds in cash.</li>
+    </ul>
+
+    <h2 id="disputes">8. Disputed payments</h2>
+    <p>If something is wrong with a payment, please contact us first. We can usually fix it faster than a dispute (chargeback) through your bank.</p>
+
+    <h2 id="changes">9. Changes to this policy</h2>
+    <p>We may update this policy from time to time. The "Last updated" date at the top shows when it last changed. The version on this page when you placed your order is the one that applies to that order.</p>
+
+    <h2 id="contact">10. Contact us</h2>
+    <address class="kxi-address">
+      {K.operator}<br />
+      {K.address}<br />
+      Phone: <a href={K.phoneHref}>{K.phone}</a> · WhatsApp: <a href={K.whatsappHref}>{K.whatsapp}</a> · Email: <a href={`mailto:${K.email}`}>{K.email}</a>
+    </address>
+    <p>See also our <a href="/kitchen/contact/">Contact Us</a> page.</p>
+  </article>
+</KitchenInfoPage>

@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-22: MatchDay Kitchen Contact Us and Refund & Cancellation Policy pages
+
+- New page **lobistarsfc.com/kitchen/contact/**: WhatsApp, phone (+234 708 009 4985), email (info@lobistarsfc.com), address, match-day and office hours, and a link to the refund policy.
+- New page **lobistarsfc.com/kitchen/refund-policy/**: cancelling, full and partial refunds, when no refund is given, how to ask, how long it takes (reply in 1 working day, processed in 7), how the money comes back (Paystack, never cash), disputes and changes.
+- The kitchen page now has a "Delivery & refunds" note above the menu, the line "By paying, you agree to our Refund & Cancellation Policy." above the Pay button, and Contact Us / Refund Policy links at the bottom. Ordering and payment are unchanged.
+- The address shown is McCarthy Stadium for now (operator: Aeson Sports Management Limited). To change the phone, email, address or "Last updated" date, edit `src/data/kitchenContact.ts` only. Still to do: send the company's registered address (HANDOVER-TODO K9).
+
 ## 2026-11-22: News pages load their main picture sooner and no longer jump (Core Web Vitals)
 
 **Who it affects:** visitors reading the news, and Google. **Nothing to do.**

@@ -1,0 +1,44 @@
+---
+// /kitchen/contact/: MatchDay Kitchen Contact Us (owner's text, 22 Nov 2026). Details from src/data/kitchenContact.ts.
+import KitchenInfoPage from '../../components/kitchen/KitchenInfoPage.astro';
+import { KITCHEN as K } from '../../data/kitchenContact';
+---
+<KitchenInfoPage title="Contact Us | MatchDay Kitchen" description="Contact MatchDay Kitchen at McCarthy Stadium, Makurdi: WhatsApp, phone or email about an order or a refund. We reply within 1 working day." heading="Contact Us" current="contact">
+  <p class="kxi-lead">Questions about an order, a refund, or using {K.business} at your venue? We're happy to help.</p>
+
+  <ul class="kxi-cards">
+    <li class="kxi-card">
+      <h2>WhatsApp</h2>
+      <p class="kxi-value">{K.whatsapp}</p>
+      <a class="kx-btn kx-btn--wa" href={K.whatsappHref} target="_blank" rel="noopener">Chat on WhatsApp</a>
+      <p class="kxi-note">Fastest on match days.</p>
+    </li>
+    <li class="kxi-card">
+      <h2>Phone</h2>
+      <p class="kxi-value">{K.phone}</p>
+      <a class="kx-btn kx-btn--pay" href={K.phoneHref}>Call us</a>
+    </li>
+    <li class="kxi-card">
+      <h2>Email</h2>
+      <p class="kxi-value">{K.email}</p>
+      <a class="kx-btn kx-btn--pay" href={`mailto:${K.email}`}>Send an email</a>
+      <p class="kxi-note">We reply within 1 working day.</p>
+    </li>
+    <li class="kxi-card">
+      <h2>Address</h2>
+      <address class="kxi-value">{K.operator}<br />{K.address}</address>
+    </li>
+  </ul>
+
+  <section class="kxi-doc" aria-labelledby="h-matchday">
+    <h2 id="h-matchday">On match days</h2>
+    <p>Our team is at {K.venue} from 2 hours before kick-off until 30 minutes after the final whistle. Ask any {K.business} runner or visit the kitchen counter.</p>
+    <h2>Office hours</h2>
+    <p>Monday to Friday, 9:00am – 5:00pm (closed on public holidays).<br />Messages received outside these hours are answered the next working day.</p>
+  </section>
+
+  <aside class="kxi-box" aria-labelledby="h-refund">
+    <h2 id="h-refund">Need a refund or have a problem with your order?</h2>
+    <p>Read our <a href="/kitchen/refund-policy/">Refund &amp; Cancellation Policy</a>, then contact us with your order number within 24 hours of the end of the match.</p>
+  </aside>
+</KitchenInfoPage>

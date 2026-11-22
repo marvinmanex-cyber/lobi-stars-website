@@ -518,3 +518,40 @@
 .kd-3d .kd-photo { visibility: hidden; }
 /* Drawn drinks (if any) only turn round now: no tumbling, never upside down. */
 @keyframes kd-tumble { 0%, 10% { transform: none; } 40%, 55% { transform: rotateY(180deg); } 85%, 100% { transform: rotateY(360deg); } }
+/* MatchDay Kitchen information pages: Contact Us and Refund Policy (22 Nov 2026). */
+.kxi .kx-head .kx-wrap { flex-wrap: wrap; }
+.kxi-kicker { margin: 0 0 2px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .2em; text-transform: uppercase; }
+.kxi-kicker a { color: var(--kx-gold); text-decoration: none; }
+.kxi .kx-brand h1 { font-size: clamp(26px, 6vw, 42px); }
+.kxi-back { margin-left: auto; text-decoration: none; }
+.kxi-logo-link { display: block; flex: none; }
+.kxi-body { padding-top: 28px; padding-bottom: 20px; }
+.kxi-doc { max-width: 760px; font-size: 17px; line-height: 1.65; color: #E3E8F2; }
+.kxi-doc h2 { font-size: 26px; text-transform: none; margin: 30px 0 8px; scroll-margin-top: calc(var(--kx-stick, 72px) + 16px); }
+.kxi-doc ul, .kxi-doc ol { padding-left: 22px; margin: 8px 0 12px; }
+.kxi-doc li { margin: 4px 0; }
+.kxi-doc a, .kxi-box a, .kxi-foot a { color: var(--kx-gold); }
+.kxi-updated { margin: 0 0 16px; font-size: 14px; color: var(--kx-muted); }
+.kxi-toc { margin: 18px 0 8px; padding: 14px 18px; border: 1px solid var(--kx-line); border-radius: 14px; background: var(--kx-navy-2); }
+.kxi-toc h2 { margin: 0 0 6px; font-size: 20px; }
+.kxi-toc ol { margin: 0; columns: 2; column-gap: 28px; }
+@media (max-width: 560px) { .kxi-toc ol { columns: 1; } }
+.kxi-address { font-style: normal; }
+.kxi-lead { max-width: 760px; margin: 0 0 22px; font-size: 18px; line-height: 1.6; color: #E3E8F2; }
+.kxi-cards { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 900px; }
+@media (max-width: 700px) { .kxi-cards { grid-template-columns: 1fr; } }
+.kxi-card { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px 20px; border: 1px solid var(--kx-line); border-radius: 16px; background: var(--kx-navy-2); min-width: 0; }
+.kxi-card h2 { font-size: 24px; }
+.kxi-value { margin: 0; font-size: 18px; font-weight: 700; color: #fff; overflow-wrap: anywhere; font-style: normal; line-height: 1.5; }
+.kxi-card .kx-btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 46px; }
+.kxi-note { margin: 0; font-size: 14px; color: var(--kx-muted); }
+.kxi-box { max-width: 760px; margin: 26px 0 0; padding: 16px 20px; border-left: 4px solid var(--kx-gold); border-radius: 12px; background: rgba(255, 194, 26, .08); color: #E3E8F2; }
+.kxi-box h2 { font-size: 22px; text-transform: none; margin: 0 0 6px; }
+.kxi-box p { margin: 0; line-height: 1.6; }
+.kxi-foot { display: flex; flex-wrap: wrap; gap: 8px 22px; padding-top: 18px; padding-bottom: 28px; border-top: 1px solid var(--kx-line); font-weight: 700; }
+.kxi-foot a[aria-current="page"] { color: #fff; text-decoration: none; }
+/* On the kitchen page: the delivery and refunds note, the terms line above Pay, and the kitchen footer links. */
+.kx-terms-note { margin: 14px 0 0; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--kx-line); background: var(--kx-navy-2); color: var(--kx-muted); font-size: 14px; line-height: 1.5; }
+.kx-terms-note b { color: #fff; }
+.kx-agree { margin: 0 0 8px; font-size: 13px; color: var(--kx-muted); text-align: center; }
+.kx-agree a, .kx-terms-note a { color: var(--kx-gold); }
