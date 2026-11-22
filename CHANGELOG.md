@@ -8,6 +8,18 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-22: News pages load their main picture sooner and no longer jump (Core Web Vitals)
+
+**Who it affects:** visitors reading the news, and Google. **Nothing to do.**
+
+- **/news/ (LCP 4.7 s on phones):** the largest thing at the top is the first story's picture with its soft
+  blurred frame. The browser found that frame late (it is named in the page's styles), so it now gets an early
+  "download this first" line in the page head, as does the first story picture itself. The build adds this to
+  every page whose first picture uses the frame (news list, stories); the homepage keeps its own hero picture.
+- **Story pages (layout shift 0.33):** the cover photo reserved a wide 16:9 space, then the real photo (often
+  tall) arrived and pushed the headline and text down. Each cover now reserves its real shape, so nothing moves.
+  Same design.
+
 ## 2026-11-21: MatchDay Kitchen: 3D drinks without the white base; Fanta's neck
 
 **Who it affects:** fans ordering at lobistarsfc.com/kitchen/. **Nothing to do.**

@@ -133,6 +133,21 @@ export default function postbuild() {
             const small = `${base}-240w.webp`;
             return existsSync(path.join(dist, ...small.split('/'))) ? `--fit-bg:url(${q}${small}${q})` : m;
           });
+          // The first of those fills is at the top of the page and can be its largest element (LCP), but a picture
+          // named in a style is found late. Tell the browser about it in the <head> so it downloads at once (SEO
+          // Scanner: LCP 4.7 s on /news/, Nov 2026). Same for the page's first high-priority picture.
+          const firstFill = html.match(/--fit-bg:url\((?:&quot;|")(\/images\/[^"&)]+?-240w\.webp)(?:&quot;|")\)/);
+          const heads = [];
+          const lcpImg = html.match(/<img\b(?=[^>]*\bfetchpriority="high")[^>]*>/);
+          // Only when the fill comes before the page's main picture (otherwise it is further down the page).
+          const fillFirst = firstFill && (!lcpImg || (firstFill.index ?? 0) < (lcpImg.index ?? 0));
+          if (fillFirst && !html.includes(`rel="preload" as="image" href="${firstFill[1]}"`)) heads.push(`<link rel="preload" as="image" href="${firstFill[1]}" fetchpriority="high">`);
+          if (lcpImg) {
+            const src = lcpImg[0].match(/\ssrc="([^"]+)"/)?.[1], set = lcpImg[0].match(/\ssrcset="([^"]+)"/)?.[1], szs = lcpImg[0].match(/\ssizes="([^"]+)"/)?.[1];
+            // WebP only: for a JPG/PNG the browser shows the WebP copy from <picture>, so preloading it would load twice.
+            if (src && /\.webp(\?|$)/i.test(src) && !html.includes(`rel="preload" as="image" href="${src}"`)) heads.push(`<link rel="preload" as="image" href="${src}"${set ? ` imagesrcset="${set}"` : ''}${szs ? ` imagesizes="${szs}"` : ''} fetchpriority="high">`);
+          }
+          if (heads.length && html.includes('</head>')) html = html.replace(/<meta charset[^>]*>/i, m => `${m}${heads.join('')}`);
           const rel = path.relative(dist, file).split(path.sep).join('/');
           const ms = html.match(/<i hidden data-ms-start[^>]*><\/i>([\s\S]*?)<i hidden data-ms-end[^>]*><\/i>/);
           if (ms) {

@@ -77,6 +77,8 @@ const membersOnly = a.membersOnly;
 const products = (a.products || []).map(id => shop.products.find(p => p.id === id)).filter(Boolean).slice(0, 4) as typeof shop.products;
 const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.test(a.videoUrl) ? a.videoUrl : null;
 import { plainText, fitTitle, fitDescription } from '../../lib/seoText';
+// Real picture sizes (recorded at build time), so the cover keeps its space while it loads: no jump (SEO Scanner, CLS).
+import imageSizes from '../../data/image-sizes.json';
 const cleanTitle = plainText(a.title);
 ---
 <Layout title={fitTitle(cleanTitle, [' | Lobi Stars FC News', ' | Lobi Stars FC', ''])} description={fitDescription(a.summary, 'Read the full story on the official Lobi Stars FC website.')} image={a.coverImage} imageAlt={a.imageAlt} type="article" jsonLd={[articleJsonLd]} share={false} noindex={article.id === 'mc-preview-template'}>
@@ -101,7 +103,7 @@ const cleanTitle = plainText(a.title);
         <video class="art-video-el" src={directVideo} poster={a.coverImage} controls preload="metadata"></video>
       ) : (
         <div class="art-cover fitpic" style={`--fit-bg:url("${a.coverImage}")`}>
-          <img src={a.coverImage} alt={a.imageAlt} width="1600" height="900" fetchpriority="high" sizes="(max-width: 900px) 100vw, 900px" />
+          <img src={a.coverImage} alt={a.imageAlt} width={((imageSizes as Record<string, number[]>)[a.coverImage] ?? [1600, 900])[0]} height={((imageSizes as Record<string, number[]>)[a.coverImage] ?? [1600, 900])[1]} fetchpriority="high" sizes="(max-width: 900px) 100vw, 900px" />
           {a.isVideo && (
             <div class="art-video-note">
               <span class="art-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" /></svg></span>
