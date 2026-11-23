@@ -146,6 +146,15 @@ export default function postbuild() {
             const src = lcpImg[0].match(/\ssrc="([^"]+)"/)?.[1], set = lcpImg[0].match(/\ssrcset="([^"]+)"/)?.[1], szs = lcpImg[0].match(/\ssizes="([^"]+)"/)?.[1];
             // WebP only: for a JPG/PNG the browser shows the WebP copy from <picture>, so preloading it would load twice.
             if (src && /\.webp(\?|$)/i.test(src) && !html.includes(`rel="preload" as="image" href="${src}"`)) heads.push(`<link rel="preload" as="image" href="${src}"${set ? ` imagesrcset="${set}"` : ''}${szs ? ` imagesizes="${szs}"` : ''} fetchpriority="high">`);
+            else if (src && !set) {
+              // A JPG/PNG inside <picture>: preload the WebP copy the browser will really show (homepage and tickets heroes).
+              const at = lcpImg.index ?? 0, open = html.lastIndexOf('<picture', at);
+              const between = open >= 0 && !html.slice(open, at).includes('</picture>') ? html.slice(open, at) : '';
+              const webp = [...between.matchAll(/<source\b[^>]*>/g)].map(m => m[0]).find(s => /type="image\/webp"/.test(s) && !/\smedia=/.test(s));
+              const wset = webp?.match(/\ssrcset="([^"]+)"/)?.[1], wsz = webp?.match(/\ssizes="([^"]+)"/)?.[1] || szs;
+              const first = wset?.split(',')[0].trim().split(/\s+/)[0];
+              if (wset && first && !html.includes(`imagesrcset="${wset}"`)) heads.push(`<link rel="preload" as="image" href="${first}" imagesrcset="${wset}"${wsz ? ` imagesizes="${wsz}"` : ''} fetchpriority="high">`);
+            }
           }
           if (heads.length && html.includes('</head>')) html = html.replace(/<meta charset[^>]*>/i, m => `${m}${heads.join('')}`);
           const rel = path.relative(dist, file).split(path.sep).join('/');

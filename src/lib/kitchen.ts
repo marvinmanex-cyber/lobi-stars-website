@@ -238,6 +238,7 @@ function priceBands(list: Item[]) {
 function renderBelt(): boolean {
   const box = document.getElementById('cat-table');
   if (!box) return false;
+  box.classList.remove('kx-table--wait');
   const list = beltDishes();
   if (list.length < 3) { belt?.destroy(); belt = null; beltKey = ''; box.hidden = true; return false; }
   const key = JSON.stringify([menu?.open, list.map(f => [f.id, f.name, f.priceKobo, f.photo, f.emoji, f.description])]);
@@ -392,18 +393,22 @@ function renderState() {
   const soon = !menu.open && menu.reason === 'opening-soon';
   pill.className = `kx-pill kx-pill--${menu.open ? 'open' : soon ? 'soon' : 'closed'}`;
   pill.innerHTML = `<span class="kx-dot" aria-hidden="true"></span>${menu.open ? 'Kitchen open' : soon ? 'Opening soon' : 'Kitchen closed'}`;
-  $('kxClosed').classList.toggle('kx-soon', soon);
-  const head = $('kxClosed').querySelector('b'); if (head) head.textContent = soon ? 'MatchDay Kitchen is opening soon' : 'Kitchen closed';
+  // Open: the same notice (green) says so, instead of disappearing, so the menu below does not jump up.
+  $('kxClosed').classList.toggle('kx-soon', soon || menu.open);
+  const head = $('kxClosed').querySelector('b'); if (head) head.textContent = menu.open ? 'Kitchen open: order to your seat' : soon ? 'MatchDay Kitchen is opening soon' : 'Kitchen closed';
   const now = Date.now();
   $('kxCd').textContent = soon ? '' : menu.open && menu.closesAt ? `Orders close in ${untilText(Date.parse(menu.closesAt) - now)}`
     : !menu.open && menu.opensAt ? `Opens in ${untilText(Date.parse(menu.opensAt) - now)}` : '';
-  $('kxClosed').hidden = menu.open;
+  $('kxClosed').hidden = false;
   $('kxClosed').classList.remove('kx-pending');
   $('kxClosedText').textContent = menu.message ? menu.message : menu.opensAt
     ? `Ordering opens ${new Date(menu.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' })}${menu.match ? ` for ${menu.match}` : ''}. You can look at the menu now.`
     : 'Ordering opens on Lobi Stars home match days. You can look at the menu now.';
   // Opening soon: the heading says it all, with no extra text.
   if (soon) $('kxClosedText').textContent = '';
+  if (menu.open) $('kxClosedText').textContent = menu.closesAt
+    ? `Orders close at ${new Date(menu.closesAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Lagos' })}. We bring your food to your seat.`
+    : 'We bring your food to your seat.';
   $('kxClosedText').hidden = soon;
   ($('kxPayBtn') as HTMLButtonElement).disabled = !menu.open;
   $('kxTrBtn').hidden = $('kxTrHint').hidden = !menu.payTransfer;
@@ -439,6 +444,7 @@ async function loadMenu() {
     renderState(); renderMenu(); renderCart(); renderAgain();
   } catch {
     if (!menu) $('kxMenu').innerHTML = '<p class="kx-empty">The menu could not be loaded. Check your connection and try again.</p>';
+    if (!menu) { const t = $('cat-table'); t.hidden = true; t.classList.remove('kx-table--wait'); }
     if (!menu) $('kxClosed').hidden = true;
   }
 }
@@ -714,6 +720,8 @@ export function startKitchen() {
   addEventListener('online', () => { net(); loadMenu(); }); addEventListener('offline', net); net();
 
   initSeat(); recall();
+  // Show the saved cart count at once (coming back to the page), before the menu has loaded.
+  { const n = count(), c = $('kxCount'); c.textContent = String(n); c.setAttribute('aria-label', `${n} item${n === 1 ? '' : 's'}`); }
   const q = new URLSearchParams(location.search);
   if (q.get('ref') && q.get('t')) showDone({ ref: q.get('ref')!, token: q.get('t')! });
   loadMenu(); loadFixture(); initManager();

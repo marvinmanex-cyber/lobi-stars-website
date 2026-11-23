@@ -34,7 +34,7 @@ Suggested start: 1, then 2.
 **SEO and Google (free)**
 8. **A36**: PageSpeed API key, Search Console permission, confirm the keywords.
 9. **S1–S7**: free SEO steps (Free-SEO-Steps-for-Lobi-Stars.docx).
-10. Squad portal: correct "Yusuf aFEEZ" to "Yusuf Afeez"; check Daniel Atsaka's X link (x.com/Atsakasafe01 is not found).
+10. Squad portal: correct "Yusuf aFEEZ" to "Yusuf Afeez" (first name Yusuf, surname Afeez, short name Afeez) in his squad portal profile; the website copies it at the next update (it cannot be fixed in the website files); check Daniel Atsaka's X link (x.com/Atsakasafe01 is not found).
 11. **L3**: tick "Count live matches in the table".
 
 **Accounts and setup**

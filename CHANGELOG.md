@@ -8,6 +8,16 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-23: Site check: no broken links, pages stop jumping, kitchen easier to use
+
+- **Broken links:** all 218 pages and about 30,000 internal links and pictures checked. None broken on public pages (the only misses are sample draft stories listed in the admin, which have no public page by design).
+- **MatchDay Kitchen no longer jumps while loading** (layout shift 0.21 down to 0.003, "good" is under 0.1): the category tabs and the turning food table keep their space while the menu loads. On match days the red "Kitchen closed" notice now turns into a green **"Kitchen open: order to your seat"** notice with the closing time, instead of disappearing.
+- **Kitchen cart count** shows straight away when a fan comes back to the page (it showed 0 for a few seconds until the menu loaded; nothing was ever lost).
+- **Tickets page no longer jumps** (0.08 down to 0.001): the "Next home match" box keeps its loaded size and the gold line above "Buy Tickets" stays on one line.
+- **Faster main picture on the homepage and tickets page:** the WebP copy of the big top picture is now requested at once (the same fix the news pages got on 22 Nov).
+- **Kitchen ease of use:** the green "Call us" / "Send an email" buttons had gold text that was almost unreadable (now dark on green); the WhatsApp and "Back to the menu" buttons are white as designed; the Contact Us / Refund Policy / Order food links and the policy's phone and email links are now big enough to tap (44px). Checked: labels on every form field, names on every button, heading order, visible focus ring on every Tab stop, Escape closes the checkout and returns to the Cart button.
+- "Yusuf aFEEZ": the name comes from the squad portal records, which the website copies at each build, so it must be corrected there (HANDOVER-TODO item 10).
+
 ## 2026-11-22: MatchDay Kitchen Contact Us and Refund & Cancellation Policy pages
 
 - New page **lobistarsfc.com/kitchen/contact/**: WhatsApp, phone (+234 708 009 4985), email (info@lobistarsfc.com), address, match-day and office hours, and a link to the refund policy.

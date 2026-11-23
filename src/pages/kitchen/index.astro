@@ -85,11 +85,10 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
     <p class="kx-wrap kx-terms-note"><b>Delivery &amp; refunds:</b> Any seat delivery fee is shown at checkout. Cancel free before we start preparing your order. See our <a href="/kitchen/refund-policy/">Refund Policy</a>.</p>
 
     <!-- The food table: dishes turning on a table (src/lib/kitchenBelt.ts), filled when the menu loads. -->
-    <section class="kx-wrap kx-cat kx-table" id="cat-table" hidden aria-label="Food on the table"></section>
+    <!-- Shown (with the table's height kept free) while loading, so the menu does not jump down when the table appears. -->
+    <section class="kx-wrap kx-cat kx-table kx-table--wait" id="cat-table" aria-label="Food on the table"><p class="kx-empty">Loading the menu…</p></section>
 
-    <section class="kx-wrap kx-menu" id="kxMenu" aria-label="Menu">
-      <p class="kx-empty kx-loading">Loading the menu…</p>
-    </section>
+    <section class="kx-wrap kx-menu" id="kxMenu" aria-label="Menu"></section>
 
     <!-- Confirmation and order status (after ordering, or back from Paystack: /kitchen/?ref=…&t=…) -->
     <section class="kx-wrap kx-done" id="kxDone" hidden tabindex="-1" aria-labelledby="kxDoneH">

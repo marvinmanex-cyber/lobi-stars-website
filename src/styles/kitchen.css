@@ -75,7 +75,7 @@
 
 /* Category tabs (sticky, scroll sideways) */
 .kx-tabs { position: sticky; top: calc(var(--kx-stick) + var(--kx-seat-h, 62px)); transition: top .25s ease; z-index: 29; background: var(--kx-navy); border-bottom: 1px solid var(--kx-line); }
-.kx-tabs .kx-wrap { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-top: 10px; padding-bottom: 10px; scroll-snap-type: x proximity; }
+.kx-tabs .kx-wrap { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-top: 10px; padding-bottom: 10px; scroll-snap-type: x proximity; box-sizing: border-box; min-height: 64px; /* the tabs' height before the menu loads, so nothing below jumps */ }
 .kx-tabs .kx-wrap::-webkit-scrollbar { display: none; }
 .kx-tab { flex: none; scroll-snap-align: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--kx-line); background: transparent; color: #fff; text-decoration: none; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: .04em; white-space: nowrap; transition: background .2s, color .2s, border-color .2s; }
 .kx-tab[aria-current="true"] { background: var(--kx-green); border-color: var(--kx-green); color: #04140A; }
@@ -555,3 +555,14 @@
 .kx-terms-note b { color: #fff; }
 .kx-agree { margin: 0 0 8px; font-size: 13px; color: var(--kx-muted); text-align: center; }
 .kx-agree a, .kx-terms-note a { color: var(--kx-gold); }
+
+/* Buttons made from links keep their button colours (the gold ".kx a" rule made the green ones unreadable). */
+.kx a.kx-btn--pay { color: #04140A; }
+.kx a.kx-btn--wa, .kx a.kx-btn--ghost { color: #fff; }
+/* Easy to tap (at least 44px high): the footer links and the address links. */
+.kxi-foot a { display: inline-flex; align-items: center; min-height: 44px; }
+.kxi-address a { display: inline-block; padding: 10px 0; }
+/* The food table's space while the menu loads (its real height at each width), so nothing jumps when it appears. */
+.kx-table--wait { min-height: 565px; }
+@media (min-width: 1024px) { .kx-table--wait { min-height: 660px; } }
+@media (min-width: 1366px) { .kx-table--wait { min-height: 400px; } }

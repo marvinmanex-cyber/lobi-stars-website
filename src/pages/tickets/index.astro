@@ -192,7 +192,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   .tk-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(115deg, rgba(10, 12, 16, .92) 0%, rgba(40, 6, 8, .82) 45%, rgba(227, 30, 36, .55) 100%); }
   .tk-hero-in { max-width: 1280px; margin: 0 auto; padding: 38px 5% 34px; display: grid; gap: 22px; align-items: center; }
   @media (min-width: 900px) { .tk-hero-in { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); padding: 56px 5% 50px; gap: 40px; } }
-  .tk-kicker { margin: 0 0 8px; font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--tk-gold); }
+  .tk-kicker { margin: 0 0 8px; font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--tk-gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* one line before and after the club font loads */ }
   .tk-h1 { margin: 0; font: 400 clamp(52px, 11vw, 96px)/.9 'Bebas Neue', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
   .tk-h1 span { color: var(--tk-red); text-shadow: 0 2px 18px rgba(227, 30, 36, .35); }
   .tk-sub { margin: 10px 0 18px; font-size: 18px; color: rgba(255, 255, 255, .9); }
@@ -201,9 +201,9 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   .tk-chip svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .tk-chip--link { min-height: 44px; background: #fff; color: var(--tk-ink); border-color: #fff; }
   .tk-chip--link:hover { background: var(--tk-gold); border-color: var(--tk-gold); }
-  .tk-next { padding: 18px 20px; border-radius: var(--tk-radius); background: rgba(10, 12, 16, .72); border: 1px solid rgba(255, 255, 255, .16); border-top: 4px solid var(--tk-red); backdrop-filter: blur(6px); min-height: 190px; box-sizing: border-box; }
+  .tk-next { padding: 18px 20px; border-radius: var(--tk-radius); background: rgba(10, 12, 16, .72); border: 1px solid rgba(255, 255, 255, .16); border-top: 4px solid var(--tk-red); backdrop-filter: blur(6px); min-height: 254px; /* the loaded match card's height, so the page does not jump */ box-sizing: border-box; }
   .tk-next-k { margin: 0 0 10px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--tk-gold); }
-  .tk-next-skel { height: 130px; border-radius: 10px; background: linear-gradient(90deg, rgba(255,255,255,.06) 25%, rgba(255,255,255,.14) 37%, rgba(255,255,255,.06) 63%); background-size: 400% 100%; animation: tk-shimmer 1.4s ease infinite; }
+  .tk-next-skel { height: 194px; border-radius: 10px; background: linear-gradient(90deg, rgba(255,255,255,.06) 25%, rgba(255,255,255,.14) 37%, rgba(255,255,255,.06) 63%); background-size: 400% 100%; animation: tk-shimmer 1.4s ease infinite; }
   .tk :global(.tk-next-teams) { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; text-align: center; }
   .tk :global(.tk-next-team) { display: flex; flex-direction: column; align-items: center; gap: 6px; font: 700 18px/1.1 'Barlow Condensed', sans-serif; min-width: 0; overflow-wrap: anywhere; }
   .tk :global(.tk-next-vs) { font: 400 22px/1 'Bebas Neue', sans-serif; color: rgba(255, 255, 255, .7); }
