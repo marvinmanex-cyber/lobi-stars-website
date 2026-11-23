@@ -27,14 +27,15 @@ const captionOf = (p: (typeof photos)[number]) => p.data.album && p.data.caption
         No photos have been added yet &mdash; check back soon.
       </div>
     )}
-    {[...albums.entries()].map(([name, list]) => (
+    {[...albums.entries()].map(([name, list], ai) => (
       <section class="gl-album">
         <h2 class="gl-h">{name}</h2>
         {videosOf(list).length > 0 && <ul class="gl-videos">{videosOf(list).map(v => <li><a href={v.url} target="_blank" rel="noopener">▶ {v.caption || 'Watch the video'}<span class="sr-only"> (opens in a new tab)</span></a></li>)}</ul>}
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;">
-          {list.map(photo => (
+          {list.map((photo, i) => (
             <div class="card" style="height:200px;position:relative;">
-              <img src={photo.data.photo} alt={captionOf(photo)} style="width:100%;height:100%;object-fit:cover;" loading="lazy"/>
+              {/* The first photo is the page's largest picture on phones: load it at once. Cards are ~220-300px wide (full width on small phones). */}
+              <img src={photo.data.photo} alt={captionOf(photo)} style="width:100%;height:100%;object-fit:cover;" sizes="(max-width: 520px) 100vw, 300px" {...(ai === 0 && i === 0 ? { loading: 'eager', fetchpriority: 'high' } : { loading: 'lazy' })}/>
               <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:rgba(255,255,255,.85);font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;padding:8px 10px;">
                 {captionOf(photo)}{photo.data.credit && <> · Photo: {photo.data.credit}</>}
               </div>
@@ -45,9 +46,9 @@ const captionOf = (p: (typeof photos)[number]) => p.data.album && p.data.caption
     ))}
     {albums.size > 0 && loose.length > 0 && <h2 class="gl-h">More photos</h2>}
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;">
-      {loose.map(photo => (
+      {loose.map((photo, i) => (
         <div class="card" style="height:200px;position:relative;">
-          <img src={photo.data.photo} alt={photo.data.caption} style="width:100%;height:100%;object-fit:cover;"/>
+          <img src={photo.data.photo} alt={photo.data.caption} style="width:100%;height:100%;object-fit:cover;" sizes="(max-width: 520px) 100vw, 300px" {...(albums.size === 0 && i === 0 ? { loading: 'eager', fetchpriority: 'high' } : { loading: 'lazy' })}/>
           <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:rgba(255,255,255,.85);font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;padding:8px 10px;">
             {photo.data.caption}{photo.data.credit && <> · Photo: {photo.data.credit}</>}
           </div>
