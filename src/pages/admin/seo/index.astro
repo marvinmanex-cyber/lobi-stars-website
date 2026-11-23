@@ -224,7 +224,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
         el('button', { type: 'button', class: 'a2', disabled: a.automate ? null : '', title: a.automate ? '' : 'This kind of issue needs a person or code', onclick: () => { location.href = `/admin/seo/settings/?rule=${encodeURIComponent(i.type)}#rules`; } }, '⚙️ Set up AI to fix this next time'),
         el('button', { type: 'button', class: 'a3', onclick: () => myself(i, box) }, '🛠️ Fix it myself')),
       el('div', { class: 'small-btns' },
-        i.path ? el('button', { type: 'button', onclick: () => checkAgain([i.path]) }, '🔁 Check again') : null,
+        i.path ? el('button', { type: 'button', onclick: () => checkAgain([i.path], i.category === 'speed') }, '🔁 Check again') : null,
         i.path ? el('button', { type: 'button', onclick: () => openPage(i.path) }, '📄 Page details') : null,
         i.status === 'ignored' ? el('button', { type: 'button', onclick: () => unignore(i) }, 'Stop ignoring') : el('button', { type: 'button', onclick: () => ignore(i) }, 'Mark as ignored')),
       box);
@@ -326,7 +326,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       if (g.admin) kids.push(el('p', {}, 'Where: ', el('a', { href: g.admin.href, text: g.admin.label })));
       if (g.help) kids.push(el('p', {}, 'Google’s help: ', el('a', { href: g.help, target: '_blank', rel: 'noopener', text: g.help })));
       if (r.vscode) kids.push(el('h4', { text: 'For the developer (VS Code)' }), el('pre', { text: r.vscode }), el('button', { type: 'button', onclick: () => copy(r.vscode) }, '📋 Copy'), el('button', { type: 'button', onclick: () => developer(i.id) }, '✉️ Send to developer'));
-      if (i.path) kids.push(el('button', { type: 'button', onclick: () => checkAgain([i.path]) }, '🔁 Check again'));
+      if (i.path) kids.push(el('button', { type: 'button', onclick: () => checkAgain([i.path], i.category === 'speed') }, '🔁 Check again'));
       box.replaceChildren(el('div', { class: 'panel' }, ...kids));
     } catch (e) { box.replaceChildren(el('div', { class: 'panel', text: e.message })); }
   }
@@ -353,8 +353,8 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     } catch (e) { msg(`${e.message} The scan carries on in the background.`, false); }
     scanning = false; $('prog').hidden = true; $('scanNow').disabled = false; load();
   }
-  async function checkAgain(paths) {
-    try { const r = await api({ action: 'scan', kind: 'quick', paths }); msg(r.already ? 'A scan is already running: following it.' : `Checking ${paths.join(', ')} again…`); follow(r.scan.id); } catch (e) { msg(e.message, false); }
+  async function checkAgain(paths, speed = false) {
+    try { const r = await api({ action: 'scan', kind: 'quick', paths, ...(speed ? { speed: true } : {}) }); msg(r.already ? 'A scan is already running: following it.' : speed ? `Asking Google for a new speed test of ${paths.join(', ')} (about a minute)…` : `Checking ${paths.join(', ')} again…`); follow(r.scan.id); } catch (e) { msg(e.message, false); }
   }
   $('scanNow').addEventListener('click', async () => {
     try { const r = await api({ action: 'scan', kind: 'full' }); msg(r.already ? 'A scan is already running: following it.' : 'Full scan started. It reads every page politely (2 a second), so it takes a few minutes; you can leave this page, it carries on.'); follow(r.scan.id); } catch (e) { msg(e.message, false); }

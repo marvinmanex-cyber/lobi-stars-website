@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-23: SEO Scanner "Check again" now re-tests speed issues
+
+- **Why the /news/ and story speed cards never cleared:** "Check again" only re-read the page itself; it never asked Google for a new speed test, and Google's speed test only ran once a week (last on 22 Nov, before the /news/ picture fix and the story jump fix went live). So speed cards could not clear until the next weekly test, whatever was fixed.
+- **Now:** "Check again" on a Speed card (Core Web Vitals poor, Slow on mobile, Speed could be better) asks Google for a new mobile and desktop test of that page (about a minute) and clears the card if the page now passes. It uses the website's own PageSpeed key (added today), so it no longer fails with "Quota exceeded".
+- Checked today on a simulated phone: the 20 Nov story page jumps 0.002-0.05 (was 0.33, limit 0.1); /news/ asks for its top picture at once (fix from 22 Nov).
+- Note for the developer: tests/seo-scanner.test.mjs still expects the Aeson partner page to have a 68-character title; that title was shortened on purpose earlier, so that one check is out of date (5 of 6 pass).
+
 ## 2026-11-23: "Lobi Stars match today" links, faster gallery, AI key retries
 
 - Homepage: the big red top button now says **"Lobi Stars match today"** (was "Fixtures") and links to /fixtures/, so Google connects that search to the fixtures page rather than the homepage. The fixtures page title and heading already say "Lobi Stars Match Today". The "See all fixtures" fallback link now says "All Lobi Stars match today & fixtures".

@@ -3995,7 +3995,9 @@ never copies Google search results.
   appearing on the site (e.g. a news story).
 - A page is checked again about 4 minutes after a fix (once the site has rebuilt).
 - **Scan now** (whole site) and **Check again** (one page) at any time. A full
-  scan takes a few minutes; you can leave the page, it carries on.
+  scan takes a few minutes; you can leave the page, it carries on. On a
+  **Speed** card, Check again also asks Google for a new speed test of that
+  page (about a minute); otherwise speed is tested once a week (23 Nov 2026).
 
 **The dashboard**
 1. **Score (0–100)** with its trend over 90 days, and the number of Critical,

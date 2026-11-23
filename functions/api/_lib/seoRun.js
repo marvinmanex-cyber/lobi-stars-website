@@ -20,6 +20,8 @@ const iso = () => new Date().toISOString();
 const sid = () => `seo_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 const lagosHour = (t = Date.now()) => new Date(t + 3600e3).getUTCHours();
 // Issue types worked out page by page (a quick scan of a page re-checks only these, for that page).
+// Speed issues: judged again by a quick check only when it ran a new speed test.
+const SPEED_TYPES = ['speed_poor', 'speed_fair', 'cwv_poor'];
 const PAGE_TYPES = ['http_error', 'redirect_chain', 'redirect_loop', 'title_missing', 'title_duplicate', 'title_length', 'desc_missing', 'desc_duplicate', 'desc_length', 'h1_missing', 'h1_multiple',
   'heading_order', 'img_alt', 'img_size_attr', 'canonical_missing', 'canonical_wrong', 'noindex_public', 'viewport_missing', 'social_tags', 'hreflang_invalid', 'https_problem', 'schema_invalid', 'schema_missing',
   'thin_page', 'news_player_links', 'keyword_missing'];
@@ -56,8 +58,12 @@ export async function startScan(env, { kind = 'full', trigger = 'manual', by = n
   if (kind === 'quick') {
     const q = [...new Set(paths.map(p => String(p || '').replace(/[?#].*$/, '')).filter(p => p.startsWith('/') && !isPrivate(p)))].slice(0, 10);
     if (!q.length) return { error: 'No page to check.' };
-    steps = ['crawl', 'links', 'finish'];
-    const state = { steps, i: 0, queue: q, idx: 0, quick: true, ran: { crawl: true }, sitemap: trigger === 'published' ? q.map(path => ({ path })) : undefined };
+    // "Check again" on a speed issue also asks Google for a new speed test of just those pages (mobile and desktop):
+    // without it a speed issue could only clear at the weekly full test.
+    const quickSpeed = speed === true;
+    steps = quickSpeed ? ['crawl', 'links', 'speed', 'finish'] : ['crawl', 'links', 'finish'];
+    const state = { steps, i: 0, queue: q, idx: 0, quick: true, ran: { crawl: true }, sitemap: trigger === 'published' ? q.map(path => ({ path })) : undefined,
+      ...(quickSpeed ? { quickSpeed: true, speedList: q, speedIdx: 0 } : {}) };
     return insertScan(db, kind, trigger, by, state);
   }
   const lastSpeed = await db.prepare(`SELECT MAX(date) AS d FROM seo_speed`).first();
@@ -292,10 +298,12 @@ async function finishScan(env, scan, st) {
   const startedAt = scan.started_at, now = iso();
   if (!st.quick && st.ran?.crawl) await db.prepare(`DELETE FROM seo_pages WHERE scanned_at < ?`).bind(startedAt).run();
   const input = await gatherInput(env, st);
-  if (st.quick) { input.ran = { crawl: true, gsc: false, index: false, speed: false }; input.stale = null; input.priv = {}; }
+  const quickSpeedRan = !!(st.quick && st.quickSpeed && st.ran?.speed);
+  if (st.quick) { input.ran = { crawl: true, gsc: false, index: false, speed: quickSpeedRan }; input.stale = null; input.priv = {}; }
   let found = computeIssues(input);
   const quickPaths = st.quick ? new Set(st.queue) : null;
-  if (quickPaths) found = found.filter(i => PAGE_TYPES.includes(i.type) && quickPaths.has(i.path));
+  const quickTypes = quickSpeedRan ? [...PAGE_TYPES, ...SPEED_TYPES] : PAGE_TYPES;
+  if (quickPaths) found = found.filter(i => quickTypes.includes(i.type) && quickPaths.has(i.path));
   const before = new Map((await db.prepare(`SELECT id, status FROM seo_issues`).all()).results.map(r => [r.id, r.status]));
   const rows = found.map(i => ({ id: i.id, type: i.type, category: i.category, severity: i.severity, path: i.path, impact: i.impact, detail: JSON.stringify(i.detail) }));
   // One statement for all of them (Cloudflare counts every statement).
@@ -310,7 +318,7 @@ async function finishScan(env, scan, st) {
   // What was not found again is fixed (only for what this scan looked at).
   if (quickPaths) {
     await db.prepare(`UPDATE seo_issues SET status = 'fixed', fixed_at = ?1 WHERE status = 'open' AND last_seen < ?2 AND path IN (SELECT value FROM json_each(?3)) AND type IN (SELECT value FROM json_each(?4))`)
-      .bind(now, startedAt, JSON.stringify([...quickPaths]), JSON.stringify(PAGE_TYPES)).run();
+      .bind(now, startedAt, JSON.stringify([...quickPaths]), JSON.stringify(quickTypes)).run();
   } else {
     const cats = [input.ran.crawl && 'technical', input.ran.crawl && 'content', input.ran.crawl && 'offsite', input.ran.gsc && 'rankings', input.ran.index && 'indexing', input.ran.speed && 'speed'].filter(Boolean);
     await db.prepare(`UPDATE seo_issues SET status = 'fixed', fixed_at = ?1 WHERE status = 'open' AND last_seen < ?2 AND category IN (SELECT value FROM json_each(?3))`).bind(now, startedAt, JSON.stringify(cats)).run();
