@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-23: "Lobi Stars match today" links, faster gallery, AI key retries
+
+- Homepage: the big red top button now says **"Lobi Stars match today"** (was "Fixtures") and links to /fixtures/, so Google connects that search to the fixtures page rather than the homepage. The fixtures page title and heading already say "Lobi Stars Match Today". The "See all fixtures" fallback link now says "All Lobi Stars match today & fixtures".
+- Gallery: the first photo loads at once (it was set to load late although it is the biggest picture on a phone), and photos download at card size instead of full width.
+- AI: Anthropic has refused the club's API key since 22 Nov 2026 (it last worked 19 Nov), so AI Fix and the weekly summary stop with "The Anthropic API key was not accepted". A new key is needed (HANDOVER-TODO A38). Until then the weekly summary now waits 6 hours after a failed try instead of retrying every minute.
+
 ## 2026-11-23: Site check: no broken links, pages stop jumping, kitchen easier to use
 
 - **Broken links:** all 218 pages and about 30,000 internal links and pictures checked. None broken on public pages (the only misses are sample draft stories listed in the admin, which have no public page by design).

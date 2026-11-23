@@ -304,5 +304,9 @@ export async function weeklyAiTick(env) {
   if (lagos.getUTCDay() !== 1 || lagos.getUTCHours() < 6) return;
   const last = await getKey(env.DB, 'ai_summary');
   if (last && Date.now() - Date.parse(last.at) < 6 * DAY) return;
-  await writeAiSummary(env, 'Weekly');
+  // After a failed try (key refused, no credit), wait 6 hours instead of retrying every minute.
+  const tried = await getKey(env.DB, 'ai_summary_try');
+  if (tried && Date.now() - Date.parse(tried.at) < 6 * 3600e3) return;
+  const r = await writeAiSummary(env, 'Weekly');
+  if (r?.error) await setKey(env.DB, 'ai_summary_try', { at: new Date().toISOString(), error: r.error });
 }
