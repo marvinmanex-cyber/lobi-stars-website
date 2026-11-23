@@ -12,7 +12,7 @@ in HANDOVER-TODO.md.
 
 - Homepage: the big red top button now says **"Lobi Stars match today"** (was "Fixtures") and links to /fixtures/, so Google connects that search to the fixtures page rather than the homepage. The fixtures page title and heading already say "Lobi Stars Match Today". The "See all fixtures" fallback link now says "All Lobi Stars match today & fixtures".
 - Gallery: the first photo loads at once (it was set to load late although it is the biggest picture on a phone), and photos download at card size instead of full width.
-- AI: Anthropic has refused the club's API key since 22 Nov 2026 (it last worked 19 Nov), so AI Fix and the weekly summary stop with "The Anthropic API key was not accepted". The old key had a 30-day expiry and expired on 20 Nov; a new key was added in Cloudflare on 23 Nov 2026 (HANDOVER-TODO A38). Until then the weekly summary now waits 6 hours after a failed try instead of retrying every minute.
+- AI: Anthropic has refused the club's API key since 22 Nov 2026 (it last worked 19 Nov), so AI Fix and the weekly summary stop with "The Anthropic API key was not accepted". The old key had a 30-day expiry and expired on 20 Nov; a new key was added in Cloudflare on 23 Nov 2026 (HANDOVER-TODO A38) and AI Fix worked straight after. The SEO Scanner's own PageSpeed key (PAGESPEED_API_KEY) was also added the same day, so speed tests and "Check again" no longer depend on Google's shared daily allowance (HANDOVER-TODO A36). Until then the weekly summary now waits 6 hours after a failed try instead of retrying every minute.
 
 ## 2026-11-23: Site check: no broken links, pages stop jumping, kitchen easier to use
 
