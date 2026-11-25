@@ -22,7 +22,7 @@ export async function onRequestGet({ request, env }) {
         tiers: c.ticket.tiers.map(t => ({ tier: t.tier, label: t.label, priceKobo: t.priceKobo, wasKobo: t.wasKobo || null, offKobo: t.offKobo || 0, left: t.remaining, free: !!t.free, soon: !!t.soon })), partial: !!c.ticket.partial,
       }));
     // Discount badges (Group, Early bird, Family bundle) when a rule is on and applies.
-    const offers = await offersFor(env.DB, matches);
+    const offers = cat.engine ? new Map() : await offersFor(env.DB, matches); // engine mode: no local discount badges
     for (const m of matches) m.offers = offers.get(m.id) || null;
     const freeStands = [...new Set(matches.filter(m => m.state === 'on_sale').flatMap(m => m.tiers.filter(t => t.free && t.left !== 0).map(t => t.label)))];
     return Response.json({ matches, freeStands, pause: cat.pause?.paused ? { message: cat.pause.message, freeOpen: matches.some(m => m.partial && m.state === 'on_sale'), freeStands } : null, serverTime: new Date().toISOString() }, { headers: { 'Cache-Control': 'no-store' } });

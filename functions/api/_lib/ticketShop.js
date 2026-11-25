@@ -18,6 +18,15 @@ import { ticketsPdf } from './ticketPdf.js';
 import { basketTickets } from '../tickets/basket.js';
 
 import { HOLD_MINUTES } from './ticketHold.js';
+import { engineActive, processorName } from './ticketing/engineStore.js';
+import { engineEvents, buildIndex, engineRowAndSettings, fixRemaining } from './ticketing/engineCatalogue.js';
+
+/** Engine mode: the engine's matches matched to ours (null in legacy mode). */
+async function engineIndexFor(env, rows) {
+  if (!(await engineActive(env).catch(() => false))) return null;
+  const locals = rows.map(r => ({ ...r, is_home: toSummary(r, r).is_home }));
+  return buildIndex(await engineEvents(env), locals);
+}
 export { HOLD_MINUTES };
 
 let ready = false;
@@ -158,9 +167,13 @@ export async function decorateMatches(env, summaries, rows = null) {
     await ensureTicketShopSchema(db);
     const [settings, sold, md, pause] = await Promise.all([settingsFor(db), soldCounts(db), matchdays(db), salesPause(db)]);
     const byId = new Map((rows || []).map(r => [r.id, r]));
+    const eng = await engineIndexFor(env, summaries.map(m => byId.get(m.id) || m)).catch(() => null);
     return summaries.map(m => {
       const row = byId.get(m.id) || m;
-      const t = applyPause(ticketState({ ...row, ...m, is_home: m.is_home }, settings.get(m.id), sold.get(m.id) || {}), pause);
+      const entry = eng?.byLocal.get(m.id);
+      const adj = eng ? engineRowAndSettings({ ...row, ...m }, settings.get(m.id), entry) : { row: { ...row, ...m }, settings: settings.get(m.id) };
+      const t = applyPause(ticketState({ ...adj.row, is_home: m.is_home }, adj.settings, eng ? {} : (sold.get(m.id) || {})), pause);
+      if (eng) fixRemaining(t, entry);
       const open = t.tiers.filter(x => !x.soon);
       const fromKobo = open.length ? Math.min(...open.map(x => x.priceKobo)) : null;
       const league = md.get(m.id);
@@ -181,10 +194,16 @@ export async function catalogue(env, { earlyMs = 0 } = {}) {
   const [settings, sold, md, pause] = await Promise.all([settingsFor(db), soldCounts(db), matchdays(db), salesPause(db)]);
   const map = new Map();
   map.pause = pause;
+  // Engine mode: prices, sale times and seats left come from the ticketing engine (same rules, same page).
+  const eng = await engineIndexFor(env, rows);
+  map.engine = eng;
   for (const r of rows) {
     const summary = toSummary(r, r);
-    const ticket = applyPause(ticketState({ ...r, is_home: summary.is_home, status: summary.status }, settings.get(r.id), sold.get(r.id) || {}, Date.now(), { earlyMs }), pause);
-    map.set(r.id, { event: { ...r, ...summary }, ticket, settings: settings.get(r.id) || null, matchday: md.get(r.id)?.matchday ?? null });
+    const entry = eng?.byLocal.get(r.id) || null;
+    const adj = eng ? engineRowAndSettings(r, settings.get(r.id), entry) : { row: r, settings: settings.get(r.id) };
+    const ticket = applyPause(ticketState({ ...adj.row, is_home: summary.is_home, status: summary.status }, adj.settings, eng ? {} : (sold.get(r.id) || {}), Date.now(), { earlyMs }), pause);
+    if (eng) fixRemaining(ticket, entry);
+    map.set(r.id, { event: { ...r, ...summary }, ticket, settings: adj.settings || null, matchday: md.get(r.id)?.matchday ?? null, engine: entry });
   }
   return map;
 }
@@ -272,6 +291,8 @@ export async function sendBasketEmail(env, basket) {
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 14px;font-size:14px;line-height:1.7;background:#E9F8EE;border-radius:8px;"><tr><td style="padding:10px 12px;">Tickets<br><b>Discount: ${esc(basket.discount_label || 'Discount')}</b>${basket.group_name ? `<br>Group: ${esc(basket.group_name)}` : ''}<br><b>Total paid</b></td><td align="right" style="padding:10px 12px;vertical-align:top;">${naira(total + discount)}<br><b>−${naira(discount)}</b>${basket.group_name ? '<br>&nbsp;' : ''}<br><b>${naira(total)}</b></td></tr></table><p style="margin:0 0 14px;color:#0B7A2E;font-weight:bold;">You saved ${naira(discount)}.</p>`
     : '';
   const free = total === 0 && !(Number(basket.points_kobo) > 0);
+  // Engine orders: the company that received the payment is named on every receipt (honesty rule).
+  const processedBy = basket.backend === 'engine' && !free ? await processorName(db) : '';
   const html = `<div style="max-width:520px;margin:0 auto;font-family:Arial,sans-serif;color:#111;">
     <h2 style="color:#0d1a33;">Your ${free ? 'free ' : ''}Lobi Stars match tickets</h2>
     <p>Hi ${esc(basket.buyer_name)},</p>
@@ -282,6 +303,7 @@ export async function sendBasketEmail(env, basket) {
     ${sections.join('')}
     <p style="background:#FFF8E1;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;"><strong>On match day:</strong> order food and drinks to your seat from your phone at MatchDay Kitchen: <a href="https://lobistarsfc.com/kitchen/">lobistarsfc.com/kitchen</a>.</p>
     <p style="font-size:12px;color:#888;">Pride of Benue &middot; Lobi Stars Football Club</p>
+    ${processedBy ? `<p style="font-size:11px;color:#888;">Payments processed by ${esc(processedBy)}.</p>` : ''}
   </div>`;
   // The same tickets as a PDF attachment (one page per ticket), to save on the phone or print.
   const pdf = await ticketsPdf(env, await basketTickets(db, basket)).catch(err => { console.error('[tickets] pdf attachment', err); return null; });

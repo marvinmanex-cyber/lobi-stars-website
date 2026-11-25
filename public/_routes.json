@@ -19,6 +19,8 @@
     "/gate-control/*",
     "/health",
     "/health/*",
+    "/internal",
+    "/internal/*",
     "/live",
     "/live/*",
     "/m",

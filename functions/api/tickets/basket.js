@@ -8,6 +8,8 @@ import { seasonConfig } from '../_lib/seasonConfig.js';
 import { presaleMs } from '../_lib/rewardsTiers.js';
 import { holdCheckoutRewards, releaseCheckout, ensureCheckoutColumns } from '../_lib/rewardsCheckout.js';
 import { ensureDiscountSchema, priceWithDiscounts, orderChunks, holdChunkStatement, parseBuyerLines, publicPricing, lockedTotalOk } from '../_lib/ticketDiscounts.js';
+import { createEngineBasket, pollEngineOrder } from '../_lib/ticketing/engineOrders.js';
+import { ensureEngineSchema, processorName } from '../_lib/ticketing/engineStore.js';
 
 // POST /api/tickets/basket { lines: [{ eventId, tier, quantity } | { eventId, tier, family: true, adults, children }],
 //   groupName, expectedTotalKobo, buyerName, buyerEmail, buyerPhone, turnstileToken }
@@ -66,11 +68,17 @@ export async function onRequestPost({ request, env, waitUntil }) {
         return Response.json({ error: had >= max ? `You already have the most free tickets allowed for ${name} (${max} per person).` : `Free tickets are limited to ${max} per person for ${name}. You can book ${max - had} more.`, eventId: l.eventId }, { status: 400 });
       }
     }
-    const { pricing, input } = await priceWithDiscounts(db, priced.lines, rawByKey, cat, email);
-    if (!pricing.ok) return Response.json({ error: pricing.error, eventId: pricing.eventId || null }, { status: 400 });
     const expected = b.expectedTotalKobo === undefined || b.expectedTotalKobo === null ? null : Number(b.expectedTotalKobo);
-    if (expected !== null && expected !== pricing.totalKobo) {
-      return Response.json({ code: 'repriced', error: `The price has changed to ${naira(pricing.totalKobo)}. Check your order and press Pay again.`, pricing: publicPricing(pricing) }, { status: 409 });
+    // Ticketing engine mode: the engine prices the order (no local discounts or Star Points: not in the contract).
+    const engineMode = !!cat.engine;
+    if (engineMode && [...rawByKey.values()].some(r => r.family)) return Response.json({ error: 'Family and child tickets cannot be bought online for this match yet. Choose adult tickets.' }, { status: 400 });
+    let pricing = null, input = null;
+    if (!engineMode) {
+      ({ pricing, input } = await priceWithDiscounts(db, priced.lines, rawByKey, cat, email));
+      if (!pricing.ok) return Response.json({ error: pricing.error, eventId: pricing.eventId || null }, { status: 400 });
+      if (expected !== null && expected !== pricing.totalKobo) {
+        return Response.json({ code: 'repriced', error: `The price has changed to ${naira(pricing.totalKobo)}. Check your order and press Pay again.`, pricing: publicPricing(pricing) }, { status: 409 });
+      }
     }
 
     // Members' priority window (same rule as single tickets).
@@ -82,6 +90,16 @@ export async function onRequestPost({ request, env, waitUntil }) {
         const e = cat.get(early[0].eventId).event;
         return Response.json({ error: `${e.home_team} vs ${e.away_team} is in the members' priority window. Members: please log in first.`, eventId: e.id, code: 'members_only' }, { status: 403 });
       }
+    }
+
+    if (engineMode) {
+      const { basketId, reference } = newBasketIds();
+      const origin = new URL(request.url).origin;
+      const r = await createEngineBasket(env, { cat, priced, buyer: { name, email, phone }, basketId, reference, expectedTotalKobo: expected, origin });
+      if (!r.ok) return Response.json(r.body, { status: r.status });
+      await tagBasket(db, basketId, request, b.source).catch(err => console.error('[tickets] tag', err));
+      if (r.free) return Response.json({ free: true, reference, totalKobo: 0, redirect: `${origin}/tickets/success/?basket=${encodeURIComponent(reference)}&free=1` });
+      return Response.json({ authorizationUrl: r.authorizationUrl, reference, totalKobo: r.totalKobo, pointsUsed: 0 });
     }
 
     // The basket, with the discount locked in (discount_snapshot_json: the exact
@@ -152,11 +170,14 @@ export async function onRequestGet({ request, env, waitUntil }) {
     const db = env.DB;
     await ensureTicketShopSchema(db);
     await ensureDiscountSchema(db);
+    await ensureEngineSchema(db);
     const reference = new URL(request.url).searchParams.get('reference') || '';
     if (!/^LSBAS-[A-Z0-9]{6,20}$/.test(reference)) return Response.json({ error: 'Missing reference' }, { status: 400 });
     let basket = await db.prepare(`SELECT * FROM league_ticket_orders WHERE reference = ?`).bind(reference).first();
     if (!basket) return Response.json({ error: 'Order not found' }, { status: 404 });
-    if (basket.status === 'pending') {
+    if (basket.backend === 'engine' && basket.status === 'pending') {
+      basket = await pollEngineOrder(env, basket, { waitUntil });
+    } else if (basket.status === 'pending') {
       try {
         const t = await verify(env, reference);
         if (t.status === 'success' && t.amount === basket.total_kobo && (t.currency || 'NGN') === 'NGN' && await lockedTotalOk(db, basket)) await fulfilBasket(env, basket, waitUntil);
@@ -164,7 +185,9 @@ export async function onRequestGet({ request, env, waitUntil }) {
       basket = await db.prepare(`SELECT * FROM league_ticket_orders WHERE id = ?`).bind(basket.id).first();
     }
     if (basket.status !== 'paid') return Response.json({ paid: false, status: basket.status }, { headers: { 'Cache-Control': 'no-store' } });
-    return Response.json({ paid: true, ...(await basketTickets(db, basket)) }, { headers: { 'Cache-Control': 'no-store' } });
+    // Engine orders: the receipt names the company that received the payment.
+    const processedBy = basket.backend === 'engine' && basket.total_kobo > 0 ? (await processorName(db)) || null : null;
+    return Response.json({ paid: true, ...(await basketTickets(db, basket)), processedBy }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     console.error('[tickets] basket status', err);
     return Response.json({ error: 'Something went wrong.' }, { status: 500 });

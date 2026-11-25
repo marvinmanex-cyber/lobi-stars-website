@@ -24,6 +24,16 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       <div class="la-row"><button type="button" class="btn-p" id="pauseOn">Pause online sales</button><button type="button" class="btn-o" id="pauseSave">Save message</button><button type="button" class="btn-o" id="pauseOff">Resume online sales</button></div>
     </section>
 
+    <!-- Super Admins only (the server refuses everyone else; this card stays hidden for them). -->
+    <section class="la-card" id="procBox" hidden aria-labelledby="h-proc">
+      <h2 id="h-proc">Who receives ticket payments (Super Admins)</h2>
+      <p class="la-msg" id="procState"></p>
+      <label class="la-f" style="display:block">Legal name of the company that receives online ticket payments<input id="procName" maxlength="120" style="width:100%;margin-top:6px" placeholder="As registered, e.g. Example Company Limited" /></label>
+      <p class="la-msg">Shown to fans on every receipt ("Payments processed by …"), in the Terms and in the Privacy Policy while ticket sales run through the outside ticket system. Online sales cannot move to that system until this is filled in. Never write that payments go to the club if they go to this company.</p>
+      <label class="la-f"><input type="checkbox" id="procImport" /> Old tickets (LS-TIX-…) have been imported into the ticket system and are checked there</label>
+      <div class="la-row"><button type="button" class="btn-p" id="procSave">Save</button></div>
+    </section>
+
     <section class="la-card" aria-labelledby="h-tot"><h2 id="h-tot">Sales</h2><div id="totals" class="la-row"></div></section>
 
     <section class="la-card" aria-labelledby="h-bulk">
@@ -210,6 +220,22 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       var u = URL.createObjectURL(b), a = el('a', { href: u, download: 'ticket-orders.csv' }); document.body.append(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 2000);
     }).catch(function () { LA.toast('Could not download.', true); });
   });
+  // Payment processor (Super Admins only: anyone else gets 403 and the card stays hidden).
+  function showProc(d) {
+    $('procBox').hidden = false;
+    $('procName').value = d.legalProcessorName || '';
+    $('procImport').checked = !!d.legacyImportConfirmed;
+    $('procState').textContent = 'Online ticket sales now run on: ' + (d.mode === 'engine' ? 'the outside ticket system' : "the club's own system") + '.' +
+      (d.requested === 'engine' && d.blockers && d.blockers.length ? ' Not switched over yet: ' + d.blockers.join(' ') : '');
+  }
+  fetch('/api/admin/ticketing-settings', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { if (d) showProc(d); }).catch(function () {});
+  $('procSave').addEventListener('click', function () {
+    fetch('/api/admin/ticketing-settings', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ legalProcessorName: $('procName').value, legacyImportConfirmed: $('procImport').checked }) })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || 'Could not save.'); return d; }); })
+      .then(function (d) { showProc(d); LA.toast('Saved.'); })
+      .catch(function (e) { LA.toast(e.message, true); });
+  });
+
   load(); loadOrders();
 })();
 </script>
