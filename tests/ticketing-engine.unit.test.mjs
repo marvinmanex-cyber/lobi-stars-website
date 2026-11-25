@@ -10,7 +10,12 @@ import { startMockEngine, signedCallback } from './helpers/mockEngine.mjs';
 import { signRequest, verifySigned, sha256Hex, engine, engineFetch, fanMessage, safeEqual } from '../functions/api/_lib/ticketing/engineClient.js';
 import { ensureEngineSchema, setSetting, ticketingStatus, intlPhone, qrTextFor, isEngineToken, SETTING_PROCESSOR, SETTING_IMPORT_CONFIRMED, _forgetProcessorName } from '../functions/api/_lib/ticketing/engineStore.js';
 import { standTier, matchLocal, _resetEngineMemo } from '../functions/api/_lib/ticketing/engineCatalogue.js';
-import { plainPricing } from '../functions/api/_lib/ticketing/engineOrders.js';
+import { plainPricing, createEngineBasket } from '../functions/api/_lib/ticketing/engineOrders.js';
+import { ensureRewardsSchema } from '../functions/api/_lib/rewards.js';
+import { ensureAdminSchema } from '../functions/api/_lib/adminSession.js';
+import { ensureCatalogueSchema } from '../functions/api/_lib/rewardsCatalogue.js';
+import { priceWithDiscounts, parseBuyerLines } from '../functions/api/_lib/ticketDiscounts.js';
+import { priceBasket } from '../functions/api/_lib/tickets/rules.js';
 import { catalogue } from '../functions/api/_lib/ticketShop.js';
 import { onRequestPost as basketPost, onRequestGet as basketGet } from '../functions/api/tickets/basket.js';
 import { onRequestPost as pricePost } from '../functions/api/tickets/price.js';
@@ -60,6 +65,8 @@ before(async () => {
   await ensureEngineSchema(DB);
   // Tables the live site has (League and Gate Control), used by the ticket views and the gate.
   DB.exec(`CREATE TABLE IF NOT EXISTS league_fixtures (id TEXT PRIMARY KEY, event_id TEXT, matchday INTEGER, status TEXT)`);
+  await ensureAdminSchema(DB); // who gets the alert emails (Super Admins)
+  for (const col of ['active INTEGER DEFAULT 1', 'disabled_at TEXT']) { try { DB.exec('ALTER TABLE admin_users ADD COLUMN ' + col); } catch { /* already there */ } }
   await DB.prepare(`INSERT INTO events (id, home_team, away_team, competition, event_date, venue, vip_price_kobo, premium_price_kobo, regular_price_kobo, active, is_home) VALUES (?, 'Lobi Stars FC', 'Kano Pillars', 'NNL', ?, 'McCarthy Stadium, Makurdi', 400000, 250000, 100000, 1, 1)`).bind(LOCAL_ID, KICKOFF).run();
 });
 after(async () => { globalThis.fetch = realFetch; await mock.close(); });
@@ -341,10 +348,17 @@ test('callback: order.refunded voids the tickets that were not used', async () =
   assert.equal((await env.DB.prepare(`SELECT status FROM tickets WHERE id = ?`).bind(o.tickets[0].token).first()).status, 'void');
 });
 
-test('callback: an order this site never made is logged as unmatched (200, nothing created)', async () => {
+test('callback: an order this site never made is logged as unmatched (200, nothing created) and the Super Admins get an alert', async () => {
+  emails = [];
   const r = await callbackPost({ request: await signedCallback({ secret: 'callback-secret-new', body: { event_id: crypto.randomUUID(), type: 'order.paid', occurred_at: new Date().toISOString(), order: { order_id: 'ord_unknown', client_reference: 'LSBAS-NOTOURS00000', status: 'paid' }, tickets: [] } }), env, waitUntil });
   assert.equal(r.status, 200); assert.equal((await r.json()).unmatched, true);
   assert.ok(await env.DB.prepare(`SELECT 1 FROM ticketing_log WHERE kind = 'unmatched_order'`).first());
+  const alert = emails.find(e => /Ticket sales alert/.test(e.subject));
+  assert.ok(alert, 'an alert email was sent'); assert.match(alert.subject, /matches no order/);
+  // A second one within the hour: no second email (at most one alert per kind per hour).
+  emails = [];
+  await callbackPost({ request: await signedCallback({ secret: 'callback-secret-new', body: { event_id: crypto.randomUUID(), type: 'order.paid', occurred_at: new Date().toISOString(), order: { order_id: 'ord_unknown2', client_reference: 'LSBAS-NOTOURS00001', status: 'paid' }, tickets: [] } }), env, waitUntil });
+  assert.equal(emails.filter(e => /Ticket sales alert/.test(e.subject)).length, 0);
 });
 
 // ── Access ──
@@ -414,4 +428,46 @@ test('season passes in engine mode: the same page, one pass per person, the same
   g = await checkTicket(env, pass, { mode: 'admit', how: 'camera', who, force: true });
   assert.equal(g.code, 'admitted', 'and again at the next home match');
   mock.state.today = null;
+});
+
+test('Star Points in engine mode: sent as a club points line; the hold is taken when paid, given back when the payment fails, returned on a refund', async () => {
+  await ensureRewardsSchema(env.DB); await ensureCatalogueSchema(env.DB);
+  const ledger = ref => env.DB.prepare(`SELECT status, points FROM rewards_ledger WHERE source = 'points_payment' AND source_ref = ?`).bind(ref).first();
+  const holdAndBuy = async ref => {
+    // The site holds 500 Star Points (₦500) for this order, exactly as holdCheckoutRewards does.
+    await env.DB.prepare(`INSERT INTO rewards_ledger (member_id, type, points, status, source, source_ref, description, pay_ref) VALUES ('mem-1', 'REDEEM', -500, 'PENDING', 'points_payment', ?, 'Paid with Star Points (match tickets)', ?)`).bind(ref, ref).run();
+    _resetEngineMemo();
+    const cat = await catalogue(env);
+    const { lines, rawByKey } = parseBuyerLines([{ eventId: LOCAL_ID, tier: 'VIP', quantity: 1 }]);
+    const priced = priceBasket(lines, cat);
+    const { pricing, input } = await priceWithDiscounts(env.DB, priced.lines, rawByKey, cat, 'ada@example.com');
+    const pay = { pointsUsed: 500, pointsKobo: 50000, totalKobo: pricing.totalKobo - 50000 };
+    return createEngineBasket(env, { cat, priced, pricing, input, pay, buyer: { name: 'Ada Okafor', email: 'ada@example.com', phone: '08031234567' }, basketId: `LS-BSK-${ref.slice(-8)}`, reference: ref, origin: SITE });
+  };
+  // Paid: the engine charged ₦5,000 − ₦500, and the points are now taken.
+  const ref1 = 'LSBAS-POINTSPAID001';
+  const r1 = await holdAndBuy(ref1);
+  assert.equal(r1.ok, true, JSON.stringify(r1)); assert.equal(r1.totalKobo, 450000);
+  const eo = mock.state.byRef.get(ref1);
+  assert.deepEqual(eo.adjustments, [{ kind: 'points', label: 'Star Points', amount_kobo: 50000 }]);
+  assert.equal((await ledger(ref1)).status, 'PENDING', 'held while the fan pays');
+  const o1 = mock.pay(ref1);
+  const send = (o, ref, status, tickets) => callbackPost({ request: signedCallback({ secret: 'callback-secret-new', body: { event_id: crypto.randomUUID(), type: `order.${status}`, occurred_at: new Date().toISOString(), order: { order_id: o.order_id, client_reference: ref, status }, tickets } }), env, waitUntil });
+  await callbackPost({ request: await signedCallback({ secret: 'callback-secret-new', body: { event_id: crypto.randomUUID(), type: 'order.paid', occurred_at: new Date().toISOString(), order: { order_id: o1.order_id, client_reference: ref1, status: 'paid' }, tickets: o1.tickets.map(({ days, ...t }) => t) } }), env, waitUntil });
+  await settle();
+  assert.equal((await ledger(ref1)).status, 'AVAILABLE', 'taken once the payment is confirmed');
+  // Refunded: the Star Points used to pay are given back (a REVERSE entry of +500).
+  await callbackPost({ request: await signedCallback({ secret: 'callback-secret-new', body: { event_id: crypto.randomUUID(), type: 'order.refunded', occurred_at: new Date().toISOString(), order: { order_id: o1.order_id, client_reference: ref1, status: 'refunded' }, tickets: o1.tickets.map(({ days, ...t }) => ({ ...t, status: 'void' })) } }), env, waitUntil });
+  await settle();
+  const back = await env.DB.prepare(`SELECT SUM(points) AS p FROM rewards_ledger WHERE pay_ref = ? AND type = 'REVERSE'`).bind(ref1).first();
+  assert.equal(back.p, 500, 'points returned on the refund');
+  // Payment failed / expired: the held points are released.
+  const ref2 = 'LSBAS-POINTSFAIL002';
+  const r2 = await holdAndBuy(ref2);
+  assert.equal(r2.ok, true);
+  const o2 = mock.state.byRef.get(ref2);
+  await callbackPost({ request: await signedCallback({ secret: 'callback-secret-new', body: { event_id: crypto.randomUUID(), type: 'order.expired', occurred_at: new Date().toISOString(), order: { order_id: o2.order_id, client_reference: ref2, status: 'expired' }, tickets: [] } }), env, waitUntil });
+  await settle();
+  assert.equal((await ledger(ref2)).status, 'REVERSED', 'given back when the payment never happens');
+  void send;
 });

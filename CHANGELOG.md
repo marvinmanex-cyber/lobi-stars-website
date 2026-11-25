@@ -8,6 +8,16 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-25: Ticket system checks before going live
+
+- **Ticket emails work:** all 86 paid ticket orders on the live site were emailed (the email key is set in Cloudflare).
+- **Email security for lobistarsfc.com is in place:** Resend's DKIM key and its own SPF and return address on send.lobistarsfc.com, and a DMARC record. DMARC only watches today (`p=none`, no reports); tightening it is optional (HANDOVER-TODO A40).
+- **Old-ticket export, dry run on the live site:** no tickets are sold yet for upcoming matches, so there is nothing to import today. Over all past matches: 95 paid orders, 124 tickets; one past order has a phone number that cannot be read and would be skipped.
+- **Gate tests:** the "gates not open yet" failure seen earlier was leftover local test data; with it cleared every Gate Control test passes (14 of 14).
+- **New tests:** Star Points in the outside-system mode (sent as a points line; held, taken when paid, given back when the payment fails, returned on a refund) and the alert email when a payment matches no order (at most one per hour). 23 tests in all.
+- **Fix:** an offline check-in of a season pass from the outside system is now also recorded on the club's copy for that match, so every gate phone's offline list agrees.
+- **Handover for the outside system's operator:** `docs/ENGINE_OPERATOR_HANDOFF.md` (what they must build, what each side sends, set-up, 13 joint tests, switching over).
+
 ## 2026-11-25: Outside ticket system: club discounts, Star Points, family bundles and season tickets work there too
 
 - Following the owner's decision, the shared contract has a version 1.1 (`docs/INTEGRATION_CONTRACT.md` section C7): the website sends the club's discounts and Star Points as "club adjustment" lines that the outside system takes off before payment, marks each ticket adult or child, and sells season passes (one pass per person, valid once per home match).

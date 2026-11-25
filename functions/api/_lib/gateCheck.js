@@ -440,6 +440,11 @@ export async function syncEngineScans(env, scans, who) {
     const r = byId.get(s.scan_id) || { result: 'invalid' };
     if (r.result === 'admitted' || r.result === 'already_scanned') {
       await db.prepare(`UPDATE tickets SET status = 'used', used_at = COALESCE(used_at, ?), scanned_by = COALESCE(scanned_by, ?) WHERE id = ?`).bind(s.scanned_at, `${who.user.name || 'Gate'} (offline)`, s.token).run().catch(() => {});
+      // A season pass: recorded for today's match on the local copy too, so every phone's offline list agrees.
+      if (await db.prepare(`SELECT 1 FROM season_passes WHERE id = ?`).bind(s.token).first().catch(() => null)) {
+        const m = await todaysHomeMatch(db).catch(() => null);
+        if (m) await db.prepare(`INSERT INTO season_pass_scans (pass_id, event_id, station) VALUES (?, ?, ?) ON CONFLICT (pass_id, event_id) DO NOTHING`).bind(s.token, m.id, `${who.user.name || 'Gate'} (offline)`.slice(0, 60)).run().catch(() => {});
+      }
     }
     out.push({ token: s.token, at: s.scanned_at, result: r.result, firstScannedAt: r.first_scanned_at || null });
   }
