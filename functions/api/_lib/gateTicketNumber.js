@@ -6,7 +6,7 @@
 const ID_RE = /^LS-(TIX|SZN|ACC)-[A-HJ-NP-Z2-9]{12}$/;
 const OUR_HOSTS = /(^|\.)lobistarsfc\.com$|^localhost$|^127\.0\.0\.1$|\.lobi-stars-website\.pages\.dev$/i;
 
-/** A scanned code or typed number -> { id } (a ticket number to look up) or { code, reason } (refused before the database). */
+/** A scanned code or typed number -> { id } (a ticket number to look up), { token } (a ticketing engine ticket) or { code, reason } (refused before the database). */
 export function parseTicketInput(raw) {
   let s = String(raw || '').trim();
   if (!s) return { code: 'bad_number', reason: 'Enter or scan a ticket number.' };
@@ -19,6 +19,9 @@ export function parseTicketInput(raw) {
     if (!OUR_HOSTS.test(u.hostname) || !m) return { code: 'not_lobi', reason: `This QR code is not a Lobi Stars FC ticket (it points to ${u.hostname}).` };
     s = decodeURIComponent(m[1]);
   }
+  // Ticketing engine tickets: the QR code holds only the token (base32, 24 to 32 characters).
+  const token = s.replace(/\s+/g, '').toUpperCase();
+  if (/^[A-Z2-7]{24,32}$/.test(token)) return { token };
   let id = s.toUpperCase().replace(/[\s_.]+/g, '').replace(/—|–/g, '-');
   // Typed without the start: "ABCD2345EFGH" -> LS-TIX-ABCD2345EFGH.
   if (/^[A-Z0-9]{12}$/.test(id)) id = `LS-TIX-${id}`;

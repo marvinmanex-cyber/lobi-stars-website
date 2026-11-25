@@ -193,7 +193,9 @@ function localCheck(text: string, how: string, override = false): any {
     return ps ? { code: 'pass_ok', title: 'VALID MEDIA CARD', reason: `Allowed in: ${ps[3] || 'see the card'}. Check the photo on the card matches the person.`, ticket: { kind: 'pass', id: 'Media card', buyer: ps[1], stand: ps[2], type: 'Pass', zones: String(ps[3] || '').split(', ').filter(Boolean) }, offline: true }
       : { code: 'not_listed', title: 'MEDIA CARD NOT ON THE LIST', reason: "This media card is not on today's list on this phone. Do not let the person in until it is checked with a signal.", offline: true };
   }
-  const m = /LS-?(TIX|SZN|ACC)-?([A-HJ-NP-Z2-9]{12})(?![A-Z0-9])/.exec(up) || (/^[A-HJ-NP-Z2-9]{12}$/.test(up) ? [up, 'TIX', up] : null);
+  // Ticket system tickets: the QR code holds only the token (24 to 32 letters and numbers 2-7).
+  const isToken = /^[A-Z2-7]{24,32}$/.test(up);
+  const m = isToken ? [up, 'TIX', up] : /LS-?(TIX|SZN|ACC)-?([A-HJ-NP-Z2-9]{12})(?![A-Z0-9])/.exec(up) || (/^[A-HJ-NP-Z2-9]{12}$/.test(up) ? [up, 'TIX', up] : null);
   if (m && m[1] === 'ACC') {
     const id = `LS-ACC-${m[2]}`, ps = (pack?.passes || []).find((x: any) => x[0] === id);
     return ps ? { code: 'pass_ok', title: 'VALID PASS', reason: `Allowed in: ${ps[3]}. Check the person matches the name.`, ticket: { kind: 'pass', id, buyer: ps[1], stand: ps[2], type: 'Pass', zones: String(ps[3] || '').split(', ').filter(Boolean) }, offline: true }
@@ -202,7 +204,7 @@ function localCheck(text: string, how: string, override = false): any {
   if (m && PRACTICE_IDS[`LS-TIX-${m[2]}`]) return practice ? practiceLocal(`LS-TIX-${m[2]}`) : { code: 'practice_ticket', title: 'PRACTICE TICKET', reason: 'This is a practice ticket, not a real one. Do not admit.', offline: true };
   if (!m) return /^HTTPS?:/.test(up) && !/LOBISTARSFC/.test(up) ? { code: 'not_lobi', fake: true, title: 'NOT A LOBI STARS TICKET', reason: 'This QR code is not a Lobi Stars FC ticket.', offline: true }
     : { code: 'bad_number', title: 'CHECK THE NUMBER', reason: 'This is not a complete ticket number. Check it and try again.', offline: true };
-  const id = `LS-${m[1]}-${m[2]}`, row = packMap.get(id);
+  const id = isToken ? up : `LS-${m[1]}-${m[2]}`, row = packMap.get(id);
   if (!row) return { code: 'not_listed', title: "NOT ON TODAY'S LIST", reason: `${id} is not on today's ticket list on this phone: it may be fake, cancelled or for another match. Do not admit. Check it again when the signal returns.`, offline: true };
   const ticket = { kind: m[1] === 'SZN' ? 'season' : 'match', id, stand: STAND[row[1]] || row[1], type: row[2] ? 'Child' : 'Adult', buyer: row[3] || 'No name', status: 'valid' };
   if ((pack?.banned || []).includes(id)) return { code: 'banned', title: 'DO NOT ADMIT', reason: "This fan is on the club's banned list. Do not admit; call a supervisor.", ticket, offline: true };
@@ -394,7 +396,7 @@ $('modeAdmit').addEventListener('click', () => setMode('admit'));
 $('modeLook').addEventListener('click', () => setMode('lookup'));
 
 const KIND: Record<string, string> = { admitted: 'ok', readmitted: 'ok', valid: 'info', used: 'bad', void: 'bad', unpaid: 'bad', fake: 'fake', not_lobi: 'fake', wrong_match: 'warn', wrong_gate: 'warn', bad_number: 'warn', not_listed: 'bad',
-  banned: 'bad', gates_closed: 'warn', stand_full: 'bad', pass_ok: 'pass', pass_bad: 'bad', practice_ticket: 'fake' };
+  banned: 'bad', gates_closed: 'warn', stand_full: 'bad', pass_ok: 'pass', pass_bad: 'bad', practice_ticket: 'fake', cannot_verify: 'bad' };
 const ICON: Record<string, string> = {
   ok: '<path d="M20 6 9 17l-5-5"/>', info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   bad: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>', pass: '<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17h8"/>', fake: '<path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18v.5"/>',

@@ -7,7 +7,8 @@
 //  - Watch list: tickets tried more than once, bursts of fake tickets at a gate.
 //  - End-of-day report (CSV of every scan).
 import { ensureGateSchema, gateSettings, gcLog, oneLine, clean } from './gateControl.js';
-import { checkTicket, dayStart } from './gateCheck.js';
+import { checkTicket, dayStart, syncEngineScans } from './gateCheck.js';
+import { engineReachable, legacyImportConfirmed } from './ticketing/engineStore.js';
 import { parseTicketInput } from './gateTicketNumber.js';
 import { todaysHomeMatch, ensureSeasonSchema } from './seasonTickets.js';
 import { ensureTicketShopSchema } from './ticketShop.js';
@@ -61,8 +62,31 @@ export async function offlinePack(env) {
 /** Offline check-ins sent when the signal returns. Each one is checked in now; a ticket already used elsewhere is a double entry. */
 export async function syncOffline(env, scans, who, request) {
   const db = env.DB;
-  const list = (Array.isArray(scans) ? scans : []).slice(0, 500);
-  const out = { sent: list.length, admitted: 0, doubles: [], other: [] };
+  const all = (Array.isArray(scans) ? scans : []).slice(0, 500);
+  const out = { sent: all.length, admitted: 0, doubles: [], other: [] };
+  // Ticketing engine tickets: one batch to the engine (it keeps the earliest check-in; later ones are
+  // already_scanned). If the engine cannot be reached this throws and the phone keeps its queue.
+  const list = [], engineScans = [];
+  const imported = engineReachable(env) && await legacyImportConfirmed(db);
+  for (const s of all) {
+    const p = parseTicketInput(s.ticket);
+    const token = p.token || (imported && p.id?.startsWith('LS-TIX-') ? p.id : null);
+    if (token && engineReachable(env)) engineScans.push({ token, at: Date.parse(s.at) ? new Date(s.at).toISOString() : nowIso() });
+    else list.push(s);
+  }
+  if (engineScans.length) {
+    const results = await syncEngineScans(env, engineScans, who);
+    const REASON = { invalid: 'The ticket system does not know this ticket.', wrong_match: 'Genuine ticket, but for another match.', void: 'This ticket was cancelled or refunded.' };
+    for (const r of results) {
+      const mine = r.result === 'admitted' || (r.result === 'already_scanned' && r.firstScannedAt && Date.parse(r.firstScannedAt) === Date.parse(r.at));
+      await db.prepare(`INSERT INTO gc_scans (at, ticket_id, raw, result, how, gate, staff_user_id, staff_name, staff_code, note) VALUES (?, ?, ?, ?, 'offline', ?, ?, ?, ?, ?)`)
+        .bind(nowIso(), r.token, r.token, mine ? 'admitted' : r.result === 'already_scanned' ? 'used' : r.result === 'invalid' ? 'fake' : r.result, who.gate || null, who.user.id || null, who.user.name || null, who.user.code || null,
+          `Offline check-in at ${new Date(r.at).toLocaleTimeString('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit' })}`).run().catch(e => console.error('[gate control] scan record', e));
+      if (mine) out.admitted++;
+      else if (r.result === 'already_scanned') { out.doubles.push(r.token); await gcLog(db, who.user, `Double entry: ${r.token} was let in offline but had already been checked in`, { kind: 'scan', details: 'Checked by the ticket system', request }); }
+      else out.other.push({ ticket: r.token, code: r.result === 'invalid' ? 'fake' : r.result, reason: REASON[r.result] || 'Not checked in.' });
+    }
+  }
   for (const s of list) {
     // Sent twice (the answer was lost on a weak signal): already checked in by this person offline, not a double entry.
     const id = parseTicketInput(s.ticket).id;
@@ -75,7 +99,7 @@ export async function syncOffline(env, scans, who, request) {
     else if (r.code === 'used') { out.doubles.push(r.ticket?.id || s.ticket); await gcLog(db, who.user, `Double entry: ${r.ticket?.id || s.ticket} was let in offline but had already been checked in`, { kind: 'scan', details: r.reason, request }); }
     else out.other.push({ ticket: r.ticket?.id || s.ticket, code: r.code, reason: r.reason });
   }
-  if (list.length) await gcLog(db, who.user, `Sent ${list.length} offline check-in${list.length === 1 ? '' : 's'} (${out.admitted} new${out.doubles.length ? `, ${out.doubles.length} double entr${out.doubles.length === 1 ? 'y' : 'ies'}` : ''})`, { kind: 'scan', request });
+  if (all.length) await gcLog(db, who.user, `Sent ${all.length} offline check-in${all.length === 1 ? '' : 's'} (${out.admitted} new${out.doubles.length ? `, ${out.doubles.length} double entr${out.doubles.length === 1 ? 'y' : 'ies'}` : ''})`, { kind: 'scan', request });
   return out;
 }
 

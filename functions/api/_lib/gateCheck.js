@@ -29,6 +29,8 @@ import { scanSeasonPass, todaysHomeMatch, ensureSeasonSchema } from './seasonTic
 import { earnAttendance } from './rewardsEarn.js';
 import { TIER_LABELS, TIERS } from './tickets/rules.js';
 import { parseTicketInput } from './gateTicketNumber.js';
+import { engine } from './ticketing/engineClient.js';
+import { ensureEngineSchema, legacyImportConfirmed, logTicketing, engineReachable } from './ticketing/engineStore.js';
 import { banFor, banIncident, gatesStatus, standFull, capacityAlerts, passCheck, mediaPassCheck, practiceResult, PRACTICE } from './gateMatchday.js';
 export { parseTicketInput };
 
@@ -125,11 +127,13 @@ export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', wh
     await record(r.record, { id: r.ticket?.id || null, note: r.ticket?.stand || null });
     return { ...r, practice };
   }
-  if (!parsed.id) {
+  // Ticketing engine tickets: the token is checked by the engine (gate rules here first).
+  const engineCtx = () => ({ admit, practice, override, force, note, gate, u, station, record, gateRules: (tier, ticket) => gateRules(tier, ticket), banned: (ban, d) => banned(ban, d) });
+  if (!parsed.id && !parsed.token) {
     await record(parsed.code);
     return { code: parsed.code, title: parsed.code === 'not_lobi' ? 'NOT A LOBI STARS TICKET' : 'CHECK THE NUMBER', reason: parsed.reason, fake: parsed.code === 'not_lobi' };
   }
-  const id = parsed.id;
+  const id = parsed.id || parsed.token;
 
   // Practice tickets: each shows one answer, in Practice mode only.
   if (PRACTICE[id]) {
@@ -165,6 +169,10 @@ export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', wh
     if (!practice) await banIncident(db, { ...u, gate }, id, ban).catch(e => console.error('[gate control] ban incident', e));
     return { code: 'banned', title: 'DO NOT ADMIT', reason: `This fan is on the club's banned list (${ban.reason}). Do not admit. A supervisor has been alerted.`, ticket: d.ticket, practice };
   };
+
+  if (parsed.token) return engineTicketCheck(env, parsed.token, engineCtx());
+  // Old LS-TIX numbers: once the engine has imported them, the engine checks them too.
+  if (id.startsWith('LS-TIX-') && engineReachable(env) && await legacyImportConfirmed(db)) return engineTicketCheck(env, id, engineCtx());
 
   if (id.startsWith('LS-SZN-')) {
     const r = await seasonCheck(env, id, { admit: admit && !practice, station, gateRules });
@@ -310,4 +318,113 @@ export async function todayView(env, user = null) {
     stands, byGate, byStaff, timeline,
     latest: latest.map(s => ({ at: s.at, ticket: s.ticket_id, result: s.result, gate: s.gate, by: s.staff_name ? `${s.staff_name}${s.staff_code ? ` (${s.staff_code})` : ''}` : '', how: s.how, stand: TIER_LABELS[s.tier] || '', note: s.note })),
   };
+}
+
+// ── Ticketing engine tickets ──
+// The engine decides valid / used / wrong match / void (POST /tickets/validate, /tickets/scan);
+// this site still applies its own gate rules first (banned list, wrong gate, gates closed, stand
+// full) and keeps its display copy and gc_scans record up to date. If the engine cannot be
+// reached the steward sees CANNOT VERIFY and the documented manual procedure: never a silent admit.
+const CANNOT_VERIFY = 'The ticket system cannot be reached, so this ticket cannot be checked. Do not admit yet. Call the gate manager: they check the name and phone against the downloaded order list (Admin › Tickets › Orders) and, if it matches, let the fan in and write it in the gate log.';
+function engineView(t, token) {
+  return { kind: 'match', id: token, stand: t?.stand_name || '', tier: null, type: 'Adult', match: t?.event_name || '', matchDate: t?.kickoff_at || null, venue: t?.venue || '',
+    buyer: null, phone: '', email: '', channel: 'Online (lobistarsfc.com)', payment: 'Paid', status: t?.status === 'scanned' ? 'used' : t?.status || 'valid' };
+}
+async function engineTicketCheck(env, token, o) {
+  const db = env.DB;
+  await ensureEngineSchema(db);
+  const local = await ticketRow(db, token);
+  const d = local ? describe(local, local.status === 'used' ? await lastAdmit(db, token) : null) : null;
+  const base = { id: token, eventId: local?.event_id || null, tier: local?.tier || null };
+  if (local) {
+    const ban = await banFor(db, { ticketId: token, email: local.buyer_email, phone: local.buyer_phone });
+    if (ban && local.status !== 'void') return o.banned(ban, { ...base, ticket: d });
+  }
+  const cannot = async err => {
+    await logTicketing(env, 'error', 'scan_unreachable', { code: err?.code, status: err?.status });
+    await o.record('cannot_verify', base);
+    return { code: 'cannot_verify', title: 'CANNOT VERIFY', reason: CANNOT_VERIFY, ticket: d, practice: o.practice };
+  };
+  const markUsed = () => local ? db.prepare(`UPDATE tickets SET status = 'used', used_at = COALESCE(used_at, datetime('now')), scanned_by = COALESCE(scanned_by, ?) WHERE id = ?`).bind(o.station, token).run().catch(() => {}) : null;
+  const markVoid = () => local ? db.prepare(`UPDATE tickets SET status = 'void' WHERE id = ? AND status = 'valid'`).bind(token).run().catch(() => {}) : null;
+  const usedReason = first => `Already checked in${first ? ` at ${new Date(first).toLocaleTimeString('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit' })}` : ' earlier'}. Do not admit again.`;
+  const wrongMatch = async t => {
+    await o.record('wrong_match', base);
+    const name = d?.match || t?.event_name || 'another match', when = d?.matchDate || t?.kickoff_at;
+    const date = when ? new Date(when).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    return { code: 'wrong_match', title: 'WRONG MATCH', reason: `Genuine ticket, but for ${name}${date ? ` on ${date}` : ''}. Do not admit today; it stays valid for that match.`, ticket: d || engineView(t, token), practice: o.practice };
+  };
+  const fake = async () => { await o.record('fake', base); return { code: 'fake', fake: true, title: 'FAKE TICKET', reason: 'The ticket system does not know this ticket. Do not admit.', practice: o.practice }; };
+  const voided = async t => { await markVoid(); await o.record('void', base); return { code: 'void', title: 'CANCELLED TICKET', reason: 'This ticket was cancelled or refunded. Do not admit.', ticket: d || engineView(t, token), practice: o.practice }; };
+
+  // Look up only, or practice: nothing changes (validate).
+  if (!o.admit || o.practice) {
+    let v;
+    try { v = await engine.validate(env, token); } catch (err) { return err.unreachable ? cannot(err) : fake(); }
+    const st = v?.ticket?.status, why = String(v?.reason || '');
+    if (st === 'void' || /void|refund|cancel/i.test(why)) return voided(v?.ticket);
+    if (st === 'scanned' || /already|scanned|used/i.test(why)) { await o.record('used', base); return { code: 'used', title: 'ALREADY USED', reason: usedReason(null), ticket: d || engineView(v?.ticket, token), practice: o.practice }; }
+    if (/wrong.?match|another match/i.test(why)) return wrongMatch(v?.ticket);
+    if (!v?.valid) return fake();
+    if (o.practice && o.admit) return { code: 'admitted', title: 'ADMIT', reason: 'Genuine ticket (practice: not checked in).', ticket: d || engineView(v.ticket, token), practice: true };
+    await o.record('lookup', base);
+    return { code: 'valid', title: 'VALID TICKET', reason: 'Genuine and not yet used. Not checked in (Look up only).', ticket: d || engineView(v.ticket, token) };
+  }
+  // Wrong gate (this gate only takes some stands): send the fan on, not checked in.
+  if (!o.override && o.gate && local?.tier) {
+    const { gates, stands } = await gateSettings(db);
+    if (stands[o.gate]?.length && !stands[o.gate].includes(local.tier)) {
+      const goTo = gates.filter(g => !stands[g]?.length || stands[g].includes(local.tier));
+      await o.record('wrong_gate', base);
+      return { code: 'wrong_gate', title: 'WRONG GATE', canOverride: true, reason: `This ticket is for the ${d.stand}. Send the fan to ${goTo.join(' or ') || 'the right gate'}. Not checked in.`, ticket: d, goTo };
+    }
+  }
+  if (local?.tier) { const stop = await o.gateRules(local.tier, d); if (stop) return stop; }
+  let r;
+  const scan = { token, scan_id: crypto.randomUUID(), gate_id: String(o.gate || 'gate').slice(0, 60), device_id: String(o.u?.id || 'device').slice(0, 60), scanned_at: new Date().toISOString() };
+  try { r = await engine.scan(env, scan); } catch (err) { return err.unreachable ? cannot(err) : fake(); }
+  switch (r?.result) {
+    case 'admitted': {
+      await markUsed();
+      await o.record('admitted', { ...base, note: o.force ? [o.note, 'Let in by a supervisor (gates closed / stand full)'].filter(Boolean).join('; ') : o.note });
+      if (local) { await earnAttendance(env, token).catch(() => {}); await capacityAlerts(db, local.tier).catch(() => {}); }
+      const fresh = local ? describe(await ticketRow(db, token), null) : engineView(r.ticket, token);
+      return { code: 'admitted', title: 'ADMIT', reason: 'Genuine ticket, checked in now.', ticket: fresh };
+    }
+    case 'already_scanned':
+      await markUsed();
+      await o.record('used', base);
+      return { code: 'used', title: 'ALREADY USED', reason: usedReason(r.first_scanned_at), ticket: d || engineView(r.ticket, token) };
+    case 'wrong_match': return wrongMatch(r.ticket);
+    case 'void': return voided(r.ticket);
+    default: return fake();
+  }
+}
+
+/** A UUID made from the check-in itself, so sending the same offline check-in again is never counted twice. */
+async function stableUuid(text) {
+  const h = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map(b => b.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`;
+}
+/**
+ * Offline check-ins of engine tickets, sent to the engine in ONE batch. Throws when the engine
+ * cannot be reached, so the phone keeps its queue and tries again.
+ * scans: [{ token, at }] -> [{ token, at, result, firstScannedAt }]
+ */
+export async function syncEngineScans(env, scans, who) {
+  const db = env.DB;
+  await ensureEngineSchema(db);
+  const list = [];
+  for (const s of scans) list.push({ token: s.token, scan_id: await stableUuid(`${who.user.id}|${s.token}|${s.at}`), gate_id: String(who.gate || 'gate').slice(0, 60), device_id: String(who.user.id || 'device').slice(0, 60), scanned_at: s.at });
+  const d = await engine.scanBatch(env, list, await stableUuid(list.map(x => x.scan_id).join(',')));
+  const byId = new Map((d?.results || []).map(x => [x.scan_id, x]));
+  const out = [];
+  for (const s of list) {
+    const r = byId.get(s.scan_id) || { result: 'invalid' };
+    if (r.result === 'admitted' || r.result === 'already_scanned') {
+      await db.prepare(`UPDATE tickets SET status = 'used', used_at = COALESCE(used_at, ?), scanned_by = COALESCE(scanned_by, ?) WHERE id = ?`).bind(s.scanned_at, `${who.user.name || 'Gate'} (offline)`, s.token).run().catch(() => {});
+    }
+    out.push({ token: s.token, at: s.scanned_at, result: r.result, firstScannedAt: r.first_scanned_at || null });
+  }
+  return out;
 }
