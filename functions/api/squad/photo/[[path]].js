@@ -15,3 +15,9 @@ export async function onRequestGet({ env, params }) {
   if (!o) return new Response('Not found', { status: 404 });
   return new Response(o.body, { headers: { 'Content-Type': o.httpMetadata?.contentType || 'image/webp', 'Cache-Control': 'public, max-age=86400' } });
 }
+
+// HEAD (link checkers, some crawlers): the same answer as GET, without the picture itself.
+export async function onRequestHead(context) {
+  const res = await onRequestGet(context);
+  return new Response(null, { status: res.status, headers: res.headers });
+}

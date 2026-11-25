@@ -10,6 +10,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import fs from 'node:fs';
 
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
 const ADMIN = { 'Content-Type': 'application/json', 'x-admin-code': process.env.ADMIN_CODE || 'test-code-123' };
@@ -90,13 +91,27 @@ test('settings: connections without secrets, keywords (no academy), validation',
   assert.equal((await api({ action: 'competitor', domain: 'lobistarsfc.com' })).status, 400);
 });
 
+// The test brings its own page with a title that is too long (the real site's titles are all fixed),
+// served by the local test server from dist/ for this test only and removed afterwards.
+const TEST_PAGE = '/seo-scanner-test/';
+const testPageFile = new URL('../dist/seo-scanner-test/index.html', import.meta.url);
+function addTestPage() {
+  fs.mkdirSync(new URL('./', testPageFile), { recursive: true });
+  fs.writeFileSync(testPageFile, '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Aeson Sports Management Limited – Official Media and Broadcast Partner of Lobi Stars FC</title>'
+    + '<meta name="description" content="Aeson Sports Management Limited is the official media and broadcast partner of Lobi Stars FC: live commentary, match coverage and club media in Makurdi, Benue State.">'
+    + '<link rel="canonical" href="https://lobistarsfc.com/seo-scanner-test/"></head><body><main><h1>Aeson Sports Management</h1><p>Official media and broadcast partner of Lobi Stars FC, the Pride of Benue. Live commentary of every match, news coverage and club media from Makurdi.</p></main></body></html>');
+}
+after(() => { try { fs.rmSync(new URL('./', testPageFile), { recursive: true, force: true }); } catch { /* already gone */ } });
+
 test('quick scan, issues, guide, AI Fix preview → approve → undo, stuffing refused', async () => {
-  const page = '/partners/aeson-sports-management/';
+  addTestPage();
+  const page = TEST_PAGE;
   const s = await runScan([page, '/']);
   assert.ok(s.score >= 0 && s.score <= 100);
-  const dash = (await api()).d;
-  const issue = dash.issues.find(i => i.path === page && i.type === 'title_length');
-  assert.ok(issue, 'the 68-character title is found');
+  // This page's own issues (the dashboard lists the 600 most important, which a busy test database can fill).
+  const pageView = (await api(null, `?view=page&path=${encodeURIComponent(page)}`)).d;
+  const issue = (pageView.issues || []).find(i => i.type === 'title_length');
+  assert.ok(issue, 'the too-long title is found');
   assert.equal(issue.actions.ai, true);
   const g = (await api(null, `?view=issue&id=${encodeURIComponent(issue.id)}`)).d;
   assert.ok(g.guide.steps.length && g.guide.help.startsWith('https://developers.google.com'));
@@ -133,7 +148,7 @@ test('quick scan, issues, guide, AI Fix preview → approve → undo, stuffing r
 
 test('code-level issues get a VS Code instruction (nothing changes); ignore needs a reason; send to developer', async () => {
   const dash = (await api()).d;
-  const code = dash.issues.find(i => i.actions.code);
+  const code = dash.issues.find(i => i.actions.code && !i.progress?.lock); // one not already locked by an earlier run
   if (code) {
     const p = await api({ action: 'prepare', issueId: code.id });
     assert.equal(p.status, 200, JSON.stringify(p.d));

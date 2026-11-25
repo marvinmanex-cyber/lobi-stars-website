@@ -548,7 +548,13 @@ export async function stepPayments(ctx) {
   let lastHook = null; try { lastHook = hook ? JSON.parse(hook.value) : null; } catch { lastHook = null; }
   const hookRecent = lastHook && Date.now() - Date.parse(lastHook.at) < 24 * 3600e3;
   if (paidInPaystack && !hookRecent) out.push(result('paystack_webhook', 'FAIL', { problem: `Paystack had ${plural(paidInPaystack, 'successful payment')} in the last 24 hours but sent no confirmation to the website${lastHook ? ` (last one ${lastHook.at.slice(0, 16).replace('T', ' ')} UTC)` : ''}. Fans' paid orders may stay "Awaiting payment".`, details: { lastWebhook: lastHook?.at || null, paidLast24h: paidInPaystack } }));
-  else out.push(result('paystack_webhook', 'PASS', { problem: lastHook ? `Last confirmation from Paystack: ${lastHook.at.slice(0, 16).replace('T', ' ')} UTC (signature checked on every one).` : 'No payments yet, so no confirmations expected. Every confirmation\'s signature is checked.', details: { lastWebhook: lastHook?.at || null } }));
+  // Payments confirmed on the website in the last 30 days (by the fan's return to the site), while Paystack
+  // has NEVER sent a confirmation: the webhook address is missing in Paystack (or belongs to another account).
+  const siteNever = !lastHook && !(paidInPaystack && !hookRecent) ? Number((await safeFirst(db, `SELECT
+      (SELECT COUNT(*) FROM food_orders WHERE payment_status = 'paid' AND paystack_reference IS NOT NULL AND paystack_reference NOT LIKE 'WA-%' AND paid_at >= datetime('now', '-30 days'))
+    + (SELECT COUNT(*) FROM league_ticket_orders WHERE status IN ('paid', 'refunded') AND total_kobo > 0 AND COALESCE(backend, 'legacy') = 'legacy' AND paid_at >= datetime('now', '-30 days')) AS n`))?.n || 0) : 0;
+  if (siteNever > 0) out.push(result('paystack_webhook', 'WARNING', { problem: `${plural(siteNever, 'payment')} in the last 30 days, but Paystack has never sent a payment confirmation to the website. A fan who closes the page before returning to the site is then never confirmed. In Paystack › Settings › API Keys & Webhooks, set the Live Webhook URL to ${origin}/api/paystack-webhook (the same Paystack account and mode as the website's key).`, who: SA }));
+  else if (!(paidInPaystack && !hookRecent)) out.push(result('paystack_webhook', 'PASS', { problem: lastHook ? `Last confirmation from Paystack: ${lastHook.at.slice(0, 16).replace('T', ' ')} UTC (signature checked on every one).` : 'No payments yet, so no confirmations expected. Every confirmation\'s signature is checked.', details: { lastWebhook: lastHook?.at || null } }));
   // MatchDay Kitchen's own Paystack account (optional: without it, food uses the main account).
   const kKey = env.PAYSTACK_KITCHEN_SECRET_KEY || '';
   if (!kKey) out.push(result('paystack_kitchen', 'SKIPPED', { problem: 'No separate kitchen account yet: food payments go through the main Paystack account.' }));

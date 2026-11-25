@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-25: Site re-check, Paystack confirmations, SEO Scanner tests
+
+- **Whole live site re-checked:** all 100 pages in the sitemap and the 183 pictures, styles, scripts, PDFs and fonts they use load correctly.
+- Squad player photos now also answer "HEAD" requests (used by link checkers and some crawlers); before, those tools wrongly reported every player photo as missing. Fans and Google were never affected.
+- **Paystack finding:** the website has never received Paystack's signed payment confirmation (webhook) since it started recording it on 18 Oct. Payments are still confirmed when the fan returns to the site after paying, but a fan who closes the page first is only confirmed through the webhook. Set the webhook address in Paystack (HANDOVER-TODO A41). The Paystack key in Cloudflare is a **live** key (Website Health) and it confirmed 19 food payments and 2 ticket payments. Website Health now also warns when payments were taken in the last 30 days but Paystack has never sent a confirmation (before, it only looked at the last 24 hours, so it showed a pass on quiet days).
+- **/news/ speed:** not re-tested yet. Google's free daily allowance is used up for everyone; the SEO Scanner uses the club's own key: press Check again on the /news/ card, or it re-tests by itself on 28 Nov.
+- **SEO Scanner tests** pass again (6 of 6): the test now brings its own page with a too-long title instead of relying on a real page having one (every real title is fixed), and no longer trips over locks left by an earlier test run.
+
 ## 2026-11-25: Ticket system checks before going live
 
 - **Ticket emails work:** all 86 paid ticket orders on the live site were emailed (the email key is set in Cloudflare).
