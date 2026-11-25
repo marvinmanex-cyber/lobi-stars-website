@@ -114,6 +114,7 @@ export async function engineFetch(env, method, path, { body = null, idempotencyK
 /** The Partner API calls (C3). */
 export const engine = {
   events: env => engineFetch(env, 'GET', '/events'),
+  season: env => engineFetch(env, 'GET', '/season'),
   createOrder: (env, order, idempotencyKey) => engineFetch(env, 'POST', '/orders', { body: order, idempotencyKey, timeoutMs: 15000 }),
   getOrder: (env, orderId) => engineFetch(env, 'GET', `/orders/${encodeURIComponent(orderId)}`),
   orderByReference: (env, ref) => engineFetch(env, 'GET', `/orders?client_reference=${encodeURIComponent(ref)}`),
@@ -129,6 +130,7 @@ export function fanMessage(err) {
   if (/sold_out|not_available|insufficient|capacity/.test(c)) return 'Sorry, those tickets have just sold out. Check your order and try again.';
   if (/sale_closed|not_on_sale|sale_not_open/.test(c)) return 'Tickets for this match are not on sale.';
   if (/expired|hold/.test(c)) return 'Your reserved tickets have expired. Please start again.';
+  if (/invalid_adjustment/.test(c)) return 'The discount could not be applied just now. Please try again.';
   if (/invalid_(buyer|phone|email)/.test(c)) return 'Please check your name, email and phone number.';
   return 'Payment could not be started. Please try again.';
 }

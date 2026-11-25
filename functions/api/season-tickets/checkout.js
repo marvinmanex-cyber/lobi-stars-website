@@ -3,6 +3,8 @@ import { initialize } from '../_lib/paystackClient.js';
 import { seasonSettings, availability, TIERS, MAX_PER_ORDER } from '../_lib/seasonTickets.js';
 import { seasonConfig } from '../_lib/seasonConfig.js';
 import { normalizeNigerianPhone, clientIp, rateLimit, tooMany, ensureFanSchema } from '../_lib/fans.js';
+import { engineActive } from '../_lib/ticketing/engineStore.js';
+import { createEngineSeasonOrder } from '../_lib/ticketing/engineSeason.js';
 
 // POST /api/season-tickets/checkout { tier, quantity, buyerName, buyerEmail, buyerPhone }
 // -> { authorizationUrl, reference } (Paystack). The price always comes from
@@ -13,8 +15,9 @@ export async function onRequestPost({ request, env }) {
     const b = await request.json().catch(() => ({}));
     await ensureFanSchema(env.DB);
     if (!(await rateLimit(env.DB, `season-checkout:${clientIp(request)}`, 10, 3600))) return tooMany();
+    const engineMode = await engineActive(env);
     const s = await seasonSettings(env.DB, (await seasonConfig(env, request)).currentSeason);
-    if (!s.enabled) return Response.json({ error: 'Season tickets are not on sale.' }, { status: 409 });
+    if (!engineMode && !s.enabled) return Response.json({ error: 'Season tickets are not on sale.' }, { status: 409 });
     const tier = String(b.tier || '');
     const qty = Number.parseInt(b.quantity, 10);
     const name = String(b.buyerName || '').replace(/<[^>]*>/g, '').trim().slice(0, 80);
@@ -26,6 +29,11 @@ export async function onRequestPost({ request, env }) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 254) return Response.json({ error: 'Please enter a valid email address.' }, { status: 400 });
     if (!phone) return Response.json({ error: 'Please enter a valid Nigerian mobile number.' }, { status: 400 });
 
+    // Ticketing engine mode: the season pass is sold by the engine (same page, same pass, same email).
+    if (engineMode) {
+      const r = await createEngineSeasonOrder(env, { tier, quantity: qty, buyer: { name, email, phone }, origin: new URL(request.url).origin });
+      return r.ok ? Response.json({ authorizationUrl: r.authorizationUrl, reference: r.reference }) : Response.json(r.body, { status: r.status });
+    }
     const avail = (await availability(env.DB, s))[tier];
     if (!avail.onSale) return Response.json({ error: 'That stand is not on sale.' }, { status: 409 });
     if (avail.limit && avail.remaining < qty) return Response.json({ error: avail.remaining ? `Only ${avail.remaining} left in the ${avail.label}.` : `The ${avail.label} is sold out.` }, { status: 409 });

@@ -33,12 +33,12 @@ Tables involved: `events`, `league_ticket_settings`, `league_ticket_orders` (bas
 | Stands, prices, seats left, sale open/close | `GET /events` | Engine values are fed into the same `ticketState` rules, so the page looks the same. |
 | Several matches in one payment | `POST /orders` items | Yes. |
 | Price changed while paying | Engine prices the order | Engine total ≠ total shown → the existing 409 "price has changed" message. |
-| Discounts (group, early bird, family bundle, amount off) | Not in the contract | **Not applied in engine mode** (the engine sets the price). Discount badges are hidden in engine mode. Needs a contract change if wanted. |
-| Child / family tickets | Not in the contract (no ticket type) | **Refused in engine mode** with a clear message. Needs a contract change. |
-| Star Points / vouchers (Rewards) | Not in the contract | **Not offered in engine mode** (payment goes to the engine's Paystack account). |
+| Discounts (group, early bird, family bundle) | Contract 1.1 `club_adjustments` | Worked out here as today (on the engine's prices) and sent as a club discount line. A per-stand "amount off" set here does not apply in engine mode (set the price in the engine instead). |
+| Child / family tickets | Contract 1.1 `ticket_type` | Each ticket is sent as adult or child; the gate shows ADMIT CHILD as today. |
+| Star Points (Rewards) | Contract 1.1 `club_adjustments` (kind `points`) | Held, confirmed and released here as today; sent as a club points line. Points are earned and reversed here as today. |
 | Free stands (₦0) | Engine price 0 | Supported if the engine marks the order paid at once; otherwise refused. |
 | Members' priority window | Local rule | Kept (checked before the order is sent). |
-| Season tickets (one pass per person) | `season_bundle` exists but tickets are per match | **Stay on the legacy flow** in both modes until the club decides (fans would get one ticket per match instead of one season pass, a visible change). |
+| Season tickets (one pass per person) | Contract 1.1 `GET /season` + `season_bundle` | One pass token per person, valid once per home match, as today. |
 | Seat holds | Engine (`expires_at`) | Engine holds; no local capacity hold in engine mode. |
 | Refunds, voids, reissues | Callbacks | Applied to the local display copy. |
 | Banned list, gates closed, stand full, wrong gate | Local gate rules | Kept, checked before the engine scan. |

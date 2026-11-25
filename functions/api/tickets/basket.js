@@ -69,16 +69,12 @@ export async function onRequestPost({ request, env, waitUntil }) {
       }
     }
     const expected = b.expectedTotalKobo === undefined || b.expectedTotalKobo === null ? null : Number(b.expectedTotalKobo);
-    // Ticketing engine mode: the engine prices the order (no local discounts or Star Points: not in the contract).
+    // Ticketing engine mode: the same discounts, worked out on the engine's prices (the catalogue is engine-fed).
     const engineMode = !!cat.engine;
-    if (engineMode && [...rawByKey.values()].some(r => r.family)) return Response.json({ error: 'Family and child tickets cannot be bought online for this match yet. Choose adult tickets.' }, { status: 400 });
-    let pricing = null, input = null;
-    if (!engineMode) {
-      ({ pricing, input } = await priceWithDiscounts(db, priced.lines, rawByKey, cat, email));
-      if (!pricing.ok) return Response.json({ error: pricing.error, eventId: pricing.eventId || null }, { status: 400 });
-      if (expected !== null && expected !== pricing.totalKobo) {
-        return Response.json({ code: 'repriced', error: `The price has changed to ${naira(pricing.totalKobo)}. Check your order and press Pay again.`, pricing: publicPricing(pricing) }, { status: 409 });
-      }
+    const { pricing, input } = await priceWithDiscounts(db, priced.lines, rawByKey, cat, email);
+    if (!pricing.ok) return Response.json({ error: pricing.error, eventId: pricing.eventId || null }, { status: 400 });
+    if (expected !== null && expected !== pricing.totalKobo) {
+      return Response.json({ code: 'repriced', error: `The price has changed to ${naira(pricing.totalKobo)}. Check your order and press Pay again.`, pricing: publicPricing(pricing) }, { status: 409 });
     }
 
     // Members' priority window (same rule as single tickets).
@@ -92,16 +88,6 @@ export async function onRequestPost({ request, env, waitUntil }) {
       }
     }
 
-    if (engineMode) {
-      const { basketId, reference } = newBasketIds();
-      const origin = new URL(request.url).origin;
-      const r = await createEngineBasket(env, { cat, priced, buyer: { name, email, phone }, basketId, reference, expectedTotalKobo: expected, origin });
-      if (!r.ok) return Response.json(r.body, { status: r.status });
-      await tagBasket(db, basketId, request, b.source).catch(err => console.error('[tickets] tag', err));
-      if (r.free) return Response.json({ free: true, reference, totalKobo: 0, redirect: `${origin}/tickets/success/?basket=${encodeURIComponent(reference)}&free=1` });
-      return Response.json({ authorizationUrl: r.authorizationUrl, reference, totalKobo: r.totalKobo, pointsUsed: 0 });
-    }
-
     // The basket, with the discount locked in (discount_snapshot_json: the exact
     // rules, settings, clock and allowances used), so reprints and the webhook
     // re-check always give the same numbers.
@@ -111,6 +97,22 @@ export async function onRequestPost({ request, env, waitUntil }) {
     await ensureCheckoutColumns(db);
     const pay = await holdCheckoutRewards(env, { memberId: sessionId, kind: 'tickets', subtotalKobo: pricing.totalKobo, usePoints: b.usePoints, reference });
     if (pay.error) return Response.json({ error: pay.error }, { status: 400 });
+    // Ticketing engine mode: the order is made in the engine (discount and points sent as club adjustments).
+    if (engineMode) {
+      const origin = new URL(request.url).origin;
+      const r = await createEngineBasket(env, { cat, priced, pricing, input, pay, buyer, basketId, reference, origin, groupName });
+      if (r.body?.code === 'engine_repriced') {
+        // The engine's prices changed meanwhile: the fan gets the new summary (same as a price change today).
+        const fresh = priceBasket(buyerLines, await catalogue(env, { earlyMs }));
+        const again = fresh.ok ? (await priceWithDiscounts(db, fresh.lines, rawByKey, await catalogue(env, { earlyMs }), email)).pricing : null;
+        if (again?.ok) return Response.json({ code: 'repriced', error: `The price has changed to ${naira(again.totalKobo)}. Check your order and press Pay again.`, pricing: publicPricing(again) }, { status: 409 });
+        return Response.json({ error: r.body.error }, { status: 409 });
+      }
+      if (!r.ok) return Response.json(r.body, { status: r.status });
+      await tagBasket(db, basketId, request, b.source).catch(err => console.error('[tickets] tag', err));
+      if (r.free) return Response.json({ free: true, reference, totalKobo: 0, redirect: `${origin}/tickets/success/?basket=${encodeURIComponent(reference)}&free=1` });
+      return Response.json({ authorizationUrl: r.authorizationUrl, reference, totalKobo: r.totalKobo, pointsUsed: pay.pointsUsed });
+    }
     const groupApplied = pricing.applied.some(a => a.kind === 'group');
     await db.prepare(`INSERT INTO league_ticket_orders (id, reference, buyer_name, buyer_email, buyer_phone, total_kobo, subtotal_kobo, discount_kobo, discount_rule_id, discount_label, discount_snapshot_json, group_name, points_used, points_kobo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(basketId, reference, name, email, phone, pay.totalKobo, pricing.subtotalKobo, pricing.discountKobo, pricing.applied[0]?.ruleId || null, pricing.label || null,

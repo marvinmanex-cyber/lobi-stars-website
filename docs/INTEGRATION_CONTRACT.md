@@ -66,6 +66,33 @@ The engine sends a signed `POST` with:
 - No fan-facing output (pages, tickets, PDFs, QR payloads, emails, SMS, headers, scripts) mentions the ticketing engine's brand or domain.
 - **Honesty guardrails:** never say or imply that payment goes directly to the club if it goes to the company. The legal processing entity is named accurately in the Terms, the Privacy Policy and a short receipt footer ("Payments processed by `<legal_processor_name>`"), set in one executive-controlled setting. Do not rename or configure the Paystack business name to misstate who receives the money.
 
+## C7. Version 1.1 additions (25 Nov 2026): club discounts, child tickets, season passes
+
+All additions are optional fields, so a 1.0 engine that ignores them still works for plain
+adult match tickets. **Both sides must support them before the club switches over.**
+
+1. **Ticket type.** `POST /orders` items may carry `"ticket_type":"adult"|"child"` (default
+   `adult`). Child tickets cost the same as adult tickets on the engine's price list (the
+   club's family discount is a club adjustment, below). The engine echoes `ticket_type` in
+   `lines` and in every ticket object.
+2. **Club adjustments** (discounts and Star Points funded by the club). `POST /orders` may carry
+   `"club_adjustments":[{"kind":"discount"|"points","label":"Family bundle","amount_kobo":225000}]`.
+   The engine prices the lines from its own list as before (`subtotal_kobo`), subtracts the sum of
+   the adjustments and charges `amount_total_kobo = subtotal_kobo − adjustments`. It refuses with
+   `400 invalid_adjustment` if an amount is not a positive integer or the adjustments exceed the
+   subtotal. The response adds `"subtotal_kobo"` and `"adjustments":[…as sent…]`. The adjustments
+   come only from the club's signed server request, never from the browser. On a full refund the
+   engine refunds `amount_total_kobo` (what the fan paid); the club reverses its own points.
+3. **Season passes.**
+   - `GET /season` returns `{"season":"2026/27","sale_open","sale_close","stands":[{"stand_id","name","price_kobo","available"}]}`
+     (`404 not_found` when no season pass is on sale).
+   - `POST /orders` with `"season_bundle":true` and items `[{"stand_id","quantity","ticket_type"}]`
+     (no `event_id`) creates a season order. `lines[].event_id` is `null`.
+   - Its tickets have `"kind":"season"`, `"season":"2026/27"`, `"event_id":null`; ordinary match
+     tickets have `"kind":"match"`. A season pass token admits once per home match of that season:
+     `POST /tickets/scan` answers `admitted` the first time on a home match day, `already_scanned`
+     after that, and `wrong_match` when there is no home match of that season that day.
+
 ## This site's switches
 
 | Name | Where | Meaning |

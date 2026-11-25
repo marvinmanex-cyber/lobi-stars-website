@@ -260,9 +260,17 @@ export function publicPricing(pricing) {
  * go in one db.batch (a transaction), so later rows see the earlier ones and
  * two buyers can't both take the last seats or the last discounted tickets.
  */
-export function holdChunkStatement(db, { orderId, basketId, reference, buyer, chunk }) {
+export function holdChunkStatement(db, { orderId, basketId, reference, buyer, chunk, engine = null }) {
   const cap = CAP_COL[chunk.tier];
-  const live = `((o.payment_status = 'paid' AND o.refunded_at IS NULL) OR (o.payment_status = 'pending' AND o.created_at > datetime('now', '-${HOLD_MINUTES} minutes')))`;
+  // Ticketing engine mode: the engine holds the seats, so the site's own seat limit is not checked here
+  // (the discounted-ticket allowances below still are); the row also records the engine's match and stand.
+  if (engine) {
+    let sql = `INSERT INTO orders (id, event_id, buyer_name, buyer_email, buyer_phone, tier, quantity, unit_price_kobo, total_kobo, paystack_reference, payment_status, basket_id, ticket_type, discount_kobo, discount_rule_ids, discounted_qty, engine_event_id, engine_stand_id)
+      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ? WHERE 1`;
+    const binds = [orderId, chunk.eventId, buyer.name, buyer.email, buyer.phone, chunk.tier, chunk.quantity, chunk.unitKobo, chunk.totalKobo, reference, basketId,
+      chunk.ticketType, chunk.rowDiscountKobo, chunk.ruleIds, chunk.discountedQty, engine.eventId, engine.standId];
+    return allowanceChecks(db, sql, binds, chunk);
+  }
   let sql = `INSERT INTO orders (id, event_id, buyer_name, buyer_email, buyer_phone, tier, quantity, unit_price_kobo, total_kobo, paystack_reference, payment_status, basket_id, ticket_type, discount_kobo, discount_rule_ids, discounted_qty)
     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?
     WHERE ((SELECT ${cap} FROM league_ticket_settings WHERE event_id = ?) IS NULL
@@ -272,6 +280,10 @@ export function holdChunkStatement(db, { orderId, basketId, reference, buyer, ch
   const binds = [orderId, chunk.eventId, buyer.name, buyer.email, buyer.phone, chunk.tier, chunk.quantity, chunk.unitKobo, chunk.totalKobo, reference, basketId,
     chunk.ticketType, chunk.rowDiscountKobo, chunk.ruleIds, chunk.discountedQty,
     chunk.eventId, chunk.eventId, chunk.tier, chunk.eventId, chunk.tier, chunk.quantity, chunk.eventId];
+  return allowanceChecks(db, sql, binds, chunk);
+}
+function allowanceChecks(db, sql, binds, chunk) {
+  const live = `((o.payment_status = 'paid' AND o.refunded_at IS NULL) OR (o.payment_status = 'pending' AND o.created_at > datetime('now', '-${HOLD_MINUTES} minutes')))`;
   if (chunk.discountedQty > 0) {
     sql += ` AND ((SELECT discount_cap FROM league_ticket_settings WHERE event_id = ?) IS NULL
        OR (SELECT COALESCE(SUM(o.discounted_qty), 0) FROM orders o WHERE o.event_id = ? AND ${live}) + ? <= (SELECT discount_cap FROM league_ticket_settings WHERE event_id = ?))`;

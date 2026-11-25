@@ -9,9 +9,9 @@ import { verifySigned, signRequest } from '../../functions/api/_lib/ticketing/en
 const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const token = () => Array.from(crypto.randomBytes(26), b => B32[b % 32]).join('');
 
-export async function startMockEngine({ key = 'club-key', secret = 'engine-secret', events = [] } = {}) {
+export async function startMockEngine({ key = 'club-key', secret = 'engine-secret', events = [], season = null } = {}) {
   const state = {
-    events, orders: new Map(), byRef: new Map(), idem: new Map(), nonces: new Set(), tickets: new Map(), scans: new Map(),
+    events, season, today: null, orders: new Map(), byRef: new Map(), idem: new Map(), nonces: new Set(), tickets: new Map(), scans: new Map(),
     calls: [], failNext: null, down: false, priceBump: 0, lookupDelayMs: 0,
   };
   const send = (res, status, body) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(body)); };
@@ -19,22 +19,36 @@ export async function startMockEngine({ key = 'club-key', secret = 'engine-secre
     o.status = 'paid'; o.paid_at = new Date().toISOString();
     o.tickets = [];
     for (const l of o.lines) for (let i = 0; i < l.quantity; i++) {
-      const ev = state.events.find(e => e.event_id === l.event_id), st = ev.stands.find(s => s.stand_id === l.stand_id);
-      const t = { ticket_id: `t_${crypto.randomUUID()}`, token: token(), order_id: o.order_id, event_id: l.event_id, event_name: ev.name, kickoff_at: ev.kickoff_at, venue: ev.venue, stand_id: l.stand_id, stand_name: st.name, status: 'valid' };
+      let t;
+      if (!l.event_id) { // a season pass
+        const st = state.season.stands.find(x => x.stand_id === l.stand_id);
+        t = { ticket_id: `t_${crypto.randomUUID()}`, token: token(), order_id: o.order_id, kind: 'season', season: state.season.season, event_id: null, event_name: `Season ${state.season.season}`, kickoff_at: null, venue: null, stand_id: l.stand_id, stand_name: st.name, ticket_type: l.ticket_type || 'adult', status: 'valid', days: new Map() };
+      } else {
+        const ev = state.events.find(e => e.event_id === l.event_id), st = ev.stands.find(x => x.stand_id === l.stand_id);
+        t = { ticket_id: `t_${crypto.randomUUID()}`, token: token(), order_id: o.order_id, kind: 'match', event_id: l.event_id, event_name: ev.name, kickoff_at: ev.kickoff_at, venue: ev.venue, stand_id: l.stand_id, stand_name: st.name, ticket_type: l.ticket_type || 'adult', status: 'valid' };
+      }
       o.tickets.push(t); state.tickets.set(t.token, t);
     }
     return o;
   };
-  const view = o => ({ order_id: o.order_id, client_reference: o.client_reference, status: o.status, amount_total_kobo: o.amount_total_kobo, paid_at: o.paid_at || null, ...(o.status === 'paid' ? { tickets: o.tickets } : {}) });
+  const pub = t => { const { days, wrong, first, ...rest } = t; return rest; };
+  const view = o => ({ order_id: o.order_id, client_reference: o.client_reference, status: o.status, amount_total_kobo: o.amount_total_kobo, paid_at: o.paid_at || null, ...(o.status === 'paid' ? { tickets: o.tickets.map(pub) } : {}) });
   const scanOne = s => {
     const t = state.tickets.get(String(s.token));
     if (!t) return { scan_id: s.scan_id, result: 'invalid' };
-    if (t.status === 'void') return { scan_id: s.scan_id, result: 'void', ticket: t };
-    if (t.wrong) return { scan_id: s.scan_id, result: 'wrong_match', ticket: t };
+    if (t.status === 'void') return { scan_id: s.scan_id, result: 'void', ticket: pub(t) };
+    if (t.wrong) return { scan_id: s.scan_id, result: 'wrong_match', ticket: pub(t) };
     if (state.scans.has(s.scan_id)) return state.scans.get(s.scan_id); // same scan again: same answer
     let r;
-    if (t.status === 'scanned') r = { scan_id: s.scan_id, result: 'already_scanned', first_scanned_at: t.first, ticket: t };
-    else { t.status = 'scanned'; t.first = s.scanned_at; r = { scan_id: s.scan_id, result: 'admitted', first_scanned_at: t.first, ticket: t }; }
+    if (t.kind === 'season') {
+      if (!state.today) return { scan_id: s.scan_id, result: 'wrong_match', ticket: pub(t) };
+      if (t.days.has(state.today)) r = { scan_id: s.scan_id, result: 'already_scanned', first_scanned_at: t.days.get(state.today), ticket: pub(t) };
+      else { t.days.set(state.today, s.scanned_at); r = { scan_id: s.scan_id, result: 'admitted', first_scanned_at: s.scanned_at, ticket: pub(t) }; }
+      state.scans.set(s.scan_id, r);
+      return r;
+    }
+    if (t.status === 'scanned') r = { scan_id: s.scan_id, result: 'already_scanned', first_scanned_at: t.first, ticket: pub(t) };
+    else { t.status = 'scanned'; t.first = s.scanned_at; r = { scan_id: s.scan_id, result: 'admitted', first_scanned_at: t.first, ticket: pub(t) }; }
     state.scans.set(s.scan_id, r);
     return r;
   };
@@ -57,33 +71,40 @@ export async function startMockEngine({ key = 'club-key', secret = 'engine-secre
     const p = url.pathname.replace(/^\/api\/partner\/v1/, '');
 
     if (req.method === 'GET' && p === '/events') return reply(200, { events: state.events });
+    if (req.method === 'GET' && p === '/season') return state.season ? reply(200, { season: state.season.season, sale_open: state.season.sale_open, sale_close: state.season.sale_close, stands: state.season.stands }) : reply(404, { error: { code: 'not_found', message: 'No season pass on sale.' } });
     if (req.method === 'POST' && p === '/orders') {
       const lines = [];
       for (const it of body.items || []) {
-        const ev = state.events.find(e => e.event_id === it.event_id), st = ev?.stands.find(s => s.stand_id === it.stand_id);
+        const st = body.season_bundle ? state.season?.stands.find(x => x.stand_id === it.stand_id) : state.events.find(e => e.event_id === it.event_id)?.stands.find(x => x.stand_id === it.stand_id);
         if (!st) return reply(404, { error: { code: 'not_available', message: 'Not available.' } });
         if (st.available < it.quantity) return reply(409, { error: { code: 'sold_out', message: 'Sold out.' } });
         const unit = st.price_kobo + state.priceBump;
-        lines.push({ event_id: it.event_id, stand_id: it.stand_id, quantity: it.quantity, unit_price_kobo: unit, line_total_kobo: unit * it.quantity });
+        lines.push({ event_id: body.season_bundle ? null : it.event_id, stand_id: it.stand_id, quantity: it.quantity, ticket_type: it.ticket_type === 'child' ? 'child' : 'adult', unit_price_kobo: unit, line_total_kobo: unit * it.quantity });
       }
-      const total = lines.reduce((s, l) => s + l.line_total_kobo, 0);
-      const o = { order_id: `ord_${crypto.randomUUID()}`, client_reference: body.client_reference, status: 'pending_payment', amount_total_kobo: total, currency: 'NGN', lines, buyer: body.buyer,
+      const subtotal = lines.reduce((s, l) => s + l.line_total_kobo, 0);
+      const adjustments = Array.isArray(body.club_adjustments) ? body.club_adjustments : [];
+      if (adjustments.some(a => !Number.isInteger(a.amount_kobo) || a.amount_kobo <= 0 || !['discount', 'points'].includes(a.kind))) return reply(400, { error: { code: 'invalid_adjustment', message: 'Invalid adjustment.' } });
+      const adj = adjustments.reduce((s, a) => s + a.amount_kobo, 0);
+      if (adj > subtotal) return reply(400, { error: { code: 'invalid_adjustment', message: 'Adjustments exceed the subtotal.' } });
+      const total = subtotal - adj;
+      const o = { order_id: `ord_${crypto.randomUUID()}`, client_reference: body.client_reference, status: 'pending_payment', subtotal_kobo: subtotal, adjustments, amount_total_kobo: total, currency: 'NGN', lines, buyer: body.buyer, season_bundle: !!body.season_bundle,
         payment: { provider: 'paystack', reference: `PSK-${crypto.randomUUID()}`, access_code: 'ac_test', authorization_url: 'https://checkout.paystack.com/test123' }, expires_at: new Date(Date.now() + 15 * 60e3).toISOString() };
       if (total === 0) issue(o);
       state.orders.set(o.order_id, o); state.byRef.set(o.client_reference, o);
-      return reply(201, { ...o, ...(o.status === 'paid' ? { tickets: o.tickets } : {}) });
+      const { tickets: _t, ...out } = o;
+      return reply(201, { ...out, ...(o.status === 'paid' ? { tickets: o.tickets.map(pub) } : {}) });
     }
     if (req.method === 'GET' && p === '/orders') { const o = state.byRef.get(url.searchParams.get('client_reference')); return o ? reply(200, view(o)) : reply(404, { error: { code: 'not_found', message: 'Not found.' } }); }
     if (req.method === 'GET' && p.startsWith('/orders/')) { const o = state.orders.get(decodeURIComponent(p.slice(8))); return o ? reply(200, view(o)) : reply(404, { error: { code: 'not_found', message: 'Not found.' } }); }
     if (req.method === 'POST' && p === '/tickets/lookup') {
       await new Promise(r => setTimeout(r, state.lookupDelayMs));
       const o = [...state.orders.values()].find(x => x.client_reference === body.order_reference && x.buyer?.email === body.email && x.status === 'paid');
-      return reply(200, { tickets: o ? o.tickets : [] });
+      return reply(200, { tickets: o ? o.tickets.map(pub) : [] });
     }
     if (req.method === 'POST' && p === '/tickets/validate') {
       const t = state.tickets.get(String(body.token));
       if (!t) return reply(200, { valid: false, reason: 'unknown_ticket' });
-      return reply(200, { valid: t.status === 'valid' && !t.wrong, ticket: t, reason: t.status === 'void' ? 'void' : t.status === 'scanned' ? 'already_scanned' : t.wrong ? 'wrong_match' : 'ok' });
+      return reply(200, { valid: t.status === 'valid' && !t.wrong, ticket: pub(t), reason: t.status === 'void' ? 'void' : t.status === 'scanned' ? 'already_scanned' : t.wrong ? 'wrong_match' : 'ok' });
     }
     if (req.method === 'POST' && p === '/tickets/scan') return reply(200, scanOne(body));
     if (req.method === 'POST' && p === '/tickets/scan/batch') {

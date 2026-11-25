@@ -1,5 +1,7 @@
 import { verify } from '../_lib/paystackClient.js';
 import { ensureSeasonSchema, fulfilSeasonOrder, TIER_LABELS } from '../_lib/seasonTickets.js';
+import { ensureEngineSchema } from '../_lib/ticketing/engineStore.js';
+import { pollEngineSeason } from '../_lib/ticketing/engineSeason.js';
 
 // GET /api/season-tickets/order?reference=… -- the page buyers return to after
 // paying. Confirms with Paystack if the webhook hasn't arrived yet, then shows
@@ -10,9 +12,12 @@ export async function onRequestGet({ request, env, waitUntil }) {
   if (!/^LSSZN-[A-Z0-9]{6,20}$/.test(reference)) return Response.json({ error: 'Missing reference' }, { status: 400 });
   try {
     await ensureSeasonSchema(env.DB);
+    await ensureEngineSchema(env.DB);
     let order = await env.DB.prepare(`SELECT * FROM season_orders WHERE paystack_reference = ?`).bind(reference).first();
     if (!order) return Response.json({ error: 'Order not found' }, { status: 404 });
-    if (order.payment_status !== 'paid') {
+    if (order.backend === 'engine' && order.payment_status !== 'paid') {
+      order = await pollEngineSeason(env, order, { waitUntil });
+    } else if (order.payment_status !== 'paid') {
       try {
         const t = await verify(env, reference);
         if (t.status === 'success' && t.amount === order.total_kobo && (t.currency || 'NGN') === 'NGN') {

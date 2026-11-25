@@ -22,6 +22,10 @@ export async function ensureEngineSchema(db) {
   await addCols(db, 'league_ticket_orders', [['backend', "TEXT DEFAULT 'legacy'"], ['engine_order_id', 'TEXT'], ['engine_status', 'TEXT'], ['engine_payment_ref', 'TEXT'], ['engine_expires_at', 'TEXT']]);
   await addCols(db, 'orders', [['engine_event_id', 'TEXT'], ['engine_stand_id', 'TEXT']]);
   await addCols(db, 'tickets', [['engine_ticket_id', 'TEXT'], ['engine_event_id', 'TEXT']]);
+  const { ensureSeasonSchema } = await import('../seasonTickets.js');
+  await ensureSeasonSchema(db);
+  await addCols(db, 'season_orders', [['backend', "TEXT DEFAULT 'legacy'"], ['engine_order_id', 'TEXT'], ['engine_status', 'TEXT'], ['ticket_type', "TEXT DEFAULT 'adult'"]]);
+  await addCols(db, 'season_passes', [['engine_ticket_id', 'TEXT']]);
   await db.batch([
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_lto_engine_order ON league_ticket_orders (engine_order_id)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_tickets_engine_id ON tickets (engine_ticket_id)`),

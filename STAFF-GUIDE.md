@@ -2579,9 +2579,13 @@ tickets and "Find my tickets"; the gate phones work the same. Today it is
   Tickets, Super Admins only). That company's legal name is then shown to fans
   on every receipt ("Payments processed by …"), in the Terms and in the Privacy
   Policy. Never tell fans the money goes to the club when it goes to that company.
-- In the outside system the price comes from that system: club discounts,
-  Star Points, family/child tickets and amounts off are not used. Season
-  tickets stay on the club's own system.
+- In the outside system the price of each stand comes from that system. The
+  club's discounts (group, early bird, family bundle) and Star Points still work
+  exactly as today: the website works them out and the outside system takes
+  them off before payment. Family bundles give child tickets (ADMIT CHILD at the
+  gate). Season tickets are sold through it too (one pass per person, once per
+  home match). Only the per-stand "amount off" set in Match Tickets does not
+  apply: change the price in the outside system instead.
 - **Gate:** tickets from the outside system have a long code of letters and
   numbers (24 to 32) instead of LS-TIX-…; scan them as usual. If the phone shows
   **CANNOT VERIFY**, the outside system could not be reached: do not admit;

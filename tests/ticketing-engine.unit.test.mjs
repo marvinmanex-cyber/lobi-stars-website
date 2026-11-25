@@ -22,6 +22,9 @@ import { checkTicket, parseTicketInput } from '../functions/api/_lib/gateCheck.j
 import { syncOffline } from '../functions/api/_lib/gateExtras.js';
 import { ensureMatchdaySchema } from '../functions/api/_lib/gateMatchday.js';
 import { permissionForPath, allowedPath } from '../functions/api/_lib/adminRoles.js';
+import { onRequestPost as seasonCheckout } from '../functions/api/season-tickets/checkout.js';
+import { onRequestGet as seasonInfo } from '../functions/api/season-tickets/index.js';
+import { onRequestGet as seasonOrder } from '../functions/api/season-tickets/order.js';
 
 const SITE = 'https://lobistarsfc.com';
 const KICKOFF = new Date(Date.now() + 5 * 86400e3).toISOString().replace(/\.\d+Z$/, 'Z');
@@ -41,7 +44,8 @@ const settle = () => Promise.all(wait.splice(0));
 const buyer = { buyerName: 'Ada Okafor', buyerEmail: 'ada@example.com', buyerPhone: '0803 123 4567' };
 
 before(async () => {
-  mock = await startMockEngine({ events: ENGINE_EVENTS });
+  mock = await startMockEngine({ events: ENGINE_EVENTS, season: { season: '2026/27', sale_open: new Date(Date.now() - 86400e3).toISOString(), sale_close: new Date(Date.now() + 60 * 86400e3).toISOString(),
+    stands: [{ stand_id: 's-vip', name: 'VIP Sitting', price_kobo: 2000000, available: 10 }] } });
   globalThis.fetch = async (url, init) => {
     if (String(url).includes('api.resend.com')) { emails.push(JSON.parse(init.body)); return new Response(JSON.stringify({ id: 'em_1' }), { status: 200 }); }
     return realFetch(url, init);
@@ -192,18 +196,17 @@ test('checkout: the order is made in the engine and copied here; the fan gets th
 });
 
 test('checkout: a price change at the engine is shown first (409), nothing is paid', async () => {
-  mock.state.priceBump = 1000;
+  // The engine raises its price after the fan's page loaded (the site still has the old price for a moment).
+  mock.state.events[0].stands[0].price_kobo = 501000;
   const r = await basketPost({ request: post('/api/tickets/basket', { lines: [{ eventId: LOCAL_ID, tier: 'VIP', quantity: 1 }], expectedTotalKobo: 500000, ...buyer }), env, waitUntil });
-  mock.state.priceBump = 0;
+  mock.state.events[0].stands[0].price_kobo = 500000; _resetEngineMemo();
   const d = await r.json();
   assert.equal(r.status, 409); assert.equal(d.code, 'repriced'); assert.equal(d.pricing.totalKobo, 501000);
 });
 
-test('checkout: sold out, too many and family tickets give the site\'s usual messages', async () => {
+test('checkout: sold out and opening soon give the site\'s usual messages', async () => {
   let r = await basketPost({ request: post('/api/tickets/basket', { lines: [{ eventId: LOCAL_ID, tier: 'Regular', quantity: 3 }], ...buyer }), env, waitUntil });
   assert.equal(r.status, 409); assert.match((await r.json()).error, /Only 2 Popular Stand tickets left/);
-  r = await basketPost({ request: post('/api/tickets/basket', { lines: [{ eventId: LOCAL_ID, tier: 'VIP', family: true, adults: 1, children: 1 }], ...buyer }), env, waitUntil });
-  assert.equal(r.status, 400); assert.match((await r.json()).error, /Family and child tickets/);
   r = await basketPost({ request: post('/api/tickets/basket', { lines: [{ eventId: LOCAL_ID, tier: 'Premium', quantity: 1 }], ...buyer }), env, waitUntil });
   assert.equal(r.status, 400); assert.match((await r.json()).error, /opening soon/);
 });
@@ -351,4 +354,64 @@ test('integration settings: Super Admins only, on the server', async () => {
   assert.equal(allowedPath({ role: 'super_admin' }, '/api/admin/ticketing-settings', 'GET'), true);
   const r = await settingsGet({ request: new Request(`${SITE}/api/admin/ticketing-settings`), env });
   assert.equal(r.status, 403, 'not signed in');
+});
+
+// ── Contract 1.1: club discounts, child tickets, season passes ──
+test('family bundle in engine mode: the club discount goes as an adjustment, children as child tickets, ADMIT CHILD at the gate', async () => {
+  await env.DB.prepare(`UPDATE league_ticket_discount_rules SET is_active = 1 WHERE id = 'family'`).run();
+  const line = { eventId: LOCAL_ID, tier: 'VIP', family: true, adults: 1, children: 2 };
+  const quote = await (await pricePost({ request: post('/api/tickets/price', { lines: [line] }), env })).json();
+  assert.equal(quote.subtotalKobo, 1500000); assert.equal(quote.discountKobo, 225000, '15% family bundle on the engine price'); assert.equal(quote.totalKobo, 1275000);
+  const r = await basketPost({ request: post('/api/tickets/basket', { lines: [line], expectedTotalKobo: 1275000, ...buyer }), env, waitUntil });
+  const d = await r.json();
+  assert.equal(r.status, 200, JSON.stringify(d));
+  const eo = mock.state.byRef.get(d.reference);
+  assert.deepEqual(eo.adjustments, [{ kind: 'discount', label: 'Family bundle (15%)', amount_kobo: 225000 }]);
+  assert.equal(eo.amount_total_kobo, 1275000, 'the engine charges what the fan was shown');
+  assert.deepEqual(eo.lines.map(l => [l.ticket_type, l.quantity]).sort(), [['adult', 1], ['child', 2]]);
+  const o = mock.pay(d.reference);
+  await callbackPost({ request: await signedCallback({ secret: 'callback-secret-new', body: { event_id: crypto.randomUUID(), type: 'order.paid', occurred_at: new Date().toISOString(), order: { order_id: o.order_id, client_reference: d.reference, status: 'paid' }, tickets: o.tickets.map(({ days, ...t }) => t) } }), env, waitUntil });
+  await settle();
+  const local = (await env.DB.prepare(`SELECT id, ticket_type, discount_kobo FROM tickets WHERE order_id IN (SELECT id FROM orders WHERE basket_id = (SELECT id FROM league_ticket_orders WHERE reference = ?))`).bind(d.reference).all()).results;
+  assert.equal(local.filter(t => t.ticket_type === 'child').length, 2); assert.equal(local.filter(t => t.ticket_type === 'adult').length, 1);
+  assert.ok(local.every(t => t.discount_kobo === 75000), 'each ticket shows its share of the discount');
+  const child = local.find(t => t.ticket_type === 'child').id;
+  const g = await checkTicket(env, child, { mode: 'admit', how: 'camera', who, force: true });
+  assert.equal(g.code, 'admitted'); assert.equal(g.title, 'ADMIT CHILD');
+  await env.DB.prepare(`UPDATE league_ticket_discount_rules SET is_active = 0 WHERE id = 'family'`).run();
+});
+
+test('the engine refuses club adjustments larger than the order (invalid_adjustment), with the site\'s own words', async () => {
+  const req = { client_reference: 'LSBAS-ADJUST000001', season_bundle: false, items: [{ event_id: 'eng-ev-1', stand_id: 's-vip', quantity: 1 }], club_adjustments: [{ kind: 'discount', label: 'x', amount_kobo: 900000 }], buyer: { name: 'A', email: 'a@example.com', phone: '+2348031234567' }, return_url: SITE };
+  await assert.rejects(engine.createOrder(env, req, 'adj-1'), e => e.code === 'invalid_adjustment' && fanMessage(e) === 'The discount could not be applied just now. Please try again.');
+});
+
+test('season passes in engine mode: the same page, one pass per person, the same email, once per home match at the gate', async () => {
+  const info = await (await seasonInfo({ request: new Request(`${SITE}/api/season-tickets`), env })).json();
+  assert.equal(info.enabled, true); assert.equal(info.season, '2026/27');
+  assert.equal(info.tiers.find(t => t.tier === 'VIP').priceKobo, 2000000);
+  const r = await seasonCheckout({ request: post('/api/season-tickets/checkout', { tier: 'VIP', quantity: 2, ...buyer }), env });
+  const d = await r.json();
+  assert.equal(r.status, 200, JSON.stringify(d)); assert.match(d.reference, /^LSSZN-/);
+  assert.equal(mock.state.byRef.get(d.reference).season_bundle, true);
+  const o = mock.pay(d.reference);
+  emails = [];
+  const cb = await callbackPost({ request: await signedCallback({ secret: 'callback-secret-new', body: { event_id: crypto.randomUUID(), type: 'order.paid', occurred_at: new Date().toISOString(), order: { order_id: o.order_id, client_reference: d.reference, status: 'paid' }, tickets: o.tickets.map(({ days, ...t }) => t) } }), env, waitUntil });
+  await settle();
+  assert.equal(cb.status, 200); assert.equal((await cb.json()).unmatched, undefined);
+  const page = await (await seasonOrder({ request: new Request(`${SITE}/api/season-tickets/order?reference=${d.reference}`), env, waitUntil })).json();
+  assert.equal(page.paid, true); assert.equal(page.passes.length, 2);
+  assert.ok(page.passes.every(isEngineToken), 'each pass number is the engine token (its QR holds only that)');
+  assert.equal(emails.length, 1); assert.match(emails[0].html, /season ticket/i); assert.match(emails[0].html, /Payments processed by Test Processor Ltd\./);
+  const pass = page.passes[0];
+  mock.state.today = null;
+  assert.equal((await checkTicket(env, pass, { mode: 'admit', how: 'camera', who, force: true })).code, 'wrong_match', 'no home match today');
+  mock.state.today = 'matchday-1';
+  let g = await checkTicket(env, pass, { mode: 'admit', how: 'camera', who, force: true });
+  assert.equal(g.code, 'admitted'); assert.match(g.ticket.stand, /season 2026\/27/);
+  assert.equal((await checkTicket(env, pass, { mode: 'admit', how: 'camera', who, force: true })).code, 'used', 'once per match');
+  mock.state.today = 'matchday-2';
+  g = await checkTicket(env, pass, { mode: 'admit', how: 'camera', who, force: true });
+  assert.equal(g.code, 'admitted', 'and again at the next home match');
+  mock.state.today = null;
 });

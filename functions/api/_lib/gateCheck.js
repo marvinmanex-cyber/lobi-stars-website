@@ -330,15 +330,29 @@ function engineView(t, token) {
   return { kind: 'match', id: token, stand: t?.stand_name || '', tier: null, type: 'Adult', match: t?.event_name || '', matchDate: t?.kickoff_at || null, venue: t?.venue || '',
     buyer: null, phone: '', email: '', channel: 'Online (lobistarsfc.com)', payment: 'Paid', status: t?.status === 'scanned' ? 'used' : t?.status || 'valid' };
 }
+async function engineSeasonRow(db, token) {
+  const p = await db.prepare(`SELECT p.*, o.buyer_name, o.buyer_email, o.buyer_phone, o.paid_at, o.created_at AS ordered_at, o.total_kobo, o.quantity, o.payment_status
+    FROM season_passes p JOIN season_orders o ON o.id = p.order_id WHERE p.id = ?`).bind(token).first().catch(() => null);
+  if (!p) return null;
+  const match = await todaysHomeMatch(db).catch(() => null);
+  return { pass: p, match, view: { kind: 'season', id: p.id, stand: `${TIER_LABELS[p.tier] || p.tier} (season ${p.season})`, tier: p.tier, type: 'Adult',
+    match: match ? `${match.home_team} vs ${match.away_team}` : 'No home match today', matchDate: match?.event_date || null, venue: match?.venue || null,
+    buyer: p.holder_name || p.buyer_name, phone: maskPhone(p.buyer_phone), email: maskEmail(p.buyer_email), boughtAt: sqlTime(p.paid_at || p.ordered_at),
+    pricePaidKobo: Math.round((p.total_kobo || 0) / Math.max(1, p.quantity || 1)), orderTotalKobo: p.total_kobo, ticketsInOrder: p.quantity,
+    where: { source: 'Online (lobistarsfc.com)', device: null, place: null }, channel: 'Season ticket, bought online', payment: p.payment_status === 'paid' ? 'Paid' : 'Not paid', status: p.status } };
+}
 async function engineTicketCheck(env, token, o) {
   const db = env.DB;
   await ensureEngineSchema(db);
   const local = await ticketRow(db, token);
-  const d = local ? describe(local, local.status === 'used' ? await lastAdmit(db, token) : null) : null;
-  const base = { id: token, eventId: local?.event_id || null, tier: local?.tier || null };
-  if (local) {
-    const ban = await banFor(db, { ticketId: token, email: local.buyer_email, phone: local.buyer_phone });
-    if (ban && local.status !== 'void') return o.banned(ban, { ...base, ticket: d });
+  const season = local ? null : await engineSeasonRow(db, token);
+  const d = local ? describe(local, local.status === 'used' ? await lastAdmit(db, token) : null) : season?.view || null;
+  const admitTitle = d?.type === 'Child' ? 'ADMIT CHILD' : 'ADMIT', admitReason = d?.type === 'Child' ? 'Child ticket: check the age if unsure.' : season ? 'Season ticket checked in for today’s match.' : 'Genuine ticket, checked in now.';
+  const base = { id: token, eventId: local?.event_id || season?.match?.id || null, tier: local?.tier || season?.pass.tier || null };
+  const who = local || season?.pass;
+  if (who) {
+    const ban = await banFor(db, { ticketId: token, email: who.buyer_email, phone: who.buyer_phone });
+    if (ban && who.status !== 'void') return o.banned(ban, { ...base, ticket: d });
   }
   const cannot = async err => {
     await logTicketing(env, 'error', 'scan_unreachable', { code: err?.code, status: err?.status });
@@ -366,30 +380,33 @@ async function engineTicketCheck(env, token, o) {
     if (st === 'scanned' || /already|scanned|used/i.test(why)) { await o.record('used', base); return { code: 'used', title: 'ALREADY USED', reason: usedReason(null), ticket: d || engineView(v?.ticket, token), practice: o.practice }; }
     if (/wrong.?match|another match/i.test(why)) return wrongMatch(v?.ticket);
     if (!v?.valid) return fake();
-    if (o.practice && o.admit) return { code: 'admitted', title: 'ADMIT', reason: 'Genuine ticket (practice: not checked in).', ticket: d || engineView(v.ticket, token), practice: true };
+    if (o.practice && o.admit) return { code: 'admitted', title: admitTitle, reason: 'Genuine ticket (practice: not checked in).', ticket: d || engineView(v.ticket, token), practice: true };
     await o.record('lookup', base);
     return { code: 'valid', title: 'VALID TICKET', reason: 'Genuine and not yet used. Not checked in (Look up only).', ticket: d || engineView(v.ticket, token) };
   }
   // Wrong gate (this gate only takes some stands): send the fan on, not checked in.
-  if (!o.override && o.gate && local?.tier) {
+  const tierHere = local?.tier || season?.pass.tier;
+  if (!o.override && o.gate && tierHere) {
     const { gates, stands } = await gateSettings(db);
-    if (stands[o.gate]?.length && !stands[o.gate].includes(local.tier)) {
-      const goTo = gates.filter(g => !stands[g]?.length || stands[g].includes(local.tier));
+    if (stands[o.gate]?.length && !stands[o.gate].includes(tierHere)) {
+      const goTo = gates.filter(g => !stands[g]?.length || stands[g].includes(tierHere));
       await o.record('wrong_gate', base);
       return { code: 'wrong_gate', title: 'WRONG GATE', canOverride: true, reason: `This ticket is for the ${d.stand}. Send the fan to ${goTo.join(' or ') || 'the right gate'}. Not checked in.`, ticket: d, goTo };
     }
   }
-  if (local?.tier) { const stop = await o.gateRules(local.tier, d); if (stop) return stop; }
+  if (tierHere) { const stop = await o.gateRules(tierHere, d); if (stop) return stop; }
   let r;
   const scan = { token, scan_id: crypto.randomUUID(), gate_id: String(o.gate || 'gate').slice(0, 60), device_id: String(o.u?.id || 'device').slice(0, 60), scanned_at: new Date().toISOString() };
   try { r = await engine.scan(env, scan); } catch (err) { return err.unreachable ? cannot(err) : fake(); }
   switch (r?.result) {
     case 'admitted': {
       await markUsed();
+      // A season pass: today's match is recorded on the local copy too (the offline list shows it as used).
+      if (season?.match) await db.prepare(`INSERT INTO season_pass_scans (pass_id, event_id, station) VALUES (?, ?, ?) ON CONFLICT (pass_id, event_id) DO NOTHING`).bind(token, season.match.id, String(o.station).slice(0, 60)).run().catch(() => {});
       await o.record('admitted', { ...base, note: o.force ? [o.note, 'Let in by a supervisor (gates closed / stand full)'].filter(Boolean).join('; ') : o.note });
-      if (local) { await earnAttendance(env, token).catch(() => {}); await capacityAlerts(db, local.tier).catch(() => {}); }
-      const fresh = local ? describe(await ticketRow(db, token), null) : engineView(r.ticket, token);
-      return { code: 'admitted', title: 'ADMIT', reason: 'Genuine ticket, checked in now.', ticket: fresh };
+      if (who) { await earnAttendance(env, token).catch(() => {}); await capacityAlerts(db, tierHere).catch(() => {}); }
+      const fresh = local ? describe(await ticketRow(db, token), null) : d || engineView(r.ticket, token);
+      return { code: 'admitted', title: admitTitle, reason: admitReason, ticket: fresh };
     }
     case 'already_scanned':
       await markUsed();

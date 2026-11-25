@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-25: Outside ticket system: club discounts, Star Points, family bundles and season tickets work there too
+
+- Following the owner's decision, the shared contract has a version 1.1 (`docs/INTEGRATION_CONTRACT.md` section C7): the website sends the club's discounts and Star Points as "club adjustment" lines that the outside system takes off before payment, marks each ticket adult or child, and sells season passes (one pass per person, valid once per home match).
+- So, once switched over, fans keep group, early-bird and family-bundle discounts, can pay part with Star Points (held, taken and given back exactly as today, and points are still earned), get child tickets in family bundles (ADMIT CHILD at the gate), and buy season tickets on the same page with the same pass and email.
+- The outside system must support version 1.1 before switching over (HANDOVER-TODO A39). Still off: the club's own system sells all tickets today.
+- If the outside system's prices change while a fan is paying, the fan sees the new total first and nothing is charged (as today).
+- Tests: 22 tests against the stand-in for the outside system (family bundle with child tickets, refused oversized discounts, season pass from purchase to the gate on two match days); all the club system's ticket, discount, season and Rewards checkout tests still pass.
+
 ## 2026-11-25: Ticket sales can run through an outside ticket system (built, switched off)
 
 - **Nothing changes for fans today.** The new switch `TICKETING_BACKEND` stays on `legacy` (the club's own system). When it is set to `engine`, orders, payments, tickets and gate scans go through the outside ticket system ("the ticketing engine"), and fans still see the same pages, ticket emails (from lobistarsfc.com), PDF tickets, confirmation page and "Find my tickets". Setting it back to `legacy` works at once.
