@@ -2565,6 +2565,33 @@ Choose **All home matches** or one match at the top.
 - Orders made before 3 Nov 2026 show "Before tracking" for source, place and
   device.
 
+### Outside ticket system (switch: club system / outside system)
+Since 25 Nov 2026 the website can sell match tickets through an outside ticket
+system instead of the club's own. Fans see exactly the same pages, emails, PDF
+tickets and "Find my tickets"; the gate phones work the same. Today it is
+**switched off**: everything runs on the club's own system.
+- **The switch** is the Cloudflare variable `TICKETING_BACKEND` (`legacy` = the
+  club's own system, `engine` = the outside system). Setting it back to
+  `legacy` takes effect at once; orders already made in the outside system still
+  finish and their tickets still scan.
+- It only switches over when the four keys are in Cloudflare **and** a Super
+  Admin has filled in **Who receives ticket payments** (Commerce › Match
+  Tickets, Super Admins only). That company's legal name is then shown to fans
+  on every receipt ("Payments processed by …"), in the Terms and in the Privacy
+  Policy. Never tell fans the money goes to the club when it goes to that company.
+- In the outside system the price comes from that system: club discounts,
+  Star Points, family/child tickets and amounts off are not used. Season
+  tickets stay on the club's own system.
+- **Gate:** tickets from the outside system have a long code of letters and
+  numbers (24 to 32) instead of LS-TIX-…; scan them as usual. If the phone shows
+  **CANNOT VERIFY**, the outside system could not be reached: do not admit;
+  the gate manager checks the name and phone against the order list (Commerce ›
+  Match Tickets › Orders) and writes any manual entry in the gate log.
+- **Old tickets (LS-TIX-…)** keep being checked by the club's system until a
+  Super Admin ticks "Old tickets have been imported" on the same card.
+- Problems (wrong signatures, the system not answering, a payment that matches
+  no order, emails failing) send a security alert email to the Super Admins.
+
 ### Pause all online ticket sales
 At the top of **Commerce › Match Tickets**, for example while payments are
 being fixed:

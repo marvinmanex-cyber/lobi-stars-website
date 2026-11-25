@@ -20,3 +20,8 @@ src/content/players/portal/
 src/content/staff/portal/
 public/og/squad/
 backups/
+
+# Ticket system legacy export (personal data: never commit)
+*.export.json
+ticketing-export*.json
+ticketing-report*.json

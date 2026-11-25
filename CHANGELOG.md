@@ -8,6 +8,16 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-25: Ticket sales can run through an outside ticket system (built, switched off)
+
+- **Nothing changes for fans today.** The new switch `TICKETING_BACKEND` stays on `legacy` (the club's own system). When it is set to `engine`, orders, payments, tickets and gate scans go through the outside ticket system ("the ticketing engine"), and fans still see the same pages, ticket emails (from lobistarsfc.com), PDF tickets, confirmation page and "Find my tickets". Setting it back to `legacy` works at once.
+- Plan and rules: `docs/INTEGRATION_AUDIT.md` (what the site does today, what the shared contract covers and does not: club discounts, Star Points, family/child tickets and season tickets stay with the club system) and `docs/INTEGRATION_CONTRACT.md` (the shared contract: signed server-to-server calls, callbacks, idempotency).
+- **Honesty rule:** the outside system only switches on once a Super Admin fills in the legal name of the company that receives the payments (Commerce › Match Tickets, Super Admins only). That name is then on every receipt ("Payments processed by …"), the Terms and the Privacy Policy.
+- New: the callback address `/internal/ticketing/callback` (signature, timestamp, one-time nonce, size and rate limits; repeats ignored); QR codes of outside-system tickets hold only the ticket code; Lobi Gate Control checks those codes with the outside system after the club's own rules (banned list, wrong gate, gates closed, stand full) and shows **CANNOT VERIFY** (never admits) if it cannot be reached; offline check-ins are sent in one batch; alert emails to Super Admins for repeated problems.
+- Old LS-TIX tickets keep scanning on the club system; `scripts/ticketing-legacy-export.mjs` exports them (read only, dry run first) for the outside system to import.
+- Tests: 19 new tests against a stand-in for the outside system (`tests/ticketing-engine.unit.test.mjs`), and a check that runs in every build and fails if the outside system's name appears anywhere fans could see it or anywhere in this project (`tests/no-branding-leak.test.mjs`; the name itself is never written in the project).
+- Still to do before switching over: HANDOVER-TODO A39.
+
 ## 2026-11-23: SEO Scanner "Check again" now re-tests speed issues
 
 - **Why the /news/ and story speed cards never cleared:** "Check again" only re-read the page itself; it never asked Google for a new speed test, and Google's speed test only ran once a week (last on 22 Nov, before the /news/ picture fix and the story jump fix went live). So speed cards could not clear until the next weekly test, whatever was fixed.
