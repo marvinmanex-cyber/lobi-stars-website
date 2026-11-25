@@ -39,6 +39,7 @@ const { email, phone, address } = site.contact;
   <h2>4. Tickets, membership, food orders and the shop</h2>
   <ul>
     <li>Card payments are processed securely by Paystack. We never see or store your card details.</li>
+    <li data-processor hidden>Online ticket payments are received and processed by <strong data-processor-name></strong>, which runs online ticket sales for the club. Its name is also on every ticket receipt.</li>
     <li>Please check your order before paying. The details shown at the time of purchase (such as match, stand, price and quantity) apply to that order.</li>
     <li>Club shop products are sold through our partner's store; their terms apply to those purchases.</li>
     <li>For any problem with an order, contact us using the details below.</li>
@@ -61,4 +62,12 @@ const { email, phone, address } = site.contact;
 
   <h2>9. Contact</h2>
   <p>Email <a href={`mailto:${email}`}>{email}</a> or call {phone}.</p>
+  <script is:inline>
+    // While ticket sales run through the outside ticket system, name the company that receives the payments.
+    fetch('/api/tickets/processor').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!d || !d.name) return;
+      document.querySelectorAll('[data-processor-name]').forEach(function (n) { n.textContent = d.name; });
+      document.querySelectorAll('[data-processor]').forEach(function (n) { n.hidden = false; });
+    }).catch(function () {});
+  </script>
 </LegalPage>

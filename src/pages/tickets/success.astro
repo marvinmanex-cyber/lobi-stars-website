@@ -266,7 +266,7 @@ import TicketsView from '../../components/tickets/TicketsView.astro';
     qrScript.onload = () => {
       data.tickets.forEach((ticketId, i) => {
         const qr = qrcode(0, 'M');
-        qr.addData(`${location.origin}/verify/${ticketId}`);
+        qr.addData(/^[A-Z2-7]{24,32}$/.test(ticketId) ? ticketId : `${location.origin}/verify/${ticketId}`); // engine tickets: the token alone
         qr.make();
         document.getElementById(`qr-${i}`).innerHTML = qr.createSvgTag({ scalable: true });
       });

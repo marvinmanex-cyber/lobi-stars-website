@@ -8,6 +8,7 @@ import { PdfDoc, pdfSafe, wrap, textWidth } from './pdfLite.js';
 import { lagosParts, splitVenue } from './fixtureCard.js';
 import { TEAM_LOGOS } from './teamLogos.js';
 import { TIER_LABELS } from './tickets/rules.js';
+import { qrTextFor } from './ticketing/engineStore.js';
 
 const SITE = 'https://lobistarsfc.com';
 const NAVY = '#0D1A33', NAVY2 = '#0A1226', GOLD = '#C9A227', GREY = '#5A6270', CHILD = '#FFC72C';
@@ -109,7 +110,7 @@ async function ticketPage(doc, m, t, i, of, homeImg, awayImg) {
   doc.text('MATCH TICKET', W / 2, 370, { size: 10, bold: true, color: NAVY, align: 'center' });
   const qs = 132, qx = (W - qs) / 2, qy = 382;
   doc.rect(qx - 7, qy - 7, qs + 14, qs + 14, { stroke: '#E2E6ED', lineWidth: 1 });
-  drawQr(doc, `${SITE}/verify/${t.id}`, qx, qy, qs);
+  drawQr(doc, qrTextFor(t.id, SITE), qx, qy, qs); // engine tickets: the token alone
   doc.text('VERIFY TICKET', W / 2, qy + qs + 24, { size: 7.5, bold: true, color: NAVY, align: 'center' });
   doc.text('Scan the QR code to confirm this ticket is genuine.', W / 2, qy + qs + 35, { size: 7, color: GREY, align: 'center' });
   // Stand, ADULT / CHILD and price.

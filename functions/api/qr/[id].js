@@ -1,4 +1,5 @@
 import { qrPngBuffer } from '../_lib/qrcode.js';
+import { qrTextFor } from '../_lib/ticketing/engineStore.js';
 
 const SITE_ORIGIN = 'https://lobistarsfc.com';
 
@@ -9,7 +10,8 @@ export async function onRequestGet({ params }) {
   const id = (params.id || '').trim();
   if (!id) return new Response('Missing ticket id', { status: 400 });
 
-  const png = await qrPngBuffer(`${SITE_ORIGIN}/verify/${id}`);
+  // Engine tickets: the QR holds the token and nothing else; older tickets: the verify link.
+  const png = await qrPngBuffer(qrTextFor(id, SITE_ORIGIN));
   return new Response(png, {
     headers: {
       'Content-Type': 'image/png',

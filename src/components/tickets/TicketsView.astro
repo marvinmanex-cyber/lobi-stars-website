@@ -254,6 +254,8 @@ import { WEB_LOGOS as TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.j
       parts.push(el('section', { class: 'tv-match' }, el('h2', { text: m.homeTeam + ' vs ' + m.awayTeam }), el('p', { class: 'tv-meta', text: when + ' · ' + m.venue + ' · ' + m.tickets.length + ' ticket' + (m.tickets.length === 1 ? '' : 's') + (m.discountKobo > 0 ? ' · you saved ' + naira(m.discountKobo) : '') }), grid, acts));
     });
     if (!data.refunded && count > 1) parts.push(el('div', { class: 'tv-acts' }, el('a', { href: pdfUrl(data), text: 'Download all tickets (PDF)' })));
+    // Who received the payment (named on every receipt when it is not the club itself).
+    if (data.processedBy) parts.push(el('p', { class: 'tv-meta', text: 'Payments processed by ' + data.processedBy + '.' }));
     box.replaceChildren.apply(box, parts);
     return count;
   };
