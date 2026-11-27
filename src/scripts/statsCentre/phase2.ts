@@ -2,7 +2,7 @@
 // comparison, season analytics, scouting, training themes, monthly reports and the xG model settings.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Ctx } from './bst';
-import { fx } from './fx';
+import { fx, club } from './fx';
 
 const W = 105, H = 68; // the pitch in metres; positions are stored 0–100 on each axis
 const pct = (v: number, max: number) => (v * max) / 100;
@@ -165,7 +165,7 @@ export async function playerView(c: Ctx, slug: string) {
     <section class="sx-card" style="margin-top:16px"><h3>Per 90 minutes</h3>${p.minutes < 90 ? '<p class="sx-small">Fewer than 90 minutes: per-90 figures are not meaningful yet.</p>' : `<div class="sx-kpis">${Object.entries({ goals: 'Goals', assists: 'Assists', shots: 'Shots', shotsOnTarget: 'On target', xg: 'xG', xa: 'xA', tackles: 'Tackles', interceptions: 'Interceptions', keyPasses: 'Key passes', ...(gk ? { saves: 'Saves' } : {}) }).map(([key, l]) => k(p.per90[key], l)).join('')}</div>`}</section>
     <section class="sx-card"><h3>Ratings</h3>${p.rows.some((r: any) => r.rating !== null) ? lineChart([{ name: 'Rating', colour: '#C8102E', values: p.rows.map((r: any) => r.rating) }, { name: 'Rolling 5-match average', colour: '#1C3F7A', values: p.rows.map((r: any) => r.rolling5) }], p.rows.map((r: any) => r.date)) : '<p class="sx-small">No ratings yet (Review › Rate players).</p>'}</section>
     <section class="sx-card sx-scroll"><h3>Match by match</h3><table class="sx-t"><thead><tr><th>Date</th><th>Opponent</th><th>Score</th><th class="n">Min</th><th class="n">G</th><th class="n">A</th><th class="n">Sh</th><th class="n">xG</th><th class="n">xA</th><th class="n">${gk ? 'Saves' : 'Tackles'}</th><th class="n">Rating</th><th>Note</th></tr></thead><tbody>
-      ${p.rows.map((r: any) => `<tr><td>${esc(c.day(r.date))}</td><td><a href="#/review/${esc(r.matchId)}">${esc(r.opponent)}</a></td><td>${esc(r.score)}</td><td class="n">${r.minutes}</td><td class="n">${r.goals}</td><td class="n">${r.assists}</td><td class="n">${r.shots}</td><td class="n">${Number(r.xg).toFixed(2)}</td><td class="n">${Number(r.xa).toFixed(2)}</td><td class="n">${gk ? r.saves : r.tackles}</td><td class="n">${r.rating ?? ''}</td><td><small>${esc(r.ratingNote)}</small></td></tr>`).join('') || '<tr><td colspan="12" class="sx-small">No recorded matches this season.</td></tr>'}</tbody></table></section>`;
+      ${p.rows.map((r: any) => `<tr><td>${esc(c.day(r.date))}</td><td><a href="#/review/${esc(r.matchId)}">${club(r.opponent)}</a></td><td>${esc(r.score)}</td><td class="n">${r.minutes}</td><td class="n">${r.goals}</td><td class="n">${r.assists}</td><td class="n">${r.shots}</td><td class="n">${Number(r.xg).toFixed(2)}</td><td class="n">${Number(r.xa).toFixed(2)}</td><td class="n">${gk ? r.saves : r.tackles}</td><td class="n">${r.rating ?? ''}</td><td><small>${esc(r.ratingNote)}</small></td></tr>`).join('') || '<tr><td colspan="12" class="sx-small">No recorded matches this season.</td></tr>'}</tbody></table></section>`;
 }
 
 export async function compareView(c: Ctx) {

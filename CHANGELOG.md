@@ -8,6 +8,16 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Statistics Center fits every phone and tablet; VS centred
+
+- **Nothing is cut off any more.** Every table is measured against the screen it is on. If it is too wide, it becomes one block per row, each value with its column name beside it. It is checked again when the screen turns or the page changes.
+- **The menu** wraps onto more lines on phones and tablets instead of running off the edge. The header title wraps instead of being cut. Long text wraps inside its box.
+- **The BST data grid** stays a grid (a wide sheet by design) and shows a "swipe sideways" hint when it is wider than the screen.
+- **VS (or the score)** now sits centred between the two club names, in the same font and size as the names. The same applies on the public match stats pages and the coach share page.
+- **Single club names** in opponent and head-to-head columns are also never split.
+
+---
+
 ## 2026-11-27: Club names never split (Statistics Center and match stats pages)
 
 - Every fixture now shows as the first club on one line, a small **VS** (or the score) under it, then the second club on one line. Club names are never broken across lines, on computers, tablets and phones.

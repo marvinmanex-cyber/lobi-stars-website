@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Ctx } from './bst';
 import { pitchSvg, pickOnPitch } from './phase2';
-import { fx } from './fx';
+import { fx, club } from './fx';
 
 const W = 105, H = 68;
 const PN: Record<string, string> = { '1H': '1st half', '2H': '2nd half', ET1: 'Extra time 1', ET2: 'Extra time 2' };
@@ -100,7 +100,7 @@ export async function seasonAdvancedView(c: Ctx) {
       <div class="sx-card"><small class="sx-small">Passes completed</small><h3 style="margin:4px 0">${d.passing.complete}/${d.passing.passes}</h3><p class="sx-small">${d.passing.progressive} progressive · ${d.passing.box} into the box</p></div>
     </div>
     <section class="sx-card sx-scroll"><h3>Match by match</h3><table class="sx-t"><thead><tr><th>Date</th><th>Opponent</th><th class="n">Score</th><th class="n">xG</th><th class="n">xPts</th><th class="n">Points</th><th class="n">Tilt</th><th class="n">PPDA</th><th></th></tr></thead><tbody>
-      ${d.expected.byMatch.map((x: any) => `<tr><td>${esc(c.day(x.date))}</td><td>${esc(x.opponent)}</td><td class="n">${esc(x.score)}</td><td class="n">${x.xgFor}–${x.xgAgainst}</td><td class="n">${x.xPts}</td><td class="n">${x.points}</td><td class="n">${num(x.tilt)}</td><td class="n">${num(x.ppda)}</td><td><a class="sx-btn" href="#/advanced/${esc(x.id)}">Open</a></td></tr>`).join('') || '<tr><td class="sx-small" colspan="9">No published matches yet.</td></tr>'}</tbody></table></section>
+      ${d.expected.byMatch.map((x: any) => `<tr><td>${esc(c.day(x.date))}</td><td>${club(x.opponent)}</td><td class="n">${esc(x.score)}</td><td class="n">${x.xgFor}–${x.xgAgainst}</td><td class="n">${x.xPts}</td><td class="n">${x.points}</td><td class="n">${num(x.tilt)}</td><td class="n">${num(x.ppda)}</td><td><a class="sx-btn" href="#/advanced/${esc(x.id)}">Open</a></td></tr>`).join('') || '<tr><td class="sx-small" colspan="9">No published matches yet.</td></tr>'}</tbody></table></section>
     <section class="sx-card sx-scroll"><h3>Game state (season)</h3>${gsTable(c, d.gameState)}</section>
     <section class="sx-card sx-scroll"><h3>Goalkeepers (season)</h3>${d.keepers.length ? gkTable(c, d.keepers) : '<p class="sx-small">No data yet.</p>'}</section>`;
   view().querySelector('[data-s]')?.addEventListener('change', (e: any) => { store.set('sx_sa', e.target.value); seasonAdvancedView(c); });

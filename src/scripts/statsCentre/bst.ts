@@ -4,7 +4,7 @@
 // are the match's events (a + adds one, a − removes the latest in that block, shared with live entry), and only the
 // analyst's own numbers (Offence/Attack, Defense, Dangerous Attack, Crossing, xG, xA) and the texts are saved here.
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { fx, fxText } from './fx';
+import { fx, fxText, club } from './fx';
 export interface Ctx {
   api: (path: string, body?: unknown) => Promise<any>; S: any; esc: (s: unknown) => string; toast: (t: string, ok?: boolean) => void;
   view: () => HTMLElement; resetView: () => { signal: AbortSignal }; store: { get(k: string, d: any): any; set(k: string, v: any): void };
@@ -63,7 +63,7 @@ async function library(c: Ctx) {
         : `<p class="sx-small">Every match already has an analysis. <a href="/staff/statistics-center/#/new">Create the match first</a> (New match), then come back.</p>`}
     </section>
     <div class="sx-card sx-scroll"><table class="sx-t"><thead><tr><th>Date</th><th>Match</th><th>Opponent</th><th>Status</th><th>Last saved</th><th>Prepared by</th><th></th></tr></thead><tbody>
-    ${d.analyses.map((a: any) => `<tr><td>${esc(c.day(a.date))}</td><td>${fx(a.home, a.away)}</td><td>${esc(a.opponent)}</td><td><span class="sx-pill ${a.status === 'final' ? 'published' : 'review'}">${a.status === 'final' ? 'Final' : 'Draft'}</span></td>
+    ${d.analyses.map((a: any) => `<tr><td>${esc(c.day(a.date))}</td><td>${fx(a.home, a.away)}</td><td>${club(a.opponent)}</td><td><span class="sx-pill ${a.status === 'final' ? 'published' : 'review'}">${a.status === 'final' ? 'Final' : 'Draft'}</span></td>
       <td>${esc(c.when(a.updatedAt))}</td><td>${esc(a.preparedBy || '')}</td><td><div class="sx-row"><a class="sx-btn sx-btn--p" href="${BASE}${esc(a.id)}/">Open</a><a class="sx-btn" href="${BASE}${esc(a.id)}/print/" target="_blank" rel="noopener">PDF</a>
       <a class="sx-btn" href="/api/stats-centre/export/bst.xlsx?id=${esc(a.id)}">Excel</a>${a.status === 'final' && c.S.user.admin ? `<button class="sx-btn" data-reopen="${esc(a.id)}">Reopen</button>` : ''}${a.status !== 'final' || c.S.user.admin ? `<button class="sx-btn" data-remove="${esc(a.id)}">Remove</button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="7" class="sx-small">No analyses yet.</td></tr>'}
     </tbody></table></div>`;

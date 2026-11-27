@@ -22,7 +22,8 @@ import MatchesTabs from '../../components/MatchesTabs.astro';
   .sxm-team :global(span) { white-space: nowrap; }
   /* Club names never split: one club per line, the score between them */
   #sxmTitle :global(.fx-club) { display: block; white-space: nowrap; font-size: clamp(26px, 7vw, 1em); }
-  #sxmTitle :global(.fx-mid) { display: block; font-size: .7em; line-height: 1.1; }
+  #sxmTitle :global(.fx-mid) { display: block; font-size: inherit; line-height: 1.1; }
+  #sxmTitle { display: inline-grid; justify-items: center; text-align: center; }
   .sxm-num { font: 400 clamp(44px, 9vw, 72px)/1 'Bebas Neue', sans-serif; letter-spacing: 2px; }
   .sxm-meta { margin: 10px 0 0; color: var(--lt); font-size: 14px; text-align: center; }
   .sxm-links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 14px 0 0; }

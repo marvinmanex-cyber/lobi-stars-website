@@ -294,11 +294,12 @@
   .sx-inst-steps { padding-left: 20px; margin: 8px 0; } .sx-inst-steps li { margin: 6px 0; } .sx-inst-ico { display: inline-block; padding: 0 6px; border: 1px solid #C9CED8; border-radius: 6px; }
   .sx-inst-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; } .sx-inst-row .sx-btn { flex: 1 1 140px; }
   /* Fixtures (27 Nov 2026): club names never split; "VS" (or the score) on its own line between them */
-  .sx-fx { display: inline-grid; justify-items: start; row-gap: 1px; line-height: 1.25; vertical-align: middle; max-width: 100%; }
+  .sx-fx { display: inline-grid; justify-items: center; text-align: center; row-gap: 2px; line-height: 1.25; vertical-align: middle; max-width: 100%; }
   .sx-club { white-space: nowrap; font-weight: 700; }
-  .sx-vs { font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--muted); padding-left: 2px; }
-  .sx-fx-score { font-weight: 800; color: var(--red); padding-left: 2px; }
-  h2 .sx-fx, h3 .sx-fx { display: grid; } h2 .sx-fx-score { font-size: .9em; } h2 .sx-club { font-size: 1em; }
+  .sx-fx > span { font: inherit; font-weight: 700; line-height: 1.2; }
+  .sx-vs, .sx-fx-score { font: inherit; font-weight: 700; }
+  .sx-fx-score { color: var(--red); }
+  h2 .sx-fx, h3 .sx-fx { display: inline-grid; }
   .sx-h2pre { display: block; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
   .sx-t td.c-match, .sx-t th:nth-child(2) { min-width: max-content; }
   .sx-feed .d a { display: inline-block; }
@@ -318,6 +319,27 @@
     .sx-t--cards .c-acts .sx-form-r { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
     .sx-t--cards .c-acts .sx-btn { width: 100%; justify-content: center; }
     .sx-t--cards td[colspan] { grid-column: 1 / -1; }
+  }
+  /* Fit every screen (27 Nov 2026): nothing is cut off on phones and tablets */
+  #sx, .sx-card { min-width: 0; } .sx-card { overflow-wrap: anywhere; } .sx-club, .sx-t th { overflow-wrap: normal; }
+  .sx-row > *, .sx-grid > * { min-width: 0; } input, select, textarea { max-width: 100%; } img, svg, video { max-width: 100%; }
+  .sx-swipe { font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+  /* A table wider than the screen: one block per row, each value with its column name */
+  table.sx-t.sx-t--stack, .sx-t--stack tbody { display: block; width: 100%; }
+  .sx-t--stack thead { display: none; }
+  .sx-t--stack > tbody > tr { display: block; padding: 10px 0; border-top: 1px solid var(--line); }
+  .sx-t--stack > tbody > tr:first-child { border-top: 0; }
+  .sx-t--stack > tbody > tr > td { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 4px 2px; border: 0; text-align: right; }
+  .sx-t--stack > tbody > tr > td:first-child { font-weight: 700; text-align: left; justify-content: flex-start; font-size: 15px; }
+  .sx-t--stack > tbody > tr > td[data-label]:not(:first-child)::before { content: attr(data-label); color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; text-align: left; flex: 0 0 auto; max-width: 55%; }
+  .sx-t--stack > tbody > tr > td:empty { display: none; }
+  .sx-t--stack > tbody > tr > td[colspan] { display: block; text-align: left; }
+  .sx-t--stack .sx-form-r, .sx-t--stack .sx-row { justify-content: flex-end; }
+  @media (max-width: 900px) {
+    /* The menu wraps onto more lines instead of running off the edge */
+    .sx-nav { flex-wrap: wrap; overflow: visible; padding: 4px 8px; gap: 0 2px; }
+    .sx-nav a { padding: 9px 10px; font-size: 13px; }
+    .sx-titles b { white-space: normal; overflow: visible; text-overflow: clip; }
   }
   .p2-tile { text-decoration: none; color: inherit; display: block; } .p2-tile:hover, .p2-tile:focus-visible { border-color: var(--red); }
   .p2-stars { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }

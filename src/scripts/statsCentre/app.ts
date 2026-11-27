@@ -6,7 +6,8 @@
 import { bstRoute, applyUi, type Ctx } from './bst';
 import { retentionView, inventoryView } from './retention';
 import { setupInstall, showInstall } from './install';
-import { fx } from './fx';
+import { fx, club } from './fx';
+import { setupFit } from './responsive';
 import { matchLinks, passesView, advancedView, seasonAdvancedView, availabilityView, markAvailability, wellnessView, developmentView, milestonesView, definitionsProView, oppositionPackView, startPractice } from './pro';
 import { analysisHub, mapsView, setPiecesView, ratingsView, playerView, compareView, analyticsView, scoutingView, trainingView, reportsView, xgView, pickOnPitch, attacksRight } from './phase2';
 const $ = (id: string) => document.getElementById(id) as any;
@@ -899,7 +900,7 @@ async function teamView() {
       <section class="sx-card"><h3>Attack and discipline</h3><p>${t.attack.shots} shots, ${t.attack.shotsOnTarget} on target, ${t.attack.corners} corners</p><p>${t.discipline.yellow} yellow cards, ${t.discipline.red} red cards</p></section>
     </div>
     <section class="sx-card sx-scroll"><h3>Head-to-head</h3><table class="sx-t"><thead><tr><th>Opponent</th><th class="n">P</th><th class="n">W</th><th class="n">D</th><th class="n">L</th><th class="n">GF</th><th class="n">GA</th></tr></thead><tbody>
-      ${t.h2h.map((h: any) => `<tr><td>${esc(h.opponent)}</td><td class="n">${h.p}</td><td class="n">${h.w}</td><td class="n">${h.d}</td><td class="n">${h.l}</td><td class="n">${h.gf}</td><td class="n">${h.ga}</td></tr>`).join('') || '<tr><td colspan="7" class="sx-small">No published matches yet.</td></tr>'}</tbody></table></section>
+      ${t.h2h.map((h: any) => `<tr><td>${club(h.opponent)}</td><td class="n">${h.p}</td><td class="n">${h.w}</td><td class="n">${h.d}</td><td class="n">${h.l}</td><td class="n">${h.gf}</td><td class="n">${h.ga}</td></tr>`).join('') || '<tr><td colspan="7" class="sx-small">No published matches yet.</td></tr>'}</tbody></table></section>
     <section class="sx-card"><h3>Results</h3><ul class="sx-feed">${t.recent.map((r: any) => `<li><span class="m ${r.r}">${r.r}</span><span class="d"><a href="#/review/${esc(r.id)}">${esc(r.opponent)}</a><small>${esc(r.score)} · ${esc(day(r.date))}</small></span></li>`).join('') || '<li class="sx-small">None yet.</li>'}</ul></section>`;
   view().querySelector('[data-season]')?.addEventListener('change', (e: any) => { store.set('sx_ts', e.target.value); teamView(); });
 }
@@ -1049,5 +1050,6 @@ const ctx: Ctx = {
 };
 
 setupInstall();
+setupFit();
 document.addEventListener('click', e => { if ((e.target as HTMLElement).closest?.('[data-install]')) { e.preventDefault(); showInstall(); } });
 boot();
