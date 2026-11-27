@@ -88,7 +88,7 @@ async function page({ request, env, params }) {
     ['link[rel="canonical"]', attr('href', canonical)],
     ['meta[name="robots"]', { element(el) { el.remove(); } }],
     ['#sxmKicker', fill(esc(`${m.competition} · ${fmtDate(m.date)}`))],
-    ['#sxmTitle', fill(`${esc(m.home)} <span class="r">${m.homeScore}–${m.awayScore}</span> ${esc(m.away)}`)],
+    ['#sxmTitle', fill(`<span class="fx-club">${esc(m.home)}</span><span class="r fx-mid">${m.homeScore}–${m.awayScore}</span><span class="fx-club">${esc(m.away)}</span>`)],
     ['#sxmBody', fill(html)],
   ]);
 }

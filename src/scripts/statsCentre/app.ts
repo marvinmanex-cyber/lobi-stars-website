@@ -6,6 +6,7 @@
 import { bstRoute, applyUi, type Ctx } from './bst';
 import { retentionView, inventoryView } from './retention';
 import { setupInstall, showInstall } from './install';
+import { fx } from './fx';
 import { matchLinks, passesView, advancedView, seasonAdvancedView, availabilityView, markAvailability, wellnessView, developmentView, milestonesView, definitionsProView, oppositionPackView, startPractice } from './pro';
 import { analysisHub, mapsView, setPiecesView, ratingsView, playerView, compareView, analyticsView, scoutingView, trainingView, reportsView, xgView, pickOnPitch, attacksRight } from './phase2';
 const $ = (id: string) => document.getElementById(id) as any;
@@ -147,7 +148,7 @@ async function dashboardView() {
     </div>
     <div class="sx-grid" style="margin-top:16px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
       <section class="sx-card"><h3>Recent published matches</h3>${d.recent.length ? `<ul class="sx-feed">${d.recent.map((r: any) => `<li><span class="m ${r.r}">${r.r}</span><span class="d"><a href="#/review/${esc(r.id)}">${esc(r.opponent)}</a><small>${esc(r.score)} · ${esc(day(r.date))}</small></span></li>`).join('')}</ul>` : '<p class="sx-small">No published matches this season yet.</p>'}</section>
-      <section class="sx-card"><h3>Awaiting review or publishing</h3>${d.open.length ? `<ul class="sx-feed">${d.open.map((m: any) => `<li><span class="d"><a href="#/${m.status === 'live' ? 'live' : m.status === 'draft' ? 'match' : 'review'}/${esc(m.id)}">${esc(m.home)} v ${esc(m.away)}</a><small>${esc(day(m.date))} · ${m.homeScore}–${m.awayScore}</small></span>${pill(m.status)}</li>`).join('')}</ul>` : '<p class="sx-small">Nothing waiting.</p>'}</section>
+      <section class="sx-card"><h3>Awaiting review or publishing</h3>${d.open.length ? `<ul class="sx-feed">${d.open.map((m: any) => `<li><span class="d"><a href="#/${m.status === 'live' ? 'live' : m.status === 'draft' ? 'match' : 'review'}/${esc(m.id)}">${fx(m.home, m.away)}</a><small>${esc(day(m.date))} · ${m.homeScore}–${m.awayScore}</small></span>${pill(m.status)}</li>`).join('')}</ul>` : '<p class="sx-small">Nothing waiting.</p>'}</section>
     </div>`;
   view().querySelector('[data-season]')?.addEventListener('change', (e: any) => { season = e.target.value; dashboardView(); });
 }
@@ -165,9 +166,9 @@ async function matchesView() {
       <label>Status<select name="status"><option value="">All</option>${S.statuses.map((s: string) => `<option ${s === f.status ? 'selected' : ''}>${s}</option>`).join('')}</select></label>
       <label>Competition<select name="competition"><option value="">All</option>${S.settings.competitions.map((c: string) => `<option ${c === f.competition ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
     </form>
-    <div class="sx-card sx-scroll"><table class="sx-t"><thead><tr><th>Date</th><th>Match</th><th class="n">Score</th><th>Competition</th><th>Status</th><th>Open</th></tr></thead><tbody>
-    ${d.matches.map((m: any) => `<tr><td>${esc(day(m.date))}</td><td><b>${esc(m.home)}</b> v <b>${esc(m.away)}</b></td><td class="n">${m.homeScore}–${m.awayScore}</td><td>${esc(m.competition)}</td><td>${pill(m.status)}</td>
-      <td><div class="sx-form-r"><a class="sx-btn" href="#/match/${esc(m.id)}">Setup</a>${m.status !== 'published' ? `<a class="sx-btn" href="#/live/${esc(m.id)}">Live</a>` : ''}<a class="sx-btn" href="#/review/${esc(m.id)}">Review</a>${m.status !== 'published' ? `<button class="sx-btn" data-remove="${esc(m.id)}">Remove</button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="6" class="sx-small">No matches yet.</td></tr>'}
+    <div class="sx-card sx-scroll"><table class="sx-t sx-t--cards"><thead><tr><th>Date</th><th>Match</th><th class="n">Score</th><th>Competition</th><th>Status</th><th>Open</th></tr></thead><tbody>
+    ${d.matches.map((m: any) => `<tr><td class="c-date">${esc(day(m.date))}</td><td class="c-match">${fx(m.home, m.away)}</td><td class="n c-score" data-label="Score">${m.homeScore}–${m.awayScore}</td><td class="c-comp">${esc(m.competition)}${m.practice ? ' · practice' : ''}</td><td class="c-status">${pill(m.status)}</td>
+      <td class="c-acts"><div class="sx-form-r"><a class="sx-btn" href="#/match/${esc(m.id)}">Setup</a>${m.status !== 'published' ? `<a class="sx-btn" href="#/live/${esc(m.id)}">Live</a>` : ''}<a class="sx-btn" href="#/review/${esc(m.id)}">Review</a>${m.status !== 'published' ? `<button class="sx-btn" data-remove="${esc(m.id)}">Remove</button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="6" class="sx-small">No matches yet.</td></tr>'}
     </tbody></table></div>`;
   $('mf').addEventListener('change', (e: any) => { store.set('sx_filters', Object.fromEntries(new FormData(e.currentTarget) as any)); matchesView(); });
   view().addEventListener('click', async (e: any) => {
@@ -184,7 +185,7 @@ async function newMatchView() {
   view().innerHTML = `
     <h2>New match</h2>
     <section class="sx-card"><h3>From the fixture list</h3><p class="sx-small">Choose the fixture: teams, date, venue and competition are filled in for you, and publishing updates its match page.</p>
-      <div class="sx-scroll"><table class="sx-t"><tbody>${open.map((f: any) => `<tr><td>${esc(day(f.date))}</td><td><b>${esc(f.home)}</b> v <b>${esc(f.away)}</b><br><small class="sx-small">${esc(f.competition)} · ${esc(f.venue || '')}</small></td><td><button class="sx-btn sx-btn--p" data-fx="${esc(f.id)}">Record this match</button></td></tr>`).join('') || '<tr><td class="sx-small">Every fixture is already being recorded.</td></tr>'}</tbody></table></div>
+      <div class="sx-scroll"><table class="sx-t"><tbody>${open.map((f: any) => `<tr><td>${esc(day(f.date))}</td><td>${fx(f.home, f.away)}<br><small class="sx-small">${esc(f.competition)} · ${esc(f.venue || '')}</small></td><td><button class="sx-btn sx-btn--p" data-fx="${esc(f.id)}">Record this match</button></td></tr>`).join('') || '<tr><td class="sx-small">Every fixture is already being recorded.</td></tr>'}</tbody></table></div>
     </section>
     <form class="sx-card" id="fr"><h3>A match not in the fixtures (e.g. a friendly)</h3>
       <div class="sx-form">
@@ -211,7 +212,7 @@ async function loadMatch(id: string) {
 }
 const matchHead = (m: any, here: string) => `
   <div class="sx-row sx-noprint" style="justify-content:space-between;margin-bottom:12px">
-    <div><h2 style="margin:0">${esc(m.home)} ${m.homeScore}–${m.awayScore} ${esc(m.away)}</h2><p class="sx-small" style="margin:0">${esc(m.competition)} · ${esc(day(m.date))} · ${pill(m.status)}</p></div>
+    <div><h2 style="margin:0">${fx(m.home, m.away, `${m.homeScore}–${m.awayScore}`)}</h2><p class="sx-small" style="margin:0">${esc(m.competition)} · ${esc(day(m.date))} · ${pill(m.status)}</p></div>
     <div class="sx-row">${[['match', 'Setup'], ['live', 'Live entry'], ['review', 'Review & publish']].filter(([k]) => !(k === 'live' && m.status === 'published')).map(([k, t]) => `<a class="sx-btn ${k === here ? 'sx-btn--p' : ''}" href="#/${k}/${esc(m.id)}">${t}</a>`).join('')}${matchLinks(ctx, m)}</div>
   </div>${m.practice ? '<p class="sx-note">Practice match: for training only. It is never published or counted, and is deleted after 30 days.</p>' : ''}`;
 

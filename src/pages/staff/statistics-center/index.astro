@@ -293,6 +293,32 @@
   .sx-inst-head { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; } .sx-inst-head img { border-radius: 14px; border: 1px solid #E2E4E9; } .sx-inst-head h2 { margin: 0; font-size: 22px; }
   .sx-inst-steps { padding-left: 20px; margin: 8px 0; } .sx-inst-steps li { margin: 6px 0; } .sx-inst-ico { display: inline-block; padding: 0 6px; border: 1px solid #C9CED8; border-radius: 6px; }
   .sx-inst-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; } .sx-inst-row .sx-btn { flex: 1 1 140px; }
+  /* Fixtures (27 Nov 2026): club names never split; "VS" (or the score) on its own line between them */
+  .sx-fx { display: inline-grid; justify-items: start; row-gap: 1px; line-height: 1.25; vertical-align: middle; max-width: 100%; }
+  .sx-club { white-space: nowrap; font-weight: 700; }
+  .sx-vs { font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--muted); padding-left: 2px; }
+  .sx-fx-score { font-weight: 800; color: var(--red); padding-left: 2px; }
+  h2 .sx-fx, h3 .sx-fx { display: grid; } h2 .sx-fx-score { font-size: .9em; } h2 .sx-club { font-size: 1em; }
+  .sx-h2pre { display: block; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+  .sx-t td.c-match, .sx-t th:nth-child(2) { min-width: max-content; }
+  .sx-feed .d a { display: inline-block; }
+  /* Phones and tablets: the matches table becomes one card per match */
+  @media (max-width: 900px) {
+    .sx-t--cards thead { display: none; }
+    .sx-t--cards, .sx-t--cards tbody { display: block; }
+    .sx-t--cards tr { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+    .sx-t--cards tr:first-child { border-top: 0; }
+    .sx-t--cards td { display: block; border: 0; padding: 0; }
+    .sx-t--cards .c-date { grid-column: 1; grid-row: 1; color: var(--muted); font-size: 13px; }
+    .sx-t--cards .c-status { grid-column: 2; grid-row: 1; justify-self: end; }
+    .sx-t--cards .c-match { grid-column: 1; grid-row: 2; font-size: 17px; }
+    .sx-t--cards .c-score { grid-column: 2; grid-row: 2; align-self: center; font-size: 26px; font-weight: 800; color: var(--navy, #1C3F7A); text-align: right; }
+    .sx-t--cards .c-comp { grid-column: 1 / -1; grid-row: 3; color: var(--muted); font-size: 13px; }
+    .sx-t--cards .c-acts { grid-column: 1 / -1; grid-row: 4; }
+    .sx-t--cards .c-acts .sx-form-r { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
+    .sx-t--cards .c-acts .sx-btn { width: 100%; justify-content: center; }
+    .sx-t--cards td[colspan] { grid-column: 1 / -1; }
+  }
   .p2-tile { text-decoration: none; color: inherit; display: block; } .p2-tile:hover, .p2-tile:focus-visible { border-color: var(--red); }
   .p2-stars { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
   .p2-stars button { min-width: 44px; min-height: 44px; border-radius: 10px; border: 2px solid var(--line); background: var(--card); color: var(--ink); font: 700 18px 'Barlow Condensed', sans-serif; cursor: pointer; }

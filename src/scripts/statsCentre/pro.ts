@@ -4,6 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Ctx } from './bst';
 import { pitchSvg, pickOnPitch } from './phase2';
+import { fx } from './fx';
 
 const W = 105, H = 68;
 const PN: Record<string, string> = { '1H': '1st half', '2H': '2nd half', ET1: 'Extra time 1', ET2: 'Extra time 2' };
@@ -26,7 +27,7 @@ export async function passesView(c: Ctx, id: string) {
   const opt = (side: string) => people(side).map((p: any) => `<option value="${esc(p.slug || `n:${p.name}`)}">${esc(p.number ? `${p.number}. ` : '')}${esc(p.name)}</option>`).join('');
   const passes = d.events.filter((e: any) => e.type === 'pass');
   const P = d.derived.players.filter((p: any) => p.passes);
-  view().innerHTML = `<div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><div><h2 style="margin:0">Passes · ${esc(m.home)} ${m.homeScore}–${m.awayScore} ${esc(m.away)}</h2><p class="sx-small" style="margin:0">Recorded after the match (from the video or notes). ${passes.length} passes so far.</p></div>
+  view().innerHTML = `<div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><div><h2 style="margin:0"><span class="sx-h2pre">Passes</span>${fx(m.home, m.away, `${m.homeScore}–${m.awayScore}`)}</h2><p class="sx-small" style="margin:0">Recorded after the match (from the video or notes). ${passes.length} passes so far.</p></div>
       <div class="sx-row"><a class="sx-btn" href="#/review/${esc(m.id)}">Review</a><a class="sx-btn" href="#/advanced/${esc(m.id)}">Advanced</a></div></div>
     ${locked ? `<p class="sx-note">${ro(c) ? 'Coach accounts view only.' : 'This match is published. Reopen it on the Review page to add passes.'}</p>` : `
     <form class="sx-card" id="pf"><h3>Add a pass</h3>
@@ -74,7 +75,7 @@ export async function advancedView(c: Ctx, id: string) {
   const { api, esc, view } = c;
   const d = await api(`match/advanced?id=${encodeURIComponent(id)}`);
   const m = d.match, a = d.advanced, ls = a.lobiSide, os = ls === 'home' ? 'away' : 'home', nm = (s: string) => (s === 'home' ? m.home : m.away);
-  view().innerHTML = `<div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><div><h2 style="margin:0">Advanced · ${esc(m.home)} ${m.homeScore}–${m.awayScore} ${esc(m.away)}</h2><p class="sx-small" style="margin:0">Worked out from the recorded events. Definitions version ${esc(m.definitionsVersion ?? 1)}.</p></div><div class="sx-row">${matchLinks(c, m)}<a class="sx-btn" href="#/review/${esc(m.id)}">Review</a></div></div>
+  view().innerHTML = `<div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><div><h2 style="margin:0"><span class="sx-h2pre">Advanced</span>${fx(m.home, m.away, `${m.homeScore}–${m.awayScore}`)}</h2><p class="sx-small" style="margin:0">Worked out from the recorded events. Definitions version ${esc(m.definitionsVersion ?? 1)}.</p></div><div class="sx-row">${matchLinks(c, m)}<a class="sx-btn" href="#/review/${esc(m.id)}">Review</a></div></div>
     <div class="sx-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
       <div class="sx-card"><small class="sx-small">Expected points</small><h3 style="margin:4px 0">${a.expected.xPts} <small class="sx-small">(got ${a.expected.actualPoints})</small></h3><p class="sx-small">Win ${Math.round(a.expected.win * 100)}% · draw ${Math.round(a.expected.draw * 100)}% · loss ${Math.round(a.expected.loss * 100)}%</p></div>
       <div class="sx-card"><small class="sx-small">Field tilt</small><h3 style="margin:4px 0">${a.fieldTilt ? `${a.fieldTilt.lobi}%` : '—'}</h3><p class="sx-small">${a.fieldTilt ? `From ${esc(a.fieldTilt.source)}` : 'Needs positions or passes'}</p></div>

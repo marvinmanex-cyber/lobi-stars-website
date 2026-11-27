@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Club names never split (Statistics Center and match stats pages)
+
+- Every fixture now shows as the first club on one line, a small **VS** (or the score) under it, then the second club on one line. Club names are never broken across lines, on computers, tablets and phones.
+- On phones and tablets the Matches list is one card per match: date and status, the fixture, a large score, the competition and full-width buttons.
+- Same style on match headings (Setup, Review, Passes, Advanced, BST, ratings), the dashboard, fixtures to record, the BST list, the public /stats match list, each public match stats page and the coach share page.
+
+---
+
 ## 2026-11-27: Statistics Center: "Install the app" prompt
 
 - When the Statistics Center is opened on a phone or tablet, a card now asks to install it as an app (home-screen icon, opens full screen, keeps taps when the signal drops). Free, no app store.

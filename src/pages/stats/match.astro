@@ -18,7 +18,11 @@ import MatchesTabs from '../../components/MatchesTabs.astro';
   .sxm { padding-bottom: 80px; }
   @media (max-width: 767px) { .sxm { padding-bottom: 32px; } }
   .sxm-score { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; text-align: center; padding: 20px 12px; background: var(--d2, #fff); border: 1px solid var(--d4); border-radius: 14px; }
-  .sxm-team { display: grid; justify-items: center; gap: 8px; font: 700 18px/1.15 'Barlow Condensed', sans-serif; letter-spacing: .03em; text-transform: uppercase; }
+  .sxm-team { display: grid; justify-items: center; gap: 8px; font: 700 clamp(13px, 3.6vw, 18px)/1.15 'Barlow Condensed', sans-serif; letter-spacing: .03em; text-transform: uppercase; }
+  .sxm-team :global(span) { white-space: nowrap; }
+  /* Club names never split: one club per line, the score between them */
+  #sxmTitle :global(.fx-club) { display: block; white-space: nowrap; font-size: clamp(26px, 7vw, 1em); }
+  #sxmTitle :global(.fx-mid) { display: block; font-size: .7em; line-height: 1.1; }
   .sxm-num { font: 400 clamp(44px, 9vw, 72px)/1 'Bebas Neue', sans-serif; letter-spacing: 2px; }
   .sxm-meta { margin: 10px 0 0; color: var(--lt); font-size: 14px; text-align: center; }
   .sxm-links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 14px 0 0; }

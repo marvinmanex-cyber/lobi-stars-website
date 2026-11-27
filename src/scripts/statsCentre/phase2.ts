@@ -2,6 +2,7 @@
 // comparison, season analytics, scouting, training themes, monthly reports and the xG model settings.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Ctx } from './bst';
+import { fx } from './fx';
 
 const W = 105, H = 68; // the pitch in metres; positions are stored 0–100 on each axis
 const pct = (v: number, max: number) => (v * max) / 100;
@@ -129,7 +130,7 @@ export async function ratingsView(c: Ctx, matchId: string) {
   const d = await api(`match?id=${encodeURIComponent(matchId)}`);
   const m = d.match, lobi = m.lobiHome ? 'home' : 'away';
   const rows = d.lineups.filter((l: any) => l.side === lobi);
-  c.view().innerHTML = `<h2>Coach ratings: ${esc(m.home)} ${m.homeScore}–${m.awayScore} ${esc(m.away)}</h2>
+  c.view().innerHTML = `<h2><span class="sx-h2pre">Coach ratings</span>${fx(m.home, m.away, `${m.homeScore}–${m.awayScore}`)}</h2>
     <p class="sx-small">Tap a rating (1–10) for each player and add a short note if needed. Staff only: ratings are never shown on the website.</p>
     <form id="rt">${rows.map((l: any) => `<section class="sx-card p2-rate" data-id="${esc(l.id)}"><div class="sx-row" style="justify-content:space-between"><b>${esc(l.number ?? '')} ${esc(l.name)}</b><span class="sx-small">${l.starter ? 'Started' : 'Substitute'}</span></div>
       <div class="p2-stars" role="radiogroup" aria-label="Rating for ${esc(l.name)}">${Array.from({ length: 10 }, (_, i) => `<button type="button" role="radio" aria-checked="${l.rating === i + 1}" data-r="${i + 1}" class="${l.rating === i + 1 ? 'on' : ''}">${i + 1}</button>`).join('')}<button type="button" data-r="" class="clear" aria-label="No rating">—</button></div>

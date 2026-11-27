@@ -4,6 +4,7 @@
 // are the match's events (a + adds one, a − removes the latest in that block, shared with live entry), and only the
 // analyst's own numbers (Offence/Attack, Defense, Dangerous Attack, Crossing, xG, xA) and the texts are saved here.
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { fx, fxText } from './fx';
 export interface Ctx {
   api: (path: string, body?: unknown) => Promise<any>; S: any; esc: (s: unknown) => string; toast: (t: string, ok?: boolean) => void;
   view: () => HTMLElement; resetView: () => { signal: AbortSignal }; store: { get(k: string, d: any): any; set(k: string, v: any): void };
@@ -57,12 +58,12 @@ async function library(c: Ctx) {
   c.view().innerHTML = `
     <div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">BST Analysis Form</h2><a class="sx-btn" href="${BASE}blank/" target="_blank" rel="noopener">Blank form (print)</a></div>
     <section class="sx-card"><h3>New analysis</h3>
-      ${d.matchesWithout.length ? `<form id="bstNew" class="sx-row"><label style="flex:1 1 280px">Match<select name="matchId">${d.matchesWithout.map((m: any) => `<option value="${esc(m.id)}">${esc(m.home)} v ${esc(m.away)} · ${esc(c.day(m.date))}</option>`).join('')}</select></label><button class="sx-btn sx-btn--r" type="submit">Start the analysis</button></form>
+      ${d.matchesWithout.length ? `<form id="bstNew" class="sx-row"><label style="flex:1 1 280px">Match<select name="matchId">${d.matchesWithout.map((m: any) => `<option value="${esc(m.id)}">${esc(fxText(m.home, m.away))} · ${esc(c.day(m.date))}</option>`).join('')}</select></label><button class="sx-btn sx-btn--r" type="submit">Start the analysis</button></form>
         <p class="sx-small">Everything known about the match (teams, date, venue, competition, line-ups, formations) is filled in from Match Setup.</p>`
         : `<p class="sx-small">Every match already has an analysis. <a href="/staff/statistics-center/#/new">Create the match first</a> (New match), then come back.</p>`}
     </section>
     <div class="sx-card sx-scroll"><table class="sx-t"><thead><tr><th>Date</th><th>Match</th><th>Opponent</th><th>Status</th><th>Last saved</th><th>Prepared by</th><th></th></tr></thead><tbody>
-    ${d.analyses.map((a: any) => `<tr><td>${esc(c.day(a.date))}</td><td>${esc(a.home)} v ${esc(a.away)}</td><td>${esc(a.opponent)}</td><td><span class="sx-pill ${a.status === 'final' ? 'published' : 'review'}">${a.status === 'final' ? 'Final' : 'Draft'}</span></td>
+    ${d.analyses.map((a: any) => `<tr><td>${esc(c.day(a.date))}</td><td>${fx(a.home, a.away)}</td><td>${esc(a.opponent)}</td><td><span class="sx-pill ${a.status === 'final' ? 'published' : 'review'}">${a.status === 'final' ? 'Final' : 'Draft'}</span></td>
       <td>${esc(c.when(a.updatedAt))}</td><td>${esc(a.preparedBy || '')}</td><td><div class="sx-row"><a class="sx-btn sx-btn--p" href="${BASE}${esc(a.id)}/">Open</a><a class="sx-btn" href="${BASE}${esc(a.id)}/print/" target="_blank" rel="noopener">PDF</a>
       <a class="sx-btn" href="/api/stats-centre/export/bst.xlsx?id=${esc(a.id)}">Excel</a>${a.status === 'final' && c.S.user.admin ? `<button class="sx-btn" data-reopen="${esc(a.id)}">Reopen</button>` : ''}${a.status !== 'final' || c.S.user.admin ? `<button class="sx-btn" data-remove="${esc(a.id)}">Remove</button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="7" class="sx-small">No analyses yet.</td></tr>'}
     </tbody></table></div>`;
@@ -250,14 +251,14 @@ async function form(c: Ctx, id: string) {
     const lobiF = lobiSide === 'home' ? ['formationHome', 'formationHomeFinish'] : ['formationAway', 'formationAwayFinish'];
     const oppF = lobiSide === 'home' ? ['formationAway', 'formationAwayFinish'] : ['formationHome', 'formationHomeFinish'];
     c.view().innerHTML = `
-      <div class="sx-row" style="justify-content:space-between;margin-bottom:8px"><div><h2 style="margin:0">Match analysis: ${esc(m.home)} ${m.homeScore}–${m.awayScore} ${esc(m.away)}</h2>
+      <div class="sx-row" style="justify-content:space-between;margin-bottom:8px"><div><h2 style="margin:0"><span class="sx-h2pre">Match analysis</span>${fx(m.home, m.away, `${m.homeScore}–${m.awayScore}`)}</h2>
         <p class="sx-small" style="margin:0">${d.analysis.status === 'final' ? `<span class="sx-pill published">Final</span> by ${esc(d.analysis.finalisedBy || '')} ${esc(c.when(d.analysis.finalisedAt))}` : '<span class="sx-pill review">Draft</span>'} · Prepared by: <b>${esc(d.analysis.preparedBy || c.S.user.fullName)}</b> · <span id="bstSave" aria-live="polite"></span></p></div>
         <div class="sx-row"><button class="sx-btn" data-ui="dark" aria-pressed="${!!uiPrefs().dark}">🌙 Dark</button><button class="sx-btn" data-ui="big" aria-pressed="${!!uiPrefs().big}">Big buttons</button><a class="sx-btn" href="${BASE}${esc(id)}/summary/">Summary</a><a class="sx-btn" href="/staff/statistics-center/#/tag/${esc(m.id)}">Tag players</a><a class="sx-btn" href="${BASE}${esc(id)}/print/${hasOpp() ? '?opponent=1' : ''}" target="_blank" rel="noopener">PDF</a><a class="sx-btn" href="/api/stats-centre/export/bst.xlsx?id=${esc(id)}&opponent=${st.opp || hasOpp() ? 1 : 0}">Excel</a><a class="sx-btn" href="/api/stats-centre/export/bst.csv?id=${esc(id)}">CSV</a></div></div>
       <p class="sx-err" id="bstOthers" ${d.others?.length ? '' : 'hidden'}>${d.others?.length ? `${esc(d.others.map((o: any) => o.name).join(', '))} also has this analysis open. Your numbers are added together safely; agree who writes the overview.` : ''}</p>
 
       <section class="sx-card"><h3>1 · Match sheet</h3>
         <div class="sx-form">
-          <div><p class="sx-small" style="margin:0">Match</p><b>${esc(m.home)} v ${esc(m.away)}</b></div><div><p class="sx-small" style="margin:0">Date and time</p><b>${esc(c.day(m.date))}${m.kickoff ? ` · ${esc(m.kickoff)}` : ''}</b></div>
+          <div><p class="sx-small" style="margin:0">Match</p><b>${fx(m.home, m.away)}</b></div><div><p class="sx-small" style="margin:0">Date and time</p><b>${esc(c.day(m.date))}${m.kickoff ? ` · ${esc(m.kickoff)}` : ''}</b></div>
           <div><p class="sx-small" style="margin:0">Venue</p><b>${esc(m.venue || '—')}</b></div><div><p class="sx-small" style="margin:0">Tournament</p><b>${esc(m.competition)}${m.matchday ? ` · ${esc(m.matchday)}` : ''}</b></div>
         </div>
         <p class="sx-small"><a href="/staff/statistics-center/#/match/${esc(m.id)}">Edit match details</a> · <a href="/staff/statistics-center/#/match/${esc(m.id)}">Edit line-up</a> (in Match Setup, so nothing is entered twice)</p>
@@ -495,13 +496,13 @@ async function summaryView(c: Ctx, id: string) {
     return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" role="img" aria-label="Momentum per 2-minute block"><polyline points="${line(a)}" fill="none" stroke="#C8102E" stroke-width="2.5" vector-effect="non-scaling-stroke"/><polyline points="${line(o)}" fill="none" stroke="#1C3F7A" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg>
       <p class="sx-small"><span style="color:#C8102E">━</span> ${esc(name('lobi'))} &nbsp; <span style="color:#1C3F7A">━</span> ${esc(name('opponent'))} (attacks + dangerous attacks + goal attempts, per 2-minute block)</p>`; })();
   const rng = (x: any) => x ? `${x.period === '1H' ? '1st half' : x.period === '2H' ? '2nd half' : x.period} ${Number(String(x.from).split('+')[0]) - 1}'–${x.to}'` : '—';
-  c.view().innerHTML = `<h2>Summary: ${esc(m.home)} ${m.homeScore}–${m.awayScore} ${esc(m.away)}</h2>
+  c.view().innerHTML = `<h2><span class="sx-h2pre">Summary</span>${fx(m.home, m.away, `${m.homeScore}–${m.awayScore}`)}</h2>
     <div class="sx-kpis">${d.cols.map((col: any) => `<div class="sx-kpi"><b>${T.lobi.goal_attempt[col.period]}–${T.opponent.goal_attempt[col.period]}</b><span>Goal attempts · ${col.period}</span></div>`).join('')}
       <div class="sx-kpi"><b>${d.accuracy.lobi === null ? '—' : `${d.accuracy.lobi}%`}</b><span>Lobi shot accuracy</span></div><div class="sx-kpi"><b>${share('lobi') === null ? '—' : `${share('lobi')}%`}</b><span>Attack share (attack ÷ attack + defence)</span></div>
       <div class="sx-kpi"><b>${T.lobi.corner.full + T.lobi.free_kick.full}</b><span>Lobi set pieces (corners + free kicks)</span></div><div class="sx-kpi"><b>${Number(T.lobi.xg.full).toFixed(2)}</b><span>Lobi xG</span></div></div>
     <section class="sx-card" style="margin-top:16px"><h3>Momentum</h3>${mom}
       <p><b>Strongest 10 minutes:</b> ${esc(rng(best))} · <b>Weakest 10 minutes:</b> ${esc(rng(worst))}</p></section>
-    <section class="sx-card"><h3>${esc(name('lobi'))} v ${esc(name('opponent'))}</h3><div class="sxm-bars2">${compare.map(bar).join('')}</div></section>
+    <section class="sx-card"><h3>${fx(name('lobi'), name('opponent'))}</h3><div class="sxm-bars2">${compare.map(bar).join('')}</div></section>
     <section class="sx-card sx-scroll"><h3>Totals per half</h3><table class="sx-t"><thead><tr><th>Metric</th>${d.cols.map((col: any) => `<th class="n">${col.period} ${esc(name('lobi'))}</th><th class="n">${col.period} ${esc(name('opponent'))}</th>`).join('')}<th class="n">Match</th></tr></thead><tbody>
       ${d.metrics.map((mt: any) => `<tr><td>${esc(mt.label)}</td>${d.cols.map((col: any) => `<td class="n">${T.lobi[mt.key][col.period]}</td><td class="n">${T.opponent[mt.key][col.period]}</td>`).join('')}<td class="n"><b>${T.lobi[mt.key].full}–${T.opponent[mt.key].full}</b></td></tr>`).join('')}</tbody></table></section>`;
 }

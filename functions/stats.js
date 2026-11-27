@@ -37,7 +37,7 @@ export async function onRequestGet({ request, env }) {
   // Match by match: matches published in the Statistics Center, each with its own stats page.
   try {
     const list = (await publicSlugs(env.DB, 40)).filter(r => !data.season || seasonOf(r.date, startMonth) === data.season);
-    if (list.length) html += `<h2 class="st-h2">Match stats ${esc(data.season)}</h2><ul class="sxm-list">` + list.map(r => `<li><a href="/stats/matches/${esc(r.slug)}/"><span><b>${esc(r.home)} ${r.homeScore}–${r.awayScore} ${esc(r.away)}</b></span><span class="st-dim">${esc(r.competition || '')} · ${esc(new Date(r.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' }))}</span></a></li>`).join('') + '</ul>';
+    if (list.length) html += `<h2 class="st-h2">Match stats ${esc(data.season)}</h2><ul class="sxm-list">` + list.map(r => `<li><a href="/stats/matches/${esc(r.slug)}/"><span class="fx"><b class="fx-club">${esc(r.home)}</b><span class="fx-mid">${r.homeScore}–${r.awayScore}</span><b class="fx-club">${esc(r.away)}</b></span><span class="st-dim">${esc(r.competition || '')} · ${esc(new Date(r.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' }))}</span></a></li>`).join('') + '</ul>';
   } catch (err) { console.error('[stats] match list', err); }
   if (!html) html = `<p class="st-empty">No stats for ${esc(data.season)} yet. They appear here once match results and player stats are entered.</p>`;
 

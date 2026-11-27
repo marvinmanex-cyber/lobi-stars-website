@@ -37,6 +37,9 @@ import { CURRENT_SEASON } from '../lib/site';
   .st :global(.sxm-list a) { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 12px 14px; border: 1px solid var(--d4); border-radius: 10px; color: inherit; text-decoration: none; }
   .st :global(.sxm-list a:hover), .st :global(.sxm-list a:focus-visible) { border-color: var(--red); }
   .st :global(.st-dim) { color: var(--lt); font-size: 14px; }
+  .st :global(.fx) { display: grid; justify-items: start; line-height: 1.25; }
+  .st :global(.fx-club) { white-space: nowrap; }
+  .st :global(.fx-mid) { font: 700 14px/1.2 'Barlow Condensed', sans-serif; color: var(--red-text); letter-spacing: .04em; }
   .st :global(.st-team) { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
   .st :global(.st-kpi) { border: 1px solid var(--d4); border-radius: 12px; padding: 14px; background: #fff; text-align: center; }
   .st :global(.st-kpi b) { display: block; font: 400 34px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
