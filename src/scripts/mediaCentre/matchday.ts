@@ -30,31 +30,85 @@ register({ path: 'matchday', label: 'Matchday Desk', icon: '⚽', async render(m
   }));
 } });
 
+// The line-up itself lives in the SHARED line-up (the Statistics Center edits the same one): every change is sent
+// with the version you last saw; changes to other players merge, a clash shows "Keep theirs / Use mine". The page
+// checks for newer versions every 5 seconds and shows who else is editing. The Media Centre item keeps the approval
+// and publishing steps (Send for approval, publish time).
+let luTimers: number[] = [];
 async function lineupEditor(main: HTMLElement, id: string) {
+  luTimers.forEach(t => clearInterval(t)); luTimers = [];
   main.innerHTML = '<p class="mc-muted">Loading…</p>';
   const [{ item, editable }, M] = await Promise.all([api(`items/${id}`), meta()]);
-  const d: any = item.data || {}, ro = editable ? '' : 'disabled';
+  const d: any = item.data || {};
   const m = M.matches.find((x: any) => x.id === d.eventId);
-  const role = (slug: string) => d.starting?.some((p: any) => p.slug === slug) ? 'start' : d.subs?.some((p: any) => p.slug === slug) ? 'sub' : '';
+  let sh: any = await api(`lineup?eventId=${encodeURIComponent(d.eventId)}`);
+  let dirty = false;
   const defaultAt = item.scheduledAt || (m ? new Date(Date.parse(m.date) - 60 * 60e3).toISOString() : null);
-  main.innerHTML = `<div class="mc-page-head"><h1>Line-up: ${esc(d.label || '')}</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/matchday/" data-go="/matchday">← Matchday Desk</a></div>
+  const ro = () => !editable || sh.status !== 'draft';
+  const chip = () => `<span class="mc-pill" style="background:${sh.status === 'locked' ? '#E5E7EB' : sh.status === 'confirmed' ? '#DCFCE7' : '#FEF3C7'}">${sh.status === 'locked' ? 'Locked (kick-off)' : sh.status === 'confirmed' ? 'Confirmed' : 'Draft'}</span>`;
+  const role = (slug: string) => { const r = sh.rows.find((x: any) => x.slug === slug); return r ? (r.role === 'starter' ? 'start' : 'sub') : ''; };
+  const draw = () => {
+    main.innerHTML = `<div class="mc-page-head"><h1>Line-up: ${esc(d.label || '')}</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/matchday/" data-go="/matchday">← Matchday Desk</a></div>
     ${statusBanner(item, editable)}
+    <p class="mc-hint" id="who" ${sh.others?.length ? '' : 'hidden'}>${sh.others?.length ? `${esc(sh.others.map((o: any) => o.name).join(', '))} ${sh.others.length > 1 ? 'are' : 'is'} editing this line-up too. Changes are merged safely; agree who picks which players.` : ''}</p>
+    ${sh.changedSincePublished ? '<p class="mc-hint" style="color:#A15C00"><b>The line-up changed since it was last published.</b> Send it for approval again to update the match page, team news and graphics.</p>' : ''}
+    <div id="conflict"></div>
     <form class="mc-card" id="f">
-      <p class="mc-muted">${m ? `${esc(when(m.date))} · ${esc(m.venue)}` : ''}</p>
+      <p class="mc-muted">${m ? `${esc(when(m.date))} · ${esc(m.venue)}` : ''} · ${chip()} · version ${sh.version}${sh.lastEditedBy ? ` · last change by ${esc(sh.lastEditedBy)}` : ''}</p>
+      <p class="mc-hint">This is the club's one line-up: the Statistics Center uses the same one. ${sh.status === 'confirmed' ? `Confirmed by ${esc(sh.confirmedBy || '')}: reopen it to change anything.` : sh.status === 'locked' ? 'The match has kicked off: changes are now substitutions (Statistics Center).' : ''}</p>
       <p><b id="count"></b></p>
-      <div class="mc-pick">${M.players.map((p: any) => `<label><span>${p.number != null ? `#${esc(p.number)} ` : ''}${esc(p.name)}</span><select data-p="${esc(p.slug)}" data-name="${esc(p.name)}" data-number="${esc(p.number ?? '')}" data-pos="${esc(p.position)}" ${ro}><option value="">—</option><option value="start" ${role(p.slug) === 'start' ? 'selected' : ''}>Starts</option><option value="sub" ${role(p.slug) === 'sub' ? 'selected' : ''}>Sub</option></select></label>`).join('') || '<p class="mc-muted">No live squad profiles yet.</p>'}</div>
-      <div class="mc-grid two" style="margin-top:12px"><div class="mc-field"><label for="formation">Formation <small>(optional)</small></label><input id="formation" maxlength="12" value="${esc(d.formation || '')}" placeholder="4-3-3" ${ro} /></div>
-      <div class="mc-field"><label for="at">Publish at <small>(Nigerian time; usually an hour before kick-off)</small></label><input id="at" type="datetime-local" value="${esc(localInput(defaultAt))}" ${ro} /></div></div>
-      <p class="mc-hint" id="saveState"></p><div id="wf"></div>
+      <div class="mc-pick">${M.players.map((p: any) => `<label><span>${p.number != null ? `#${esc(p.number)} ` : ''}${esc(p.name)}</span><select data-p="${esc(p.slug)}" data-name="${esc(p.name)}" data-number="${esc(p.number ?? '')}" data-pos="${esc(p.position)}" ${ro() ? 'disabled' : ''}><option value="">—</option><option value="start" ${role(p.slug) === 'start' ? 'selected' : ''}>Starts</option><option value="sub" ${role(p.slug) === 'sub' ? 'selected' : ''}>Sub</option></select></label>`).join('') || '<p class="mc-muted">No live squad profiles yet.</p>'}</div>
+      <div class="mc-grid two" style="margin-top:12px"><div class="mc-field"><label for="formation">Formation <small>(optional)</small></label><input id="formation" maxlength="12" value="${esc(sh.formation || '')}" placeholder="4-3-3" ${ro() ? 'disabled' : ''} /></div>
+      <div class="mc-field"><label for="at">Publish at <small>(Nigerian time; usually an hour before kick-off)</small></label><input id="at" type="datetime-local" value="${esc(localInput(defaultAt))}" ${editable ? '' : 'disabled'} /></div></div>
+      <p class="mc-hint" id="saveState"></p>
+      <p>${sh.status === 'draft' && editable ? '<button class="mc-btn mc-btn-o mc-btn-sm" type="button" id="confirm">Confirm line-up</button>' : ''}${sh.status === 'confirmed' && editable ? '<button class="mc-btn mc-btn-o mc-btn-sm" type="button" id="reopen">Reopen</button>' : ''} <button class="mc-btn mc-btn-o mc-btn-sm" type="button" id="history">History</button></p>
+      <div id="hist" hidden></div><div id="wf"></div>
     </form>`;
-  const $ = (s: string) => main.querySelector(s) as any;
-  const pick = (want: string) => [...main.querySelectorAll<HTMLSelectElement>('[data-p]')].filter(s => s.value === want).map(s => ({ slug: s.dataset.p, name: s.dataset.name, number: s.dataset.number ? Number(s.dataset.number) : null, position: s.dataset.pos }));
-  const value = () => ({ eventId: d.eventId, label: d.label, starting: pick('start'), subs: pick('sub'), formation: $('#formation').value });
-  const count = () => { const n = pick('start').length; $('#count').textContent = `Starting XI: ${n} of 11 · Substitutes: ${pick('sub').length}`; $('#count').style.color = n === 11 ? '' : '#A15C00'; };
-  const saver = autosaver(async () => { await api(`items/${id}`, { method: 'PUT', body: { data: value() } }); }, $('#saveState'));
-  $('#f').addEventListener('change', () => { count(); if (editable) saver.changed(); });
-  const wf = workflowButtons(item, editable, { flush: () => saver.flush(), schedule: () => fromLocal($('#at').value), onDone: () => go('/matchday') });
-  $('#wf').innerHTML = wf.html; wf.wire($('#wf'));
-  count();
+    wire();
+  };
+  const $ = (q: string) => main.querySelector(q) as any;
+  const count = () => { const st = sh.rows.filter((r: any) => r.role === 'starter').length; $('#count').textContent = `Starting XI: ${st} of 11 · Substitutes: ${sh.rows.filter((r: any) => r.role === 'sub').length}`; $('#count').style.color = st === 11 ? '' : '#A15C00'; };
+  const send = async (changes: any[], baseVersion = sh.version) => {
+    $('#saveState').textContent = 'Saving…'; dirty = true;
+    try {
+      const r = await api('lineup/changes', { method: 'POST', body: { eventId: d.eventId, baseVersion, changes, itemId: id } });
+      sh = r.sheet; dirty = false; $('#saveState').textContent = `Saved${r.merged ? ' (merged with changes made by someone else)' : ''}.`; count();
+      if (r.merged) draw();
+    } catch (x: any) {
+      dirty = false;
+      if (x.status === 409 && x.data?.conflict) {
+        sh = x.data.sheet; draw();
+        $('#conflict').innerHTML = `<div class="mc-card" style="border-color:#A15C00"><p><b>${esc(x.data.message || 'Someone else changed this while you were editing.')}</b></p>${(x.data.conflicts || []).map((c: any, i: number) => `<p>${esc(c.label)}: now <b>${esc(c.theirs)}</b>, you chose <b>${esc(c.mine)}</b>. <button type="button" class="mc-btn mc-btn-sm mc-btn-o" data-keep="${i}">Keep theirs</button> <button type="button" class="mc-btn mc-btn-sm" data-mine="${i}">Use mine</button> <small>(or pick another player in the list)</small></p>`).join('')}${(x.data.problems || []).map((p: string) => `<p>${esc(p)}</p>`).join('')}</div>`;
+        main.querySelectorAll('[data-keep]').forEach((b: any) => b.addEventListener('click', () => { $('#conflict').innerHTML = ''; }));
+        main.querySelectorAll('[data-mine]').forEach((b: any) => b.addEventListener('click', () => { const c = x.data.conflicts[Number(b.dataset.mine)]; const mine = changes.filter(ch => (ch.slug ? `s:${ch.slug}` : ch.op) === c.key); $('#conflict').innerHTML = ''; send(mine, sh.version); }));
+      } else { $('#saveState').textContent = x.message; toast(x.message, 8000); if (x.data?.sheet) { sh = x.data.sheet; draw(); } }
+    }
+  };
+  function wire() {
+    count();
+    $('#f').addEventListener('change', (e: any) => {
+      const t = e.target;
+      if (t.matches('[data-p]')) send([{ op: 'set', slug: t.dataset.p, role: t.value === 'start' ? 'starter' : t.value === 'sub' ? 'sub' : 'none' }]);
+      if (t.id === 'formation') send([{ op: 'formation', value: t.value.trim() }]);
+    });
+    $('#confirm')?.addEventListener('click', async () => { try { sh = (await api('lineup/confirm', { method: 'POST', body: { eventId: d.eventId } })).sheet; toast('Line-up confirmed. The Statistics Center sees it as the official line-up.'); draw(); } catch (x: any) { toast(x.message, 8000); } });
+    $('#reopen')?.addEventListener('click', async () => { try { const r = await api('lineup/reopen', { method: 'POST', body: { eventId: d.eventId } }); sh = r.sheet; if (r.warning) toast(r.warning, 9000); draw(); } catch (x: any) { toast(x.message, 8000); } });
+    $('#history').addEventListener('click', async () => {
+      const box = $('#hist'); box.hidden = !box.hidden; if (box.hidden) return;
+      const { revisions } = await api(`lineup/revisions?eventId=${encodeURIComponent(d.eventId)}`);
+      box.innerHTML = `<ul class="mc-list">${revisions.map((r: any) => `<li><div class="t"><b>Version ${r.version}</b><small>${esc(when(r.at))} · ${esc(r.by || '')} · ${esc(r.what || '')}</small></div>${editable && sh.status === 'draft' ? `<button type="button" class="mc-btn mc-btn-o mc-btn-sm" data-restore="${esc(r.id)}">Put this version back</button>` : ''}</li>`).join('') || '<li class="mc-muted">No changes yet.</li>'}</ul>`;
+      box.querySelectorAll('[data-restore]').forEach((b: any) => b.addEventListener('click', async () => { if (!confirm('Put this version back? It is saved as a new version; nothing is deleted.')) return; try { sh = (await api('lineup/restore', { method: 'POST', body: { eventId: d.eventId, revisionId: b.dataset.restore, itemId: id } })).sheet; toast('Version put back.'); draw(); } catch (x: any) { toast(x.message, 8000); } }));
+    });
+    const saverNoop = autosaver(async () => {}, $('#saveState'));
+    const wf = workflowButtons(item, editable, { flush: () => saverNoop.flush(), schedule: () => fromLocal($('#at').value), onDone: () => go('/matchday') });
+    $('#wf').innerHTML = wf.html; wf.wire($('#wf'));
+  }
+  draw();
+  // Newer versions (every 5 s) and "who is editing" (every 15 s).
+  luTimers.push(window.setInterval(async () => {
+    if (!document.body.contains(main.querySelector('#f'))) { luTimers.forEach(t => clearInterval(t)); return; }
+    try { const v = await api(`lineup/version?eventId=${encodeURIComponent(d.eventId)}`, { quiet: true }); if (v.version !== sh.version && !dirty) { sh = await api(`lineup?eventId=${encodeURIComponent(d.eventId)}`, { quiet: true }); draw(); toast(`Line-up updated by ${v.by || 'someone else'}`); } } catch { /* offline */ }
+  }, 5000));
+  const beat = async () => { try { const r = await api('lineup/heartbeat', { method: 'POST', body: { eventId: d.eventId }, quiet: true }); const w = main.querySelector('#who') as HTMLElement; if (w) { w.hidden = !r.others.length; w.textContent = r.others.length ? `${r.others.map((o: any) => o.name).join(', ')} ${r.others.length > 1 ? 'are' : 'is'} editing this line-up too (${r.others.map((o: any) => o.page === 'media-matchday' ? 'Media Centre' : 'Statistics Center').join(', ')}).` : ''; } } catch { /* offline */ } };
+  beat(); luTimers.push(window.setInterval(beat, 15000));
 }
-

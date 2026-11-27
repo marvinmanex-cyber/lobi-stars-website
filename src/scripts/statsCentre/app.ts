@@ -337,28 +337,99 @@ async function setupView(id: string) {
     if (body.date === String(m.date).slice(0, 10)) delete body.date; // same day: keep the full date and time
     try { await api('match/setup', body); toast('Details saved.'); setupView(id); } catch (x: any) { toast(x.message, false); }
   });
+  // The shared line-up (lineupService.js): the same line-up as the Media Centre's Matchday Desk. Saving sends only the
+  // changes, with the version this page loaded: other people's changes to other players merge; a clash asks.
+  const sheets: any = {};
+  let luDirty = false;
+  $('lu').addEventListener('input', () => { luDirty = true; }); $('lu').addEventListener('change', () => { luDirty = true; });
+  const chip = (sh: any) => `<span class="sx-pill ${sh.status === 'locked' ? '' : sh.status === 'confirmed' ? 'published' : 'review'}">${sh.status === 'locked' ? 'Locked (kick-off)' : sh.status === 'confirmed' ? 'Confirmed' : 'Draft'}</span>`;
+  const drawStatus = () => {
+    const sh = sheets[ls]; if (!sh) return;
+    $('luStatus').innerHTML = `${chip(sh)} <span class="sx-small">version ${sh.version}${sh.lastEditedBy ? ` · last change by ${esc(sh.lastEditedBy)}` : ''}${sh.confirmedBy && sh.status !== 'draft' ? ` · confirmed by ${esc(sh.confirmedBy)}` : ''}</span>
+      ${sh.status === 'draft' && !locked ? '<button type="button" class="sx-btn" id="luConfirm">Confirm line-up</button>' : ''}${sh.status === 'confirmed' && !locked ? '<button type="button" class="sx-btn" id="luReopen">Reopen</button>' : ''}<button type="button" class="sx-btn" id="luHist">History</button>
+      ${sh.others?.length ? `<p class="sx-err" style="margin:8px 0 0">${esc(sh.others.map((o: any) => o.name).join(', '))} ${sh.others.length > 1 ? 'are' : 'is'} editing this line-up too. Changes are merged safely.</p>` : ''}
+      ${sh.changedSincePublished ? '<p class="sx-err" style="margin:8px 0 0">The line-up changed since the Media Centre last published it: ask the media team to send it for approval again.</p>' : ''}
+      ${sh.status === 'locked' ? '<p class="sx-small">The match has kicked off: record changes as substitutions. A correction (e.g. a wrong shirt number) asks for a reason.</p>' : sh.status === 'confirmed' ? '<p class="sx-small">Confirmed: reopen it to change anything.</p>' : ''}<div id="luHistBox"></div>`;
+    $('luConfirm')?.addEventListener('click', async () => { try { sheets[ls] = (await api('lineup/confirm', { id, side: ls })).sheet; toast('Line-up confirmed (the official line-up for both pages).'); drawStatus(); } catch (x: any) { toast(x.message, false); } });
+    $('luReopen')?.addEventListener('click', async () => { try { const r = await api('lineup/reopen', { id, side: ls }); sheets[ls] = r.sheet; if (r.warning) toast(r.warning, false); drawStatus(); } catch (x: any) { toast(x.message, false); } });
+    $('luHist')?.addEventListener('click', async () => {
+      const box = $('luHistBox'); if (box.innerHTML) { box.innerHTML = ''; return; }
+      const { revisions } = await api(`lineup/revisions?id=${encodeURIComponent(id)}&side=${ls}`);
+      box.innerHTML = `<ul class="sx-feed" style="margin-top:8px">${revisions.map((r: any) => `<li><span class="d"><b>Version ${r.version}</b><small>${esc(when(r.at))} · ${esc(r.by || '')} · ${esc(r.what || '')}</small></span>${sheets[ls].status === 'draft' ? `<button type="button" class="sx-btn" data-restore="${esc(r.id)}">Put back</button>` : ''}</li>`).join('') || '<li class="sx-small">No changes yet.</li>'}</ul>`;
+      box.querySelectorAll('[data-restore]').forEach((x: any) => x.addEventListener('click', async () => { if (!confirm('Put this version back? It is saved as a new version.')) return; try { await api('lineup/restore', { id, side: ls, revisionId: x.dataset.restore }); toast('Version put back.'); setupView(id); } catch (y: any) { toast(y.message, false); } }));
+    });
+  };
+  $('lu').insertAdjacentHTML('afterbegin', '<div id="luStatus" class="sx-row" style="margin-bottom:10px"></div><div id="luConflict"></div>');
+  Promise.all([api(`lineup?id=${encodeURIComponent(id)}&side=${ls}`), api(`lineup?id=${encodeURIComponent(id)}&side=${os}`)]).then(([x, y]: any) => { sheets[ls] = x; sheets[os] = y; drawStatus(); }).catch(() => {});
+  const timers = [
+    window.setInterval(async () => {
+      if (!location.hash.startsWith(`#/match/${id}`)) { timers.forEach(t => clearInterval(t)); return; }
+      try {
+        const v = await api(`lineup/version?id=${encodeURIComponent(id)}&side=${ls}`);
+        if (sheets[ls] && v.version !== sheets[ls].version) {
+          if (!luDirty) { toast(`Line-up updated by ${v.by || 'someone else'}`); setupView(id); }
+          else $('luConflict').innerHTML = `<p class="sx-err">Line-up changed by ${esc(v.by || 'someone else')}. Your changes are still here: save to merge them, or <a href="#/match/${esc(id)}" id="luReload">see their changes</a>.</p>`;
+        }
+      } catch { /* offline */ }
+    }, 5000),
+    window.setInterval(async () => { try { const r = await api('lineup/heartbeat', { id, side: ls, page: 'match-setup' }); if (sheets[ls]) { sheets[ls].others = r.others; drawStatus(); } } catch { /* offline */ } }, 15000),
+  ];
+  api('lineup/heartbeat', { id, side: ls, page: 'match-setup' }).catch(() => {});
   $('lu').addEventListener('submit', async (e: any) => {
     e.preventDefault();
-    const keep = new Map(d.lineups.map((l: any) => [l.slug || `${l.side}:${l.name}`, l]));
-    const lobi: any[] = [];
-    view().querySelectorAll('.sx-pcard').forEach((c: any) => {
-      const role = c.querySelector('[data-role]').value; if (!role) return;
-      const old: any = keep.get(c.dataset.slug) || {};
-      lobi.push({ slug: c.dataset.slug, number: c.querySelector('[data-num]').value, position: c.querySelector('[data-ppos]').value, starter: role === 's', rating: old.rating, motm: old.motm, minutesOverride: old.minutesOverride });
-    });
-    if (lobi.filter(p => p.starter).length > 11) { toast('Only 11 players can start.', false); return; }
-    const forms: any = {};
     let badF = '';
-    view().querySelectorAll('[data-fsel]').forEach((x: any) => { const k = x.dataset.fsel; const val = x.value === 'custom' ? (view().querySelector(`[data-fcus="${k}"]`) as HTMLInputElement).value.trim() : x.value; if (val && !/^[1-5](-[1-5]){1,4}$/.test(val)) badF = val; forms[k] = val; });
+    const formVal = (k: string) => { const x = view().querySelector(`[data-fsel="${k}"]`) as HTMLSelectElement; if (!x) return null; const v = x.value === 'custom' ? (view().querySelector(`[data-fcus="${k}"]`) as HTMLInputElement).value.trim() : x.value; if (v && !/^[1-5](-[1-5]){1,4}$/.test(v)) badF = v; return v; };
+    const fk = (side: string, finish: boolean) => (side === 'home' ? (finish ? 'formationHomeFinish' : 'formationHome') : (finish ? 'formationAwayFinish' : 'formationAway'));
+    const changesFor = (side: string) => {
+      const orig = new Map(d.lineups.filter((l: any) => l.side === side).map((l: any) => [l.slug ? `s:${l.slug}` : `o:${String(l.name).toLowerCase()}#${l.number ?? ''}`, l]));
+      const out: any[] = [], seen = new Set();
+      if (side === ls) {
+        view().querySelectorAll('.sx-pcard').forEach((c: any) => {
+          const role = c.querySelector('[data-role]').value, key = `s:${c.dataset.slug}`, o: any = orig.get(key);
+          const num = c.querySelector('[data-num]').value, want = role === 's' ? 'starter' : role === 'b' ? 'sub' : 'none';
+          if (want !== 'none') seen.add(key);
+          const had = o ? (o.starter ? 'starter' : 'sub') : 'none';
+          if (want !== had || (want !== 'none' && String(o?.number ?? '') !== String(num))) out.push({ op: 'set', slug: c.dataset.slug, role: want, number: num, position: c.querySelector('[data-ppos]').value });
+        });
+      } else {
+        $('oppRows').querySelectorAll('tr').forEach((tr: any) => {
+          const name = tr.querySelector('[data-oname]').value.trim(); if (!name) return;
+          const num = tr.querySelector('[data-onum]').value, key = `o:${name.toLowerCase()}#${num}`, o: any = orig.get(key);
+          const want = tr.querySelector('[data-ostart]').checked ? 'starter' : 'sub'; seen.add(key);
+          if (!o || (o.starter ? 'starter' : 'sub') !== want || (o.position || '') !== tr.querySelector('[data-opos]').value) out.push({ op: 'set', key, name, number: num, position: tr.querySelector('[data-opos]').value, role: want });
+        });
+      }
+      for (const [key, o] of orig) if (!seen.has(key)) out.push({ op: 'set', key, slug: (o as any).slug, name: (o as any).name, number: (o as any).number, role: 'none' });
+      const f1 = formVal(fk(side, false)), f2 = formVal(fk(side, true));
+      if (f1 !== null && f1 !== (m[fk(side, false)] || '')) out.push({ op: 'formation', value: f1 });
+      if (f2 !== null && f2 !== (m[fk(side, true)] || '')) out.push({ op: 'formation_finish', value: f2 });
+      return out;
+    };
+    const todo = [[ls, changesFor(ls)], [os, changesFor(os)]].filter(([, c]: any) => c.length) as [string, any[]][];
     if (badF) { toast(`Write the formation like 4-4-2 (not "${badF}").`, false); return; }
-    lobi.sort((a, b) => Number(b.starter) - Number(a.starter));
-    const others: any[] = [];
-    $('oppRows').querySelectorAll('tr').forEach((tr: any) => {
-      const name = tr.querySelector('[data-oname]').value.trim(); if (!name) return;
-      const old: any = keep.get(`${os}:${name}`) || {};
-      others.push({ name, number: tr.querySelector('[data-onum]').value, position: tr.querySelector('[data-opos]').value, starter: tr.querySelector('[data-ostart]').checked, rating: old.rating, motm: old.motm, minutesOverride: old.minutesOverride });
-    });
-    try { const r = await api('match/lineups', { id, [ls]: lobi, [os]: others }); await api('match/setup', { id, ...forms }); toast(r.warnings?.length ? `Saved. Please check: ${r.warnings.join(' ')}` : 'Line-ups and formations saved.', !r.warnings?.length); setupView(id); } catch (x: any) { toast(x.message, false); }
+    if (!todo.length) { toast('Nothing changed.'); return; }
+    let reason = '';
+    if ((sheets[ls]?.status === 'locked' || sheets[os]?.status === 'locked')) { reason = prompt('The match has kicked off. What are you correcting, and why? (e.g. wrong shirt number on the team sheet)') || ''; if (!reason.trim()) return; }
+    for (const [side, changes] of todo) {
+      try {
+        const r = await api('lineup/changes', { id, side, baseVersion: sheets[side]?.version ?? 0, changes, reason });
+        sheets[side] = r.sheet;
+        if (r.merged) toast('Saved and merged with changes made by someone else.');
+      } catch (x: any) {
+        if (x.status === 409 && x.data?.conflict) {
+          $('luConflict').innerHTML = `<div class="sx-card" style="border-color:var(--warn)"><p><b>${esc(x.data.message || 'Someone else changed this while you were editing.')}</b></p>${(x.data.conflicts || []).map((c: any) => `<p>${esc(c.label)}: now <b>${esc(c.theirs)}</b>, you chose <b>${esc(c.mine)}</b>.</p>`).join('')}${(x.data.problems || []).map((p: string) => `<p>${esc(p)}</p>`).join('')}
+            <p class="sx-row"><button type="button" class="sx-btn" id="cfTheirs">Keep theirs (reload)</button><button type="button" class="sx-btn sx-btn--p" id="cfMine">Use mine</button></p></div>`;
+          $('cfTheirs').addEventListener('click', () => setupView(id));
+          $('cfMine').addEventListener('click', async () => { try { await api('lineup/changes', { id, side, baseVersion: x.data.sheet.version, changes, reason }); toast('Your changes are saved.'); setupView(id); } catch (y: any) { toast(y.message, false); } });
+          return;
+        }
+        toast(x.message, false); if (x.data?.sheet) { sheets[side] = x.data.sheet; drawStatus(); }
+        return;
+      }
+    }
+    luDirty = false;
+    toast('Line-ups and formations saved (the same line-up the Media Centre sees).');
+    setupView(id);
   });
 }
 /** GK, DF, MF or FW, whichever way the squad list writes the position (DEF, MID, FWD, ST…). */

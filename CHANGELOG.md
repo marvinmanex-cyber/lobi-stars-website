@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: One shared line-up for the Media Centre and the Statistics Center
+
+- **One line-up, one owner:** the Media Centre's Matchday Desk and the Statistics Center (Match Setup, live entry, BST) now read and write the SAME line-up for a fixture. The Media Centre keeps its approval and publishing steps; publishing to the match page (and Man of the Match) uses the shared line-up.
+- **Safe when two people edit at once:** every change is small (one player, a shirt number, the formation) and sent with the version the person saw. Changes to different players merge automatically; the same player changed by two people, a 12th starter, a player twice or a shirt number twice is refused with a clear message: "Keep theirs" or "Use mine". Nothing is overwritten silently.
+- **Live on both pages:** each page checks for a newer version every 5 seconds (updated with "Line-up updated by …", or a warning if you have unsaved changes) and shows who else is editing ("Jiki Benjamin is editing this line-up (Statistics Center)").
+- **Draft → Confirmed → Locked:** "Confirm line-up" on either page (about an hour before kick-off); reopen it to change anything (with a warning if team news or graphics were already published). It locks by itself at kick-off (the clock starts or the kick-off time passes); after that changes are substitutions, and a statistician or Super Admin can correct it with a reason (in the history and the activity log).
+- **History:** every change is kept (who, when, what); any version can be put back (saved as a new version).
+- **Published-content guard:** when the line-up changes after the Media Centre published it, both pages say so ("send it for approval again to update the match page").
+- An optional 5-minute "pen" (exclusive editing; a Super Admin can override), off unless someone takes it.
+- **The Media Centre's earlier line-ups were copied once** into the shared line-up (safe to run again); the report (copied, skipped, could not be matched) is on Admin › Statistics Center.
+- **Staff:** nothing to do. The Matchday Desk line-up page looks the same, with a status, Confirm/Reopen and History.
+
+---
+
 ## 2026-11-27: Statistics Center Phase 2: pitch maps, xG, video clips, set pieces, ratings, analytics, scouting, training, reports
 
 All staff only (nothing new on the public website). New **Analysis** menu.

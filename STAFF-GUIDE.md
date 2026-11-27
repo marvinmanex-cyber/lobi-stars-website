@@ -5413,3 +5413,10 @@ what you see. xG is worked out by itself for shots with a position. For corners 
 routine and what came of it. Add the match video link and the kick-off time in the video in Match Setup to get
 "Watch clip" on Review. **Rate players** on Review after the match. The Analysis menu has season analytics, maps, set
 pieces, player comparison, scouting reports (with notes), training themes, monthly reports and the xG settings.
+
+**One line-up for both pages:** the Media Centre's Matchday Desk and the Statistics Center's Match Setup edit the same
+line-up. If someone else is editing it you see their name; if you both change the same player you are asked "Keep
+theirs" or "Use mine". Press **Confirm line-up** when the team sheet is agreed (about an hour before kick-off); **Reopen**
+to change it again. At kick-off it locks: record changes as substitutions (a statistician or Super Admin can correct a
+mistake, e.g. a wrong shirt number, with a reason). **History** shows every change and can put an older version back.
+If the line-up changes after the Media Centre published it, send it for approval again.

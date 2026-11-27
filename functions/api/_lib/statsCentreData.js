@@ -725,7 +725,7 @@ export async function mediaLineup(db, matchId) {
 // ── Opponent squad registry (Add-on 2) ──
 export const teamKey = name => ` ${String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ')} `.replace(/ (fc|f c|football club) /g, ' ').replace(/\s+/g, ' ').trim();
 /** Saves (or refreshes) an opponent player in the club's registry; returns its id. One row per club + name + number. */
-async function upsertOpponentPlayer(db, user, teamName, r, matchId) {
+export async function upsertOpponentPlayer(db, user, teamName, r, matchId) {
   const tk = teamKey(teamName), nk = String(r.name).toLowerCase().trim(), at = nowIso();
   const had = await db.prepare(`SELECT id FROM sx_opponent_players WHERE team_key = ? AND name_key = ? AND IFNULL(shirt_number, -1) = IFNULL(?, -1) AND is_deleted = 0`).bind(tk, nk, r.number).first();
   if (had) {

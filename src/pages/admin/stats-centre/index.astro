@@ -29,6 +29,12 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     </section>
 
     <section class="sxa-card">
+      <h2>Line-ups copied from the Media Centre</h2>
+      <p class="muted small">The Media Centre and the Statistics Center now share one line-up. The Media Centre's earlier line-ups were copied in once (the first time a line-up was opened after the change).</p>
+      <div id="migration" class="small">Loading…</div>
+    </section>
+
+    <section class="sxa-card">
       <h2>Activity log</h2>
       <p class="muted small">Every sign-in and every change in the Statistics Center, with the old and new values. It cannot be changed or deleted. Latest 200.</p>
       <div class="sxa-scroll"><table class="sxa-table"><thead><tr><th>When</th><th>Who</th><th>What</th><th>Details</th></tr></thead><tbody id="activity"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table></div>
@@ -75,7 +81,13 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     const a = crypto.getRandomValues(new Uint32Array(3));
     return `${words[a[0] % 10]}-${words[a[1] % 10]}-${1000 + (a[2] % 9000)}`;
   }
+  function drawMigration(r: any) {
+    const el = $('migration'); if (!el) return;
+    if (!r) { el.textContent = 'Not run yet: it runs the first time someone opens a line-up.'; return; }
+    el.innerHTML = `<p>${esc(when(r.at))}: ${r.items} Media Centre line-up item${r.items === 1 ? '' : 's'} checked · <b>${r.migrated} copied</b> · ${r.skippedHasLineup} skipped (the match already had a line-up).</p>${r.unmatched?.length ? `<p><b>Could not be matched (${r.unmatched.length}):</b></p><ul>${r.unmatched.map((u: any) => `<li>${esc(u.reason)} <small class="muted">(${esc(u.item)})</small></li>`).join('')}</ul>` : '<p>Everything was matched.</p>'}`;
+  }
   function draw(d: any) {
+    if ('migration' in d) drawMigration(d.migration);
     $('users').innerHTML = d.users.length ? d.users.map((u: any) => `<tr data-id="${esc(u.id)}" data-name="${esc(u.fullName)}">
       <td><b>${esc(u.fullName)}</b><br /><small class="muted">Added ${esc(when(u.createdAt))}</small></td>
       <td><code>${esc(u.loginId)}</code></td>

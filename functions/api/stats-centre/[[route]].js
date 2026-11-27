@@ -20,6 +20,7 @@ import { listAnalyses, createAnalysis, getAnalysis, setCell, setText, setStoppag
 import { sendEmail } from '../_lib/email.js';
 import { xgParams, saveXgParams, recalcXg, XG_DEFAULTS, ROUTINES, SP_OUTCOMES, saveRatings, addScoutingNote, removeScoutingNote, themes, saveTheme, addTag, removeTag, themeReport, ensurePhase2Schema } from '../_lib/statsPhase2.js';
 import { mapEvents, playerProfile, comparePlayers, seasonAnalytics, opponents, scoutingReport, buildMonthlyReport, reportsList, reportHtml, keyMoments } from '../_lib/statsAnalytics.js';
+import { getSheet, applyChanges, confirmSheet, reopenSheet, sheetVersion, heartbeat as lineupHeartbeat, takePen, revisions as lineupRevisions, restoreRevision, migrateMediaLineups } from '../_lib/lineupService.js';
 import { matchWeather, makeSheetsKey, stopSheetsKey, sheetsCsv, secondCheck, secondCheckProblem } from '../_lib/statsExtras.js';
 import { superAdminEmails } from '../_lib/superAdmins.js';
 import { buildXlsx, buildCsv } from '../_lib/xlsx.js';
@@ -124,6 +125,23 @@ export async function onRequest({ request, env, params }) {
       case 'POST xg/recalc': { if (!s.user.canPublish) return json({ error: 'Only a senior statistician or a Super Admin can recalculate.' }, 403); return out(await recalcXg(db, s.user, { matchId: b.matchId || '', season: b.matchId ? '' : (b.season || season) }, opts)); }
       case 'POST ratings': return out(await saveRatings(db, s.user, b.id, b.rows, opts));
       case 'GET match/key-moments': { const full = await getMatch(db, q.get('id')); return full ? json({ moments: keyMoments(full), video: !!full.match.videoUrl }) : json({ error: 'Match not found.' }, 404); }
+      // ── The shared line-up (one owner: lineupService.js) ──
+      case 'GET lineup': case 'POST lineup/changes': case 'POST lineup/confirm': case 'POST lineup/reopen': case 'GET lineup/version': case 'POST lineup/heartbeat': case 'POST lineup/pen': case 'GET lineup/revisions': case 'POST lineup/restore': {
+        const roster = await loadRoster(env, request.url);
+        await migrateMediaLineups(db, roster);
+        const mid = String(b.id || q.get('id') || ''), side = (b.side || q.get('side')) === 'away' ? 'away' : 'home';
+        const actor = { kind: s.user.admin ? 'admin' : 'stats', id: s.user.id, fullName: s.user.fullName, loginId: s.user.loginId };
+        const send = r => (r.conflict || r.status === 409 ? json(r, 409) : r.status === 423 ? json(r, 423) : r.error ? json(r, 400) : json(r));
+        if (key === 'GET lineup') return json(await getSheet(db, mid, side, actor));
+        if (key === 'GET lineup/version') return json(await sheetVersion(db, mid, side));
+        if (key === 'GET lineup/revisions') return json({ revisions: await lineupRevisions(db, mid, side) });
+        if (key === 'POST lineup/changes') return send(await applyChanges(db, actor, mid, side, b.baseVersion, b.changes, roster, { reason: oneLine(b.reason || '', 200), request }));
+        if (key === 'POST lineup/confirm') return send(await confirmSheet(db, actor, mid, side, opts));
+        if (key === 'POST lineup/reopen') return send(await reopenSheet(db, actor, mid, side, opts));
+        if (key === 'POST lineup/heartbeat') return json(await lineupHeartbeat(db, actor, mid, side, b.page || 'match-setup'));
+        if (key === 'POST lineup/pen') return send(await takePen(db, actor, mid, side, { release: !!b.release, override: !!b.override }));
+        return send(await restoreRevision(db, actor, mid, side, b.revisionId, roster, { reason: oneLine(b.reason || '', 200), request }));
+      }
       case 'GET match/media-lineup': return json({ lineup: await mediaLineup(db, q.get('id')) });
       case 'POST match/setup': return out(await saveSetup(db, s.user, b.id, b, opts));
       case 'POST match/lineups': return out(await saveLineups(db, s.user, b.id, b, await loadRoster(env, request.url), opts));

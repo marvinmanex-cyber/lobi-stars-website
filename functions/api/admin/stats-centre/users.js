@@ -1,5 +1,6 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
-import { listUsers, createUser, updateUser, activityList, json } from '../../_lib/statsCentre.js';
+import { listUsers, createUser, updateUser, activityList, json, sxSettings } from '../../_lib/statsCentre.js';
+const migration = async db => { try { return JSON.parse((await sxSettings(db)).lineup_migration || 'null'); } catch { return null; } };
 
 // Super Admins (permission stats.centre.manage, see adminRoles.js): Statistics Center accounts and the activity log.
 // GET  -- every statistician and the latest activity.
@@ -8,7 +9,7 @@ import { listUsers, createUser, updateUser, activityList, json } from '../../_li
 export async function onRequestGet({ request, env }) {
   const { denied } = await requireAdminUser(request, env);
   if (denied) return denied;
-  return json({ users: await listUsers(env.DB), activity: await activityList(env.DB, { limit: 200 }) });
+  return json({ users: await listUsers(env.DB), activity: await activityList(env.DB, { limit: 200 }), migration: await migration(env.DB) });
 }
 
 export async function onRequestPost({ request, env }) {

@@ -14,6 +14,7 @@ import { fromLiveMatchControl } from './scores/consensus.js';
 import { settlePredictions } from './predict.js';
 import { toPublic } from './matchCentre.js';
 import { ensureMediaSchema, oneLine, parseJson, mcLog } from './mediaCentre.js';
+import { markPublished } from './lineupService.js';
 
 export const UPDATE_TYPES = { kickoff: 'Kick-off', goal: 'Goal', yellow: 'Yellow card', red: 'Red card', sub: 'Substitution', halftime: 'Half-time', secondhalf: 'Second half', fulltime: 'Full-time', note: 'Update' };
 const nowIso = () => new Date().toISOString();
@@ -105,12 +106,28 @@ async function lineupPublish(env, r, v) {
   await ensureTable(db);
   const m = await loadMatch(db, v.eventId);
   if (!m) return { error: 'The match no longer exists.' };
+  // The shared line-up (Statistics Center + Matchday Desk) is the owner: publish what it holds now.
+  let sharedMatch = null;
+  try {
+    const sx = await db.prepare(`SELECT id, is_lobi_home FROM sx_matches WHERE event_id = ? AND is_deleted = 0`).bind(v.eventId).first();
+    if (sx) {
+      const side0 = sx.is_lobi_home ? 'home' : 'away';
+      const rows = (await db.prepare(`SELECT player_slug, player_name, shirt_number, position, is_starter FROM sx_lineups WHERE match_id = ? AND side = ? ORDER BY is_starter DESC, sort`).bind(sx.id, side0).all()).results;
+      if (rows.length) {
+        const map = r0 => ({ slug: r0.player_slug, name: r0.player_name, number: r0.shirt_number, position: r0.position || '' });
+        const sheet = await db.prepare(`SELECT formation FROM sx_lineup_sheets WHERE match_id = ? AND side = ?`).bind(sx.id, side0).first().catch(() => null);
+        v = { ...v, starting: rows.filter(x => x.is_starter).map(map), subs: rows.filter(x => !x.is_starter).map(map), formation: sheet?.formation || v.formation };
+        sharedMatch = { id: sx.id, side: side0 };
+      }
+    }
+  } catch { /* no shared line-up yet: the item's own line-up */ }
   const side = /lobi stars/i.test(m.event.home_team) ? 'home' : 'away';
   const lu = parseJson(m.centre?.lineups_json, { home: { starting: [], subs: [] }, away: { starting: [], subs: [] } });
   lu[side] = { starting: v.starting.map(p => p.name), subs: v.subs.map(p => p.name) };
   const squad = { starting: v.starting.map(p => ({ slug: p.slug, name: p.name, number: p.number, position: p.position, photo: null })), bench: v.subs.map(p => ({ slug: p.slug, name: p.name, number: p.number, position: p.position, photo: null })) };
   await db.prepare(`INSERT INTO match_centre (event_id, status, lineups_json, squad_json, updated_at) VALUES (?, 'scheduled', ?, ?, datetime('now'))
     ON CONFLICT(event_id) DO UPDATE SET lineups_json = excluded.lineups_json, squad_json = excluded.squad_json, updated_at = excluded.updated_at`).bind(v.eventId, JSON.stringify(lu), JSON.stringify(squad)).run();
+  if (sharedMatch) await markPublished(db, sharedMatch.id, sharedMatch.side).catch(() => {});
   return { ok: true, note: 'The line-up is on the match page.' };
 }
 export const LINEUP = {

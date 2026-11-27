@@ -208,6 +208,42 @@ Code: `statsPhase2.js` (schema, xG, zones, clips, set pieces, ratings, notes, th
 analytics, scouting, monthly report and its timer in `internal/checklist-run`), `src/scripts/statsCentre/phase2.ts`.
 Tests: `tests/stats-phase2.unit.test.mjs`.
 
+## One shared line-up (built 27 Nov 2026)
+
+**The rule:** `sx_lineups` holds every line-up row (both teams); `functions/api/_lib/lineupService.js` is the only code
+that writes them, for the Media Centre's Matchday Desk (`/api/media-centre/lineup/*`, keyed by fixture) and the
+Statistics Center (`/api/stats-centre/lineup/*`, keyed by match). The fixture links the two: the Statistics Center
+match for a fixture is created the first time its line-up is edited (`sx_matches.event_id` is unique: never two).
+
+Tables: `sx_lineup_sheets` (UNIQUE match + side: status draft | confirmed | locked, formations, version, confirmed /
+locked / last edited / published), `sx_lineup_revisions` (every version: full line-up, players touched, who, what),
+`sx_lineup_presence` (who is editing; heartbeats every 15 s, gone after 45 s; never backed up).
+
+**Conflict rules:** a change carries the version the person saw. Same version: applied. Older: the players and fields
+changed since then are compared; different players merge (and the result is validated again); the same player or
+formation, or a merged result that breaks the rules (12 starters, a player twice, a shirt number twice), is refused
+with HTTP 409, the current line-up, the conflicting items and "what changed since you opened this". Writing claims the
+next version first (`UPDATE … WHERE version = ?`), so two saves at the same moment never lose one.
+
+**Lifecycle:** draft (anyone who edits line-ups) → confirmed (edits refused until reopened; reopening after publication
+warns) → locked (automatically at kick-off: the clock starts or the kick-off time passes; then only a statistician or
+Super Admin, with a reason). Publishing from the Media Centre reads the shared line-up and records `published_at`;
+a later change shows "changed since published".
+
+| Situation | What happens |
+|---|---|
+| Both open a new line-up at once | one sheet (UNIQUE match + side) |
+| A changes player 3, B player 9 | merged; both saved; both pages update |
+| A and B put the same player in different places | the second is asked: keep theirs / use mine |
+| Same shirt number twice | refused with the names |
+| A confirms while B edits | B's save is refused ("confirmed by A at …; reopen to continue"); B's screen keeps the changes |
+| Media Centre and Statistics Center at once | same service, same rules |
+| Offline and back | the save carries the old version: merged or asked |
+| After kick-off | refused; a correction needs a statistician or Super Admin and a reason |
+
+The Media Centre's earlier line-ups were copied once (`migrateMediaLineups`, safe to run again; report in Admin ›
+Statistics Center); the old item data is kept (no longer the editing copy). Tests: `tests/stats-lineup-service.unit.test.mjs`.
+
 ## Coming next (queued by the owner)
 
-   training tags, scheduled reports.
+1. Data retention, archiving and privacy controls.

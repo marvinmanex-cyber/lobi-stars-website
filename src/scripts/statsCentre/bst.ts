@@ -368,7 +368,8 @@ async function form(c: Ctx, id: string) {
         if (t.dataset.form) { inp.hidden = sel.value !== 'custom'; if (sel.value === 'custom') { inp.focus(); return; } }
         const value = sel.value === 'custom' ? inp.value.trim() : sel.value;
         if (value && !/^[1-5](-[1-5]){1,4}$/.test(value)) { c.toast('Write the formation like 4-4-2.', false); return; }
-        try { await api('match/setup', { id: m.id, [name]: value }); m[name] = value; d.checks = (await api(`bst/one?id=${encodeURIComponent(id)}`)).checks; lastSaved = new Date().toISOString(); showSaved(); draw(); } catch (x: any) { c.toast(x.message, false); }
+        // Formations belong to the shared line-up (the same one as Match Setup and the Media Centre).
+        try { const sideF = /Home/.test(name) ? 'home' : 'away'; const ver = await api(`lineup/version?id=${encodeURIComponent(m.id)}&side=${sideF}`); await api('lineup/changes', { id: m.id, side: sideF, baseVersion: ver.version, changes: [{ op: /Finish$/.test(name) ? 'formation_finish' : 'formation', value }] }); m[name] = value; d.checks = (await api(`bst/one?id=${encodeURIComponent(id)}`)).checks; lastSaved = new Date().toISOString(); showSaved(); draw(); } catch (x: any) { c.toast(x.message, false); }
       }
     }, R);
     v.addEventListener('input', (e: any) => {
