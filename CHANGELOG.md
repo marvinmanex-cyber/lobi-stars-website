@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Statistics Center shows the real results
+
+- Match scores in the Statistics Center (matches list, dashboard, match headings) now show the **official result**, exactly as on the Results page (lobistarsfc.com/results). This is Match Centre's full-time score, else League › Fixtures, including awarded results. A note says "Official result".
+- If the goals recorded in the Statistics Center do not add up to the official result yet, the note says so (for example "goals recorded 0–0").
+- The publish checklist now stops a match whose goal events disagree with the official result, so published statistics always match the Results page.
+- **Staff:** for past matches, record the goals (Live entry or Review) until they match the official result, then publish.
+
+---
+
 ## 2026-11-27: "BST Analysis Form" is now "Analysis Form"
 
 - The menu item, the page title, the dashboard button, the Attacks chart and the retention labels now say **Analysis Form**. The web address (/staff/statistics-center/bst-analysis/) is unchanged, so saved links keep working.

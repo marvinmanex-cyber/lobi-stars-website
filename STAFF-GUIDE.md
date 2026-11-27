@@ -5444,3 +5444,5 @@ notes**; keep such files inside the club.
 - **Coach accounts:** a Super Admin adds them in Admin › Statistics Center with Account type **Coach**. Coaches see everything and change nothing.
 
 **Statistics Center as an app on your phone:** open lobistarsfc.com/staff/statistics-center/ on your phone. A card asks to install it. On Android press **Install the app**. On iPhone, open the page in Safari, tap **Share**, then **Add to Home Screen**. The **Lobi Stats** icon then opens it full screen. Missed the card? Tap **Install the app on your phone** under the sign-in form (or Settings › Install the app).
+
+**Official results:** the Statistics Center shows each match's official result, the same as the Results page. If it says "goals recorded 0–0", the goal events have not been entered yet. Add them (Live entry or Review) until they match; a match can only be published when its goals agree with the official result.

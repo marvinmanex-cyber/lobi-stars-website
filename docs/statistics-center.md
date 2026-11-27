@@ -311,3 +311,7 @@ Tables:
 - Retention adds three policies: `practice_matches` (30), `wellness` (730) and `availability` (1095 after clearing). Anonymising a player also clears their wellness and availability notes.
 - Milestones are worked out again after each publish.
 - The public hub uses `redactSnapshot` and `hiddenYouth`, like the other public output.
+
+## Official results (27 Nov 2026)
+
+`officialResults(db, eventIds)` (statsCentreData.js) reads the result the Results page shows: `match_centre` full-time score, else `league_fixtures` full_time/awarded goals (awarded always wins). `listMatches`, `dashboard` and `getMatch` attach `match.official`; `validate()` adds an error when the derived score differs, so publishing (which feeds match_centre) can never contradict /results.

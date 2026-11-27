@@ -84,6 +84,29 @@ export async function getMatchRow(db, id) {
   return db.prepare(`SELECT * FROM sx_matches WHERE id = ? AND is_deleted = 0`).bind(String(id || '')).first();
 }
 
+/**
+ * The official result of fixtures, exactly as /results shows it: Match Centre's full-time score, else League ›
+ * Fixtures (full time or awarded). Map eventId -> { home, away, source }. Used so the Statistics Center always shows
+ * the real result and never publishes goal events that disagree with it.
+ */
+export async function officialResults(db, eventIds) {
+  const out = new Map(), ids = [...new Set((eventIds || []).filter(Boolean).map(String))];
+  for (let i = 0; i < ids.length; i += 50) {
+    const c = ids.slice(i, i + 50), q = c.map(() => '?').join(',');
+    let league = [], centre = [];
+    try { league = (await db.prepare(`SELECT event_id, status, home_goals, away_goals FROM league_fixtures WHERE event_id IN (${q})`).bind(...c).all()).results; } catch { /* no league tables */ }
+    try { centre = (await db.prepare(`SELECT event_id, status, home_score, away_score FROM match_centre WHERE event_id IN (${q})`).bind(...c).all()).results; } catch { /* no match centre */ }
+    const fixed = new Set();
+    for (const r of league) if (['full_time', 'awarded'].includes(r.status) && Number.isInteger(r.home_goals) && Number.isInteger(r.away_goals)) {
+      out.set(r.event_id, { home: r.home_goals, away: r.away_goals, source: r.status === 'awarded' ? 'awarded' : 'league' });
+      if (r.status === 'awarded') fixed.add(r.event_id);
+    }
+    for (const r of centre) if (!fixed.has(r.event_id) && r.status === 'full-time' && Number.isInteger(r.home_score) && Number.isInteger(r.away_score)) out.set(r.event_id, { home: r.home_score, away: r.away_score, source: 'match-centre' });
+  }
+  return out;
+}
+const withOfficial = async (db, list) => { const map = await officialResults(db, list.map(m => m.eventId)); for (const m of list) m.official = (m.eventId && map.get(m.eventId)) || null; return list; };
+
 export async function listMatches(db, { season = '', status = '', competition = '' } = {}) {
   await ensureStatsCentreSchema(db);
   const where = ['is_deleted = 0'], args = [];
@@ -91,7 +114,7 @@ export async function listMatches(db, { season = '', status = '', competition = 
   if (STATUSES.includes(status)) { where.push('status = ?'); args.push(status); }
   if (competition) { where.push('competition = ?'); args.push(competition); }
   const { results } = await db.prepare(`SELECT * FROM sx_matches WHERE ${where.join(' AND ')} ORDER BY match_date DESC LIMIT 300`).bind(...args).all();
-  return results.map(matchView);
+  return withOfficial(db, results.map(matchView));
 }
 
 export async function seasons(db, current) {
@@ -512,6 +535,9 @@ export function validate(match, lineups, events) {
   for (const side of ['home', 'away']) if (used[side] > 5) warnings.push(`${side === 'home' ? match.home : match.away}: ${used[side]} substitutions (the league allows 5).`);
   if (!match.clock || match.clock.period !== 'FT') warnings.push('Full time was not pressed on the live screen (fine if the match was entered afterwards).');
   if (!evs.length) warnings.push('No events recorded.');
+  // The goals must agree with the official result on /results (when there is one).
+  if (match.official && (d.score.home !== match.official.home || d.score.away !== match.official.away))
+    errors.push(`The official result is ${match.home} ${match.official.home}–${match.official.away} ${match.away} (as on the Results page), but the goal events give ${d.score.home}–${d.score.away}. Add or correct the goal events.`);
   return { errors, warnings, ok: !errors.length };
 }
 
@@ -523,6 +549,7 @@ export async function getMatch(db, id) {
   const lineups = (await db.prepare(`SELECT * FROM sx_lineups WHERE match_id = ? ORDER BY side, is_starter DESC, sort`).bind(id).all()).results.map(lineupView);
   const allEvents = (await db.prepare(`SELECT * FROM sx_events WHERE match_id = ?`).bind(id).all()).results.map(eventView);
   const match = matchView(m);
+  match.official = m.event_id ? (await officialResults(db, [m.event_id])).get(m.event_id) || null : null;
   const events = allEvents.filter(e => !e.deleted).sort(chrono);
   return { match, lineups, events, deleted: allEvents.filter(e => e.deleted), derived: derive(match, lineups, events), check: validate(match, lineups, events) };
 }
@@ -676,7 +703,7 @@ export async function dashboard(db, season) {
   const snaps = await publishedMatches(db, season);
   const players = playerTotals(snaps), team = teamTotals(snaps);
   const top = (k) => players.filter(p => p[k] > 0).sort((a, b) => b[k] - a[k])[0] || null;
-  const open = (await db.prepare(`SELECT * FROM sx_matches WHERE is_deleted = 0 AND is_practice = 0 AND status <> 'published' ORDER BY match_date DESC LIMIT 20`).all()).results.map(matchView);
+  const open = await withOfficial(db, (await db.prepare(`SELECT * FROM sx_matches WHERE is_deleted = 0 AND is_practice = 0 AND status <> 'published' ORDER BY match_date DESC LIMIT 20`).all()).results.map(matchView));
   return { season, team, topScorer: top('goals'), topAssister: top('assists'), recent: team.recent, open };
 }
 

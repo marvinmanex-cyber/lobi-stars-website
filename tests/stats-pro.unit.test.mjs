@@ -170,3 +170,21 @@ test('coach accounts: created read-only, cannot publish, and the routes refuse t
   assert.match(core, /readOnly: s\.role === 'coach'/);
   assert.match(core, /canPublish: !!s\.can_publish && s\.role !== 'coach'/);
 });
+
+test('official result (as on /results) is shown, and goal events that disagree cannot be published', async () => {
+  const { listMatches, officialResults } = await import('../functions/api/_lib/statsCentreData.js');
+  const ev = { ...DEMO_EVENT, id: `${DEMO_EVENT.id}_off` };
+  await db.prepare(`INSERT INTO events (id, home_team, away_team, competition, event_date, venue, vip_price_kobo, premium_price_kobo, regular_price_kobo) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0)`)
+    .bind(ev.id, ev.home_team, ev.away_team, ev.competition, ev.event_date, ev.venue).run();
+  db.exec(`CREATE TABLE IF NOT EXISTS match_centre (event_id TEXT PRIMARY KEY, status TEXT, home_score INTEGER, away_score INTEGER, kickoff_at TEXT, ended_at TEXT, updated_at TEXT)`);
+  await db.prepare(`INSERT OR REPLACE INTO match_centre (event_id, status, home_score, away_score) VALUES (?, 'full-time', 2, 0)`).bind(ev.id).run();
+  assert.deepEqual((await officialResults(db, [ev.id])).get(ev.id), { home: 2, away: 0, source: 'match-centre' });
+  const { id } = await createMatch(db, SENIOR, { eventId: ev.id }, { startMonth: 8 });
+  const listed = (await listMatches(db, {})).find(m => m.id === id);
+  assert.deepEqual([listed.official.home, listed.official.away], [2, 0]);
+  await saveLineups(db, SENIOR, id, DEMO_LINEUPS, DEMO_ROSTER);
+  await applyEvents(db, SENIOR, id, DEMO_EVENTS.map(e => ({ op: 'save', event: { ...e, id: `off${e.id}` } })), DEMO_ROSTER); // 3–1 in the events
+  await setClock(db, SENIOR, id, { action: 'full_time' }, {});
+  const r = await publish(db, SENIOR, id, {});
+  assert.ok(r.check.errors.some(x => /official result is Lobi Stars FC 2–0 Demo United FC/.test(x)), JSON.stringify(r.check.errors));
+});
