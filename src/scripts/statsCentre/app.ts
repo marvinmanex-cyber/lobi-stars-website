@@ -4,6 +4,7 @@
 // id made here, so sending the same event twice never records it twice.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { bstRoute, applyUi, type Ctx } from './bst';
+import { retentionView, inventoryView } from './retention';
 import { analysisHub, mapsView, setPiecesView, ratingsView, playerView, compareView, analyticsView, scoutingView, trainingView, reportsView, xgView, pickOnPitch, attacksRight } from './phase2';
 const $ = (id: string) => document.getElementById(id) as any;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
@@ -110,10 +111,10 @@ function route() {
   }
   const [, page = '', id = ''] = (location.hash || '#/').split('/');
   for (const a of document.querySelectorAll('[data-nav]')) (a as HTMLElement).toggleAttribute('aria-current', false);
-  const nav = { '': 'home', matches: 'matches', match: 'matches', live: 'matches', review: 'matches', new: 'matches', tag: 'matches', recycle: 'settings', ratings: 'matches', analysis: 'analysis', analytics: 'analysis', maps: 'analysis', 'set-pieces': 'analysis', player: 'players', compare: 'analysis', scouting: 'analysis', training: 'analysis', reports: 'analysis', xg: 'analysis', players: 'players', team: 'team', exports: 'exports', settings: 'settings', definitions: 'definitions' }[page] || 'home';
+  const nav = { '': 'home', matches: 'matches', match: 'matches', live: 'matches', review: 'matches', new: 'matches', tag: 'matches', recycle: 'settings', retention: 'settings', inventory: 'settings', ratings: 'matches', analysis: 'analysis', analytics: 'analysis', maps: 'analysis', 'set-pieces': 'analysis', player: 'players', compare: 'analysis', scouting: 'analysis', training: 'analysis', reports: 'analysis', xg: 'analysis', players: 'players', team: 'team', exports: 'exports', settings: 'settings', definitions: 'definitions' }[page] || 'home';
   document.querySelector(`[data-nav="${nav}"]`)?.setAttribute('aria-current', 'page');
   const run: Record<string, () => Promise<void> | void> = { '': dashboardView, matches: matchesView, new: newMatchView, match: () => setupView(id), live: () => liveView(id), review: () => reviewView(id),
-    players: playersView, team: teamView, exports: exportsView, settings: settingsView, definitions: definitionsView, tag: () => tagView(id), recycle: recycleView, ratings: () => ratingsView(ctx, id), analysis: () => analysisHub(ctx), analytics: () => analyticsView(ctx), maps: () => mapsView(ctx), 'set-pieces': () => setPiecesView(ctx),
+    players: playersView, team: teamView, exports: exportsView, settings: settingsView, definitions: definitionsView, tag: () => tagView(id), recycle: recycleView, retention: () => retentionView(ctx), inventory: () => inventoryView(ctx), ratings: () => ratingsView(ctx, id), analysis: () => analysisHub(ctx), analytics: () => analyticsView(ctx), maps: () => mapsView(ctx), 'set-pieces': () => setPiecesView(ctx),
     player: () => playerView(ctx, id), compare: () => compareView(ctx), scouting: () => scoutingView(ctx), training: () => trainingView(ctx), reports: () => reportsView(ctx), xg: () => xgView(ctx) };
   stopTick(); resetView();
   view().innerHTML = '<p class="sx-small">Loading…</p>';
@@ -997,7 +998,8 @@ async function recycleView() {
 function exportsView() {
   const sel = store.get('sx_es', S.season);
   view().innerHTML = `<h2>Exports</h2><section class="sx-card"><div class="sx-row">${seasonSelect(sel)}</div>
-    <p class="sx-row" style="margin-top:12px"><a class="sx-btn sx-btn--p" href="/api/stats-centre/export/events.csv?season=${encodeURIComponent(sel)}">Every event (CSV)</a><a class="sx-btn sx-btn--p" href="/api/stats-centre/export/matches.csv?season=${encodeURIComponent(sel)}">Matches (CSV)</a><a class="sx-btn" href="/api/stats-centre/export/season.json?season=${encodeURIComponent(sel)}">Everything for the season (JSON, for safekeeping)</a></p>
+    <label class="sx-small" style="flex-direction:row;align-items:center;gap:8px;margin-top:10px"><input type="checkbox" id="exNotes"> Include staff notes (coach rating notes and event notes: keep the file inside the club)</label>
+    <p class="sx-row" style="margin-top:12px"><a class="sx-btn sx-btn--p" data-ex href="/api/stats-centre/export/events.csv?season=${encodeURIComponent(sel)}">Every event (CSV)</a><a class="sx-btn sx-btn--p" href="/api/stats-centre/export/matches.csv?season=${encodeURIComponent(sel)}">Matches (CSV)</a><a class="sx-btn" data-ex href="/api/stats-centre/export/season.json?season=${encodeURIComponent(sel)}">Everything for the season (JSON, for safekeeping)</a></p>
     <p class="sx-small">CSV files open in Excel or Google Sheets. One match's events and a printable match report are on that match's Review page. Every download is recorded in the activity log.</p></section>
     <section class="sx-card"><h3>Google Sheets (updates by itself)</h3><p class="sx-small">A private link that Google Sheets can read with <code>=IMPORTDATA(…)</code>: every event of the season, refreshed by Google about once an hour. Anyone with the link can read the events, so keep it inside the club; making a new link switches the old one off.</p>
       <p class="sx-small">${S.settings.sheetsMade ? `A link is active (made ${esc(when(S.settings.sheetsMade))}).` : 'No link yet.'}</p>
@@ -1007,6 +1009,7 @@ function exportsView() {
     if (S.settings.sheetsMade && !confirm('Make a new link? The old one stops working.')) return;
     try { const r = await api('settings/sheets', {}); S.settings.sheetsMade = new Date().toISOString(); $('sheetsOut').innerHTML = `<p class="sx-note"><input readonly value="${esc(r.formula)}" style="flex:1 1 320px" aria-label="Formula for Google Sheets"><button class="sx-btn" id="sheetsCopy">Copy</button></p><p class="sx-small">Paste this formula into cell A1 of a Google Sheet. It is shown only once.</p>`; $('sheetsCopy').addEventListener('click', () => navigator.clipboard?.writeText(r.formula).then(() => toast('Copied.'))); } catch (x: any) { toast(x.message, false); }
   });
+  $('exNotes')?.addEventListener('change', (e: any) => { for (const a of view().querySelectorAll('a[data-ex]')) { const u = new URL((a as HTMLAnchorElement).href); if (e.target.checked) u.searchParams.set('notes', '1'); else u.searchParams.delete('notes'); (a as HTMLAnchorElement).href = u.toString(); } });
   $('sheetsStop')?.addEventListener('click', async () => { if (!confirm('Switch the Google Sheets link off?')) return; try { await api('settings/sheets', { stop: true }); S.settings.sheetsMade = null; exportsView(); toast('Switched off.'); } catch (x: any) { toast(x.message, false); } });
   view().querySelector('[data-season]')?.addEventListener('change', (e: any) => { store.set('sx_es', e.target.value); exportsView(); });
 }
@@ -1021,6 +1024,7 @@ function settingsView() {
     <section class="sx-card"><h3>Second check before publishing</h3><p class="sx-small">When on, a match can be published only after someone other than the publisher has pressed "I have checked this match" on its Review page (the four-eyes rule).</p>
       <label class="sx-small" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="scToggle" ${S.settings.secondCheck ? 'checked' : ''} ${can ? '' : 'disabled'}> Require a second check</label></section>
     <section class="sx-card"><h3>Recycle bin</h3><p class="sx-small">Removed matches, events and analyses are kept here and can be restored.</p><p><a class="sx-btn" href="#/recycle">Open the recycle bin</a></p></section>
+    <section class="sx-card"><h3>Data retention &amp; privacy</h3><p class="sx-small">How long things are kept, archiving old seasons, youth players and anonymising.</p><p><a class="sx-btn" href="#/retention">Open data retention</a> <a class="sx-btn" href="#/inventory">What we keep</a></p></section>
     <section class="sx-card"><h3>Your account</h3><p>${esc(S.user.fullName)} ${S.user.admin ? '(Super Admin: everything)' : `(${esc(S.user.loginId)})${S.user.canPublish ? ' · may publish' : ''}`}</p><p class="sx-small">Signed out after ${S.idleMinutes / 60} hours without activity. Accounts are managed by the Super Admins in the website admin (Statistics Center).</p></section>`;
   $('repEmail')?.addEventListener('change', async (e: any) => { try { const r = await api('settings', { reportEmail: e.target.checked }); S.settings = { ...S.settings, ...r }; toast('Saved.'); } catch (x: any) { e.target.checked = !e.target.checked; toast(x.message, false); } });
   $('scToggle')?.addEventListener('change', async (e: any) => { try { const r = await api('settings', { secondCheck: e.target.checked }); S.settings = { ...S.settings, ...r }; toast(e.target.checked ? 'A second check is now required before publishing.' : 'Second check switched off.'); } catch (x: any) { e.target.checked = !e.target.checked; toast(x.message, false); } });

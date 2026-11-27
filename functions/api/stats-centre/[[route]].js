@@ -23,6 +23,12 @@ import { mapEvents, playerProfile, comparePlayers, seasonAnalytics, opponents, s
 import { getSheet, applyChanges, confirmSheet, reopenSheet, sheetVersion, heartbeat as lineupHeartbeat, takePen, revisions as lineupRevisions, restoreRevision, migrateMediaLineups } from '../_lib/lineupService.js';
 import { matchWeather, makeSheetsKey, stopSheetsKey, sheetsCsv, secondCheck, secondCheckProblem } from '../_lib/statsExtras.js';
 import { superAdminEmails } from '../_lib/superAdmins.js';
+import { policies, retentionState, savePolicy, setRetentionSwitch, previewPolicy, runRetention, retentionRuns, seasonsList, archiveSeason, unarchiveSeason, verifyArchive, noteOffsite, readFile, privacyList, setPrivacy, anonymisePlayer, CLASSIFICATION, isSeasonArchived } from '../_lib/statsRetention.js';
+import { listBackups } from '../_lib/autoBackup.js';
+
+// Changes refused while the match's season is archived (read only; a Super Admin can still correct it).
+const MATCH_WRITES = new Set(['POST match/setup', 'POST match/lineups', 'POST match/events', 'POST match/clock', 'POST match/status', 'POST match/publish', 'POST match/reopen', 'POST match/remove', 'POST lineup/changes', 'POST lineup/confirm', 'POST lineup/reopen', 'POST lineup/restore', 'POST ratings']);
+const BST_WRITES = new Set(['POST bst/cell', 'POST bst/text', 'POST bst/stoppage', 'POST bst/final', 'POST bst/reopen']);
 import { buildXlsx, buildCsv } from '../_lib/xlsx.js';
 
 const PASSWORD_ONLY = new Set(['GET session', 'POST password', 'POST logout']);
@@ -60,6 +66,11 @@ export async function onRequest({ request, env, params }) {
     const season = q.has('season') ? oneLine(q.get('season'), 12) : current;
     const opts = { startMonth, request };
     const out = r => (r.error ? json(r, 400) : json(r));
+    if (!s.user.admin && (MATCH_WRITES.has(key) || BST_WRITES.has(key)) && b.id) {
+      const row = MATCH_WRITES.has(key) ? await db.prepare(`SELECT season FROM sx_matches WHERE id = ?`).bind(String(b.id)).first()
+        : await db.prepare(`SELECT m.season FROM sx_bst_analyses a JOIN sx_matches m ON m.id = a.match_id WHERE a.id = ?`).bind(String(b.id)).first().catch(() => null);
+      if (row && await isSeasonArchived(db, row.season)) return json({ error: `The ${row.season} season is archived (read only). Ask a Super Admin if something must be corrected.`, archived: true }, 423);
+    }
     const csv = (body, name) => new Response(body, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${name}"`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
 
     switch (key) {
@@ -87,7 +98,7 @@ export async function onRequest({ request, env, params }) {
       case 'GET taggable': return json({ types: [...TAGGABLE] });
       case 'GET export/season.json': {
         await sxLog(db, statsActor(s.user), 'export', { details: `Season export (JSON) ${season}`, request });
-        return new Response(JSON.stringify(await seasonExport(db, season), null, 1), { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="lobi-stars-statistics-${season.replace(/[^\w-]/g, '-')}.json"`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
+        return new Response(JSON.stringify(await seasonExport(db, season, { includeNotes: q.get('notes') === '1' }), null, 1), { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="lobi-stars-statistics-${season.replace(/[^\w-]/g, '-')}.json"`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
       }
       case 'GET match/weather': return out(await matchWeather(db, q.get('id')));
       case 'POST match/second-check': return out(await secondCheck(db, s.user, b.id, opts));
@@ -167,7 +178,7 @@ export async function onRequest({ request, env, params }) {
       case 'GET export/events.csv': {
         const matchId = oneLine(q.get('matchId') || '', 60);
         await sxLog(db, statsActor(s.user), 'export', { details: `Events CSV (${matchId || `season ${season}`})`, request });
-        return csv(await eventsCsv(db, matchId ? { matchId } : { season }), `lobi-stars-events-${(matchId || season).replace(/[^\w-]/g, '-')}.csv`);
+        return csv(await eventsCsv(db, { ...(matchId ? { matchId } : { season }), includeNotes: q.get('notes') === '1' }), `lobi-stars-events-${(matchId || season).replace(/[^\w-]/g, '-')}.csv`);
       }
       case 'GET export/matches.csv': {
         await sxLog(db, statsActor(s.user), 'export', { details: `Matches CSV (season ${season})`, request });
@@ -216,6 +227,45 @@ export async function onRequest({ request, env, params }) {
         await setSxSetting(db, 'competitions', JSON.stringify(comps), s.user.fullName);
         await sxLog(db, statsActor(s.user), 'settings', { after: { competitions: comps }, request });
         return json({ ok: true, ...(await settingsView(db)) });
+      }
+      // ── Data retention, archiving and privacy (Super Admins change; statisticians can look) ──
+      case 'GET retention': {
+        const backups = await listBackups(env).catch(() => []);
+        const last = backups[0] || null;
+        return json({ canEdit: !!s.user.admin, policies: await policies(db), state: await retentionState(db), runs: await retentionRuns(db), seasons: await seasonsList(db, startMonth),
+          privacy: await privacyList(db), backups: { count: backups.length, last, stale: !last || Date.now() - Date.parse(last.at || last.day) > 36 * 3600e3, storage: !!env.BACKUP_BUCKET } });
+      }
+      case 'GET retention/preview': return out(await previewPolicy(db, oneLine(q.get('key') || '', 40), q.get('days') ?? undefined));
+      case 'GET inventory': return json({ classification: CLASSIFICATION, policies: await policies(db) });
+      case 'POST retention/policy': return s.user.admin ? out(await savePolicy(db, s.user, oneLine(b.key || '', 40), b, opts)) : json({ error: 'Only a Super Admin can change retention.' }, 403);
+      case 'POST retention/switch': return s.user.admin ? out(await setRetentionSwitch(db, s.user, b, opts)) : json({ error: 'Only a Super Admin can change this.' }, 403);
+      case 'POST retention/run': {
+        if (!s.user.admin) return json({ error: 'Only a Super Admin can run the clean-up.' }, 403);
+        if (String(b.confirm || '').trim().toUpperCase() !== 'RUN') return json({ error: 'Type RUN to confirm.' }, 400);
+        return out(await runRetention(db, s.user, { force: true, request }));
+      }
+      case 'POST season/archive': {
+        if (!s.user.admin) return json({ error: 'Only a Super Admin can archive a season.' }, 403);
+        if (String(b.confirm || '').trim() !== String(b.season || '')) return json({ error: 'Type the season (for example 2025/26) to confirm.' }, 400);
+        return out(await archiveSeason(env, s.user, oneLine(b.season || '', 12), opts));
+      }
+      case 'POST season/unarchive': return s.user.admin ? out(await unarchiveSeason(db, s.user, oneLine(b.season || '', 12), { reason: b.reason, request })) : json({ error: 'Only a Super Admin can do this.' }, 403);
+      case 'POST season/offsite': return out(await noteOffsite(db, s.user, oneLine(b.season || '', 12), opts));
+      case 'POST archive/verify': return out(await verifyArchive(env, s.user, b.id, opts));
+      case 'GET archive/file': {
+        const e = await db.prepare(`SELECT * FROM sx_archive_exports WHERE id = ?`).bind(String(q.get('id') || '')).first();
+        if (!e) return json({ error: 'Archive file not found.' }, 404);
+        const body = await readFile(env, e.file_path);
+        if (body === null) return json({ error: 'The archive file is missing from storage.' }, 404);
+        await sxLog(db, statsActor(s.user), 'export', { itemType: 'archive', itemId: e.id, details: `Archive download ${e.file_path}`, request });
+        const name = e.file_path.replace(/^archives\//, 'lobi-stars-').replace(/\//g, '-');
+        return new Response(body, { headers: { 'Content-Type': e.file_path.endsWith('.json') ? 'application/json; charset=utf-8' : 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${name}"`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex', 'X-Checksum-SHA256': e.checksum } });
+      }
+      case 'POST privacy/player': return out(await setPrivacy(db, s.user, oneLine(b.slug || '', 80), b, opts));
+      case 'POST privacy/anonymise': {
+        if (!s.user.admin) return json({ error: 'Only a Super Admin can anonymise a player.' }, 403);
+        if (String(b.confirm || '').trim().toUpperCase() !== 'ANONYMISE') return json({ error: 'Type ANONYMISE to confirm (this cannot be undone).' }, 400);
+        return out(await anonymisePlayer(db, s.user, oneLine(b.slug || '', 80), { reason: b.reason, full: !!b.full }, opts));
       }
       default: return json({ error: 'Not found.' }, 404);
     }

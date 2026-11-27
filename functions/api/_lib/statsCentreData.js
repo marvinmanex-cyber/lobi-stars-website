@@ -13,6 +13,7 @@ import { ensureStatsCentreSchema, sxLog, statsActor, newId, clean, oneLine, sxSe
 import { ensureTable as ensureMatchCentre, isHomeGame } from './matchCentre.js';
 import { savePlayerStats, seasonOf } from './stats.js';
 import { matchSlug } from './matchSlug.js';
+import { hiddenYouth, redactSnapshot } from './statsPrivacy.js';
 import { ensurePhase2Schema, xgFor, xgParams, zoneOf, ROUTINES, SP_OUTCOMES, SET_PIECES } from './statsPhase2.js';
 
 export const STATUSES = ['draft', 'live', 'review', 'published'];
@@ -640,7 +641,7 @@ export async function dashboard(db, season) {
 const csvCell = v => { const s = v === null || v === undefined ? '' : String(v); return /[",\n\r]/.test(s) || /^[=+\-@]/.test(s) ? `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"` : s; };
 export const toCsv = rows => rows.map(r => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
 
-export async function eventsCsv(db, { matchId = '', season = '' } = {}) {
+export async function eventsCsv(db, { matchId = '', season = '', includeNotes = false } = {}) {
   await ensureStatsCentreSchema(db);
   const where = ['e.is_deleted = 0', 'm.is_deleted = 0'], args = [];
   if (matchId) { where.push('m.id = ?'); args.push(matchId); }
@@ -649,7 +650,7 @@ export async function eventsCsv(db, { matchId = '', season = '' } = {}) {
   return toCsv([['Season', 'Date', 'Home', 'Away', 'Match status', 'Period', 'Minute', 'Stoppage', 'Team', 'Event', 'Player', 'Assist / player on', 'Outcome', 'Body part', 'Type', 'Score at the time', 'Notes', 'Entered by', 'Entered at', 'Changed by', 'Changed at'],
     ...results.map(r => [r.season, String(r.match_date).slice(0, 10), r.home_team, r.away_team, r.status, r.period, r.minute, r.stoppage_minute ?? '', r.side === 'home' ? r.home_team : r.away_team,
       EVENT_TYPES[r.event_type] || r.event_type, r.player_name || '', r.related_name || '', r.outcome || '', r.body_part || '', r.detail_type || '', `${r.score_home_at_time ?? ''}–${r.score_away_at_time ?? ''}`,
-      r.notes || '', r.created_by || '', r.created_at, r.updated_by || '', r.updated_at || ''])]);
+      includeNotes ? r.notes || '' : '', r.created_by || '', r.created_at, r.updated_by || '', r.updated_at || ''])]);
 }
 export async function matchesCsv(db, { season = '' } = {}) {
   const list = await listMatches(db, { season });
@@ -673,7 +674,7 @@ export async function publicMatch(db, key) {
     WHERE x.published_json IS NOT NULL AND x.is_deleted = 0 AND x.status IN ('published', 'review')`).all();
   for (const r of results) {
     const slug = r.eid ? matchSlug({ id: r.eid, home_team: r.home_team, away_team: r.away_team, event_date: r.event_date }) : r.id;
-    if (slug === String(key).toLowerCase() || r.id === key) return { ...parse(r.published_json, null), id: r.id, slug, matchUrl: r.eid ? `/matches/${slug}/` : null };
+    if (slug === String(key).toLowerCase() || r.id === key) return { ...redactSnapshot(parse(r.published_json, null), await hiddenYouth(db)), id: r.id, slug, matchUrl: r.eid ? `/matches/${slug}/` : null };
   }
   return null;
 }
@@ -690,7 +691,9 @@ export async function playerMatchLog(db, slugs, season) {
   const snaps = await publishedMatches(db, season);
   if (!snaps.length) return [];
   const links = new Map((await publicSlugs(db, 500)).map(r => [r.id, r.slug]));
-  const want = new Set(slugs);
+  const hidden = await hiddenYouth(db);
+  const want = new Set(slugs.filter(x => !hidden.has(x)));
+  if (!want.size) return [];
   return playerTotals(snaps).filter(p => want.has(p.slug)).flatMap(p => p.matches)
     .map(m => ({ date: m.date, opponent: m.opponent, home: m.home, score: m.score, minutes: m.minutes, goals: m.goals, assists: m.assists, yellow: m.yellow, red: m.red, started: m.started, url: links.has(m.id) ? `/stats/matches/${links.get(m.id)}/` : null }))
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -798,12 +801,14 @@ export async function removeAnalysis(db, user, id, { request = null } = {}) {
 }
 
 /** Everything recorded for a season, for safekeeping (staff only): matches, line-ups, events and analyses. */
-export async function seasonExport(db, season) {
+export async function seasonExport(db, season, { includeNotes = false } = {}) {
   await ensureStatsCentreSchema(db);
   const matches = (await db.prepare(`SELECT * FROM sx_matches WHERE season = ? AND is_deleted = 0 ORDER BY match_date`).bind(season).all()).results.map(r => { const { published_json, clock_json, ...rest } = r; return rest; });
   const ids = matches.map(m => m.id);
   const pick = async (sql) => { const out = []; for (let i = 0; i < ids.length; i += 50) { const c = ids.slice(i, i + 50); out.push(...(await db.prepare(sql.replace('(?)', `(${c.map(() => '?').join(',')})`)).bind(...c).all()).results); } return out; };
-  const data = { season, exportedAt: nowIso(), matches, lineups: await pick(`SELECT * FROM sx_lineups WHERE match_id IN (?)`), events: await pick(`SELECT * FROM sx_events WHERE match_id IN (?) AND is_deleted = 0`) };
+  const data = { season, exportedAt: nowIso(), includesStaffNotes: !!includeNotes, matches, lineups: await pick(`SELECT * FROM sx_lineups WHERE match_id IN (?)`), events: await pick(`SELECT * FROM sx_events WHERE match_id IN (?) AND is_deleted = 0`) };
+  // Personal notes stay out unless asked for ("Include staff notes"; season archives always include them).
+  if (!includeNotes) { for (const l of data.lineups) if ('rating_note' in l) l.rating_note = null; for (const e of data.events) e.notes = null; }
   try {
     data.analyses = await pick(`SELECT * FROM sx_bst_analyses WHERE match_id IN (?) AND is_deleted = 0`);
     const aIds = data.analyses.map(a => a.id); data.analysisCells = [];

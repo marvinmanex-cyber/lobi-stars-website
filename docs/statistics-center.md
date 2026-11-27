@@ -244,6 +244,34 @@ a later change shows "changed since published".
 The Media Centre's earlier line-ups were copied once (`migrateMediaLineups`, safe to run again; report in Admin ›
 Statistics Center); the old item data is kept (no longer the editing copy). Tests: `tests/stats-lineup-service.unit.test.mjs`.
 
-## Coming next (queued by the owner)
+## Data retention, archiving and privacy (built 27 Nov 2026)
 
-1. Data retention, archiving and privacy controls.
+Code: `functions/api/_lib/statsRetention.js` (policies, nightly job, handlers, seasons, player privacy),
+`functions/api/_lib/statsPrivacy.js` (public redaction: no notes or staff names, youth players unnamed), backup
+rotation `backupsToDelete` in `autoBackup.js`. Page: `#/retention` and `#/inventory` (`src/scripts/statsCentre/retention.ts`).
+Tests: `tests/stats-retention.unit.test.mjs`.
+
+Tables: `sx_retention_policies` (16 seeded defaults: data_key, label, retention_days or NULL = forever, action keep |
+archive | anonymise | purge), `sx_retention_runs` (each run: mode, counts, errors), `sx_seasons` (active | archived,
+off-site copy date), `sx_archive_exports` (file path, SHA-256 checksum, size, verified), `sx_archive_files` (only used
+when the backup bucket is missing, as a fallback), `sx_player_privacy` (youth, youth_public, left_at, anonymised_at,
+full_anon). New columns: `archived_at` on BST analyses, scouting notes and reports; `video_checked_at` and
+`video_ok` on matches.
+
+**Rules.**
+- `core_match_data`, `player_season_stats`, `bst_final` and `video_links` are kept forever. The code refuses a
+  period for them, and no handler touches matches, events or line-up rows (only the `rating_note` and event
+  `notes` text).
+- The job runs from `/api/internal/checklist-run` once a day after 03:00 Lagos time (`retentionTick`). It is a dry
+  run for 7 days after install unless switched live, can be paused, and works in batches (100–2000 rows per policy,
+  20-second limit), so running it twice is safe.
+- The activity log purge lifts its delete trigger only inside one batch (drop trigger, delete old rows, recreate).
+- Archived seasons: match, line-up, BST and rating writes return HTTP 423 for statisticians (the check is in the
+  route); Super Admins can still correct, or unlock with a reason.
+- Archive files are stored at `archives/YYYY-YY/{season.json, events.csv, matches.csv}` in BACKUP_BUCKET, with
+  notes included.
+
+**Public output:** `publicMatch`, `publicFeed` and `playerMatchLog` pass through `redactSnapshot` /
+`hiddenYouth`. Exports include notes only with `?notes=1`.
+
+This is a technical safeguard, not legal advice; the club should confirm the periods with its data-protection adviser.

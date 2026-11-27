@@ -5420,3 +5420,12 @@ theirs" or "Use mine". Press **Confirm line-up** when the team sheet is agreed (
 to change it again. At kick-off it locks: record changes as substitutions (a statistician or Super Admin can correct a
 mistake, e.g. a wrong shirt number, with a reason). **History** shows every change and can put an older version back.
 If the line-up changes after the Media Centre published it, send it for approval again.
+
+**Data retention & privacy (Settings › Data retention):** match history is never deleted. When a season has ended,
+a Super Admin presses **Archive…** next to it (type the season to confirm). The season is saved as files and becomes
+read only. Download the three files and keep a copy away from the website (on a club computer or drive), then press
+**I copied it off-site**. **Check** confirms a file is complete. Mark young players **Youth / minor**: the public pages
+then show them as "Academy player" unless **Show publicly** is ticked (only with the guardian's agreement). Enter a
+**Left on** date when a player leaves: their notes are removed overnight and their numbers stay. **Anonymise…** removes
+every note about a player at once and cannot be undone. Exports leave out staff notes unless you tick **Include staff
+notes**; keep such files inside the club.

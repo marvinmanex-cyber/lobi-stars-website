@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Statistics Center data retention, archiving and privacy
+
+- **Match history is never deleted.** Matches, events, line-ups and scores stay forever. Old seasons are **archived**: the whole season is saved (JSON and CSV files with a checksum) in the backup storage, and the season becomes read only. Public pages and career totals keep showing it. A Super Admin can unlock it with a reason.
+- **How long other things are kept** is a setting (Statistics Center › Settings › Data retention). Defaults: unfinished BST drafts archived after a year and deleted a year later; line-up history in full for 3 seasons (then only the last version of each line-up); activity log 3 years; recycle bin 90 days (match history in the bin is never deleted); "who is editing" records 7 days; expired coach links after 14 days; opponent players not seen for 5 seasons are tidied; coach rating notes and event notes kept 3 seasons; scouting notes and monthly reports archived. Only a Super Admin can change a period, and the page counts what a shorter period would affect before saving.
+- **Nightly clean-up:** a little at a time after 3:00am, logged with counts only. It runs in **trial mode for the first 7 days**, counting what it would do without removing anything. It can be paused, and a Super Admin can run it straight away (type RUN).
+- **Backups (whole website):** now daily for 30 days, weekly up to 90 days, monthly up to a year (it was 30 days only). The page warns if there has been no backup for 36 hours.
+- **Players' privacy:**
+  - A player can be marked **youth / minor**. Their notes are kept 2 seasons, and they appear as "Academy player" on public statistics (match stats pages, the public feed, their player page's match list) unless "Show publicly" is ticked.
+  - A **leaving date** clears their personal notes in the nightly clean-up.
+  - **Anonymise** (Super Admin, with a reason, cannot be undone) removes every note about a player now. It can also replace their name with "Former player #N" in staff data. Their numbers are kept.
+- **Exports** (events CSV, season JSON) now leave out staff notes unless "Include staff notes" is ticked. Notes and staff names never appear on public pages.
+- **What we keep:** a new data inventory page lists every kind of information, its class and how long it is kept.
+- **Staff:** nothing to do. A Super Admin should archive each season once it has ended (the page reminds after 60 days), download the archive files and keep a copy away from the website. The periods are the club's choice: confirm them with the club's data-protection adviser (HANDOVER-TODO A43, optional).
+
+---
+
 ## 2026-11-27: One shared line-up for the Media Centre and the Statistics Center
 
 - **One line-up, one owner:** the Media Centre's Matchday Desk and the Statistics Center (Match Setup, live entry, BST) now read and write the SAME line-up for a fixture. The Media Centre keeps its approval and publishing steps; publishing to the match page (and Man of the Match) uses the shared line-up.

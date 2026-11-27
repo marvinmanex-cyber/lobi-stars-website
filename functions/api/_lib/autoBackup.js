@@ -135,11 +135,26 @@ export async function backupStep(env, { force = false } = {}) {
   }
 }
 
-/** Deletes backups older than 30 days (a few at a time). */
+// ── Backup rotation: daily for 30 days, one a week to 90 days, one a month to 365 days ──
+/** Which backup days to delete (YYYY-MM-DD list), keeping the newest of each ISO week / month in the older ranges. */
+export function backupsToDelete(days, today = new Date().toISOString().slice(0, 10)) {
+  const t = Date.parse(`${today}T00:00:00Z`), age = d => Math.floor((t - Date.parse(`${d}T00:00:00Z`)) / 864e5);
+  const week = d => { const x = new Date(`${d}T00:00:00Z`); const day = (x.getUTCDay() + 6) % 7; x.setUTCDate(x.getUTCDate() - day); return x.toISOString().slice(0, 10); };
+  const keepWeek = new Map(), keepMonth = new Map(), del = [];
+  for (const d of [...days].sort().reverse()) {
+    const a = age(d);
+    if (a <= 30) continue;
+    if (a <= 90) { const w = week(d); if (!keepWeek.has(w)) { keepWeek.set(w, d); continue; } del.push(d); continue; }
+    if (a <= 365) { const mth = d.slice(0, 7); if (!keepMonth.has(mth)) { keepMonth.set(mth, d); continue; } del.push(d); continue; }
+    del.push(d);
+  }
+  return del;
+}
+
 async function pruneOld(env) {
-  const cutoff = lagosDay(Date.now() - KEEP_DAYS * 864e5);
+  // Since 27 Nov 2026: daily backups for 30 days, then the newest of each week up to 90 days, then of each month up to 365 days.
   const list = await env.BACKUP_BUCKET.list({ prefix: 'db/', delimiter: '/' });
-  const old = (list.delimitedPrefixes || []).map(x => x.slice(3, 13)).filter(d => d < cutoff).slice(0, 2);
+  const old = backupsToDelete((list.delimitedPrefixes || []).map(x => x.slice(3, 13)), lagosDay(Date.now())).slice(0, 2);
   for (const d of old) {
     const objs = await env.BACKUP_BUCKET.list({ prefix: `db/${d}/` });
     if (objs.objects.length) await env.BACKUP_BUCKET.delete(objs.objects.map(o => o.key));
@@ -239,7 +254,7 @@ export async function weeklyOffsiteEmail(env, { force = false, by = 'Automatic b
 export async function listBackups(env) {
   if (!backupReady(env)) return [];
   const list = await env.BACKUP_BUCKET.list({ prefix: 'db/', delimiter: '/' });
-  const days = (list.delimitedPrefixes || []).map(x => x.slice(3, 13)).sort().reverse().slice(0, KEEP_DAYS + 2);
+  const days = (list.delimitedPrefixes || []).map(x => x.slice(3, 13)).sort().reverse().slice(0, 60);
   const out = [];
   for (const d of days.slice(0, 10)) {
     const m = await env.BACKUP_BUCKET.get(`db/${d}/manifest.json`);

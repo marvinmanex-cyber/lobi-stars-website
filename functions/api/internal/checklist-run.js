@@ -3,6 +3,7 @@ import { runReminders } from '../_lib/checklistReminders.js';
 import { gateReportTick } from '../_lib/gateMatchday.js';
 import { kitchenReportTick } from '../_lib/kitchenReport.js';
 import { monthlyReportTick } from '../_lib/statsAnalytics.js';
+import { retentionTick } from '../_lib/statsRetention.js';
 
 // POST /api/internal/checklist-run -- Match Checklist jobs, with "Authorization: Bearer <CRON_SECRET>".
 // Called every minute by the timer Worker (workers/kitchen-cron):
@@ -40,6 +41,7 @@ export async function onRequestPost({ request, env }) {
     // MatchDay Kitchen: the match-day food report, once, 4 hours after kick-off.
     // Statistics Center: last month's season summary, once, on the 1st (from 07:00 Lagos time).
     try { out.statsReport = await monthlyReportTick(env); } catch (e) { console.error('[checklist-run] stats report', e); out.statsReport = { error: true }; }
+    try { out.statsRetention = await retentionTick(env); } catch (e) { console.error('[checklist-run] stats retention', e); out.statsRetention = { error: true }; }
     try { out.kitchenReport = await kitchenReportTick(env); } catch (e) { console.error('[checklist-run] kitchen report', e); out.kitchenReport = { error: true }; }
     return Response.json(out);
   } catch (err) {

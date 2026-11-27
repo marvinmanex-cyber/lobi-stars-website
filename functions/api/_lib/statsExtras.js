@@ -7,6 +7,7 @@
 //    has checked it.
 import { ensureStatsCentreSchema, sxSettings, setSxSetting, sxLog, statsActor, sha256Hex, randomToken, oneLine } from './statsCentre.js';
 import { publishedMatches, playerTotals, teamTotals, eventsCsv, getMatchRow } from './statsCentreData.js';
+import { hiddenYouth, redactSnapshot } from './statsPrivacy.js';
 
 const WMO = { 0: 'Clear', 1: 'Mostly clear', 2: 'Partly cloudy', 3: 'Cloudy', 45: 'Fog', 48: 'Fog', 51: 'Light drizzle', 53: 'Drizzle', 55: 'Heavy drizzle', 61: 'Light rain', 63: 'Rain', 65: 'Heavy rain',
   80: 'Rain showers', 81: 'Rain showers', 82: 'Heavy showers', 95: 'Thunderstorm', 96: 'Thunderstorm with hail', 99: 'Thunderstorm with hail' };
@@ -46,7 +47,8 @@ export async function matchWeather(db, matchId) {
 
 /** The public feed: published matches and season leaders only (no ratings, notes, analysis or staff names). */
 export async function publicFeed(db, season) {
-  const snaps = await publishedMatches(db, season);
+  const hidden = await hiddenYouth(db);
+  const snaps = (await publishedMatches(db, season)).map(s => redactSnapshot(s, hidden));
   const players = playerTotals(snaps), team = teamTotals(snaps);
   const top = k => players.filter(p => p[k] > 0).sort((a, b) => b[k] - a[k]).slice(0, 10).map(p => ({ player: p.name, slug: p.slug, url: `/squad/${p.slug}/`, [k]: p[k], appearances: p.apps }));
   return {
