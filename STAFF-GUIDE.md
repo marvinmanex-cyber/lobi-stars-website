@@ -5378,3 +5378,13 @@ itself with their own Super Admin email, password and code, and can do everythin
 
 **Exports:** Exports page (season events and matches as CSV); one match's events and a printable report on its
 Review page.
+
+**BST Analysis Form** (menu: BST Analysis Form): **New analysis** › choose the match. Section 1 shows the match
+and team list from Match Setup (edit them there) and asks only for the starting and finishing formations. In
+Section 2 choose the team (Lobi Stars or the opponent) and the 2-minute block (◀ ▶, or tap a column in the grid;
+"now" follows the match clock), then tap − or + on each row. Shots, corners, free kicks, saves, fouls, tackles,
+offsides and cards are added to the match's events (you can add the player later on the Review page); Offence/Attack,
+Defense, Dangerous Attack, Crossing, xG and xA are the analyst's own numbers. Write the Game Overview (it saves by
+itself). **Mark as Final** when done (a Super Admin can reopen it). **PDF** opens the printable report (choose
+Landscape and Save as PDF); **Excel** and **CSV** download the grid; "Blank form (print)" on the library page prints an
+empty form for paper use.

@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Statistics Center › BST Analysis Form
+
+- **What:** the club's paper match-analysis form, on screen, inside the Statistics Center: **/staff/statistics-center/bst-analysis/** (new "BST Analysis Form" menu item and dashboard button). Staff only; never on the public website.
+- **Library** of analyses (Draft/Final, last saved, prepared by) and **New analysis** from a match (one per match; everything known is filled in from Match Setup).
+- **Match sheet:** match details and team list (starters 1–11, reserves 12–20) read from Match Setup with links to edit them there, and the starting and finishing formations.
+- **Data collection grid** in 2-minute blocks per half with added-time blocks: Offence/Attack, Defense, Goal Attempt, Dangerous Attack, shots on/off target, blocked shots, free kicks, corners, crossing, keeper saves, fouls, tackles won, offsides, cards, xA, xG, goals for and against. Shots, set pieces, saves, fouls, tackles, offsides and cards are the match's **events** (the same list as live entry, so both always agree); goal attempts and goals are worked out. Big +/− buttons for the chosen block on phones and tablets, the full grid on computers, keyboard shortcuts.
+- **Autosave** ("Saved", "Saving…", "Offline — will sync"), a warning when someone else has the analysis open, and a refused save (with a choice) instead of overwriting someone else's overview.
+- **Mark as Final** after checks (11 starters, score, minutes, formations); only a Super Admin can reopen.
+- **Exports:** PDF (Lobi Stars match analysis report, 2 landscape pages, "DRAFT" on drafts), Excel (grid, totals, match and line-up), CSV, and a blank form to print.
+- Live entry and Review now warn (without refusing) when the same event for the same player and minute is entered twice.
+- **Staff:** nothing to do. How to use it: STAFF-GUIDE §44 and docs/statistics-center.md.
+
+---
+
 ## 2026-11-27: Lobi Stars Statistics Center (new staff page)
 
 - **What:** a new private page, **lobistarsfc.com/staff/statistics-center/**, in the same Lobi Stars style as the IT Center and the Media Centre, where the club's statisticians record every match **event by event** (goal, shot, corner, foul, cards, offside, substitution, injury, save and more). Every total (score, team stats, minutes, goals, assists, cards, clean sheets, season and career figures, form, head-to-head) is worked out from the events, so correcting one event corrects everything.

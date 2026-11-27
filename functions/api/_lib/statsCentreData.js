@@ -63,7 +63,7 @@ export async function listFixtures(db) {
 const matchView = m => m && ({
   id: m.id, eventId: m.event_id, season: m.season, competition: m.competition, matchday: m.matchday, date: m.match_date, kickoff: m.kickoff_time,
   venue: m.venue, home: m.home_team, away: m.away_team, lobiHome: !!m.is_lobi_home, referee: m.referee, assistants: m.assistants, weather: m.weather,
-  pitch: m.pitch_condition, attendance: m.attendance, formationHome: m.formation_home, formationAway: m.formation_away, possessionHome: m.possession_home,
+  pitch: m.pitch_condition, attendance: m.attendance, formationHome: m.formation_home, formationAway: m.formation_away, formationHomeFinish: m.formation_home_finish || '', formationAwayFinish: m.formation_away_finish || '', possessionHome: m.possession_home,
   homeScore: m.home_score, awayScore: m.away_score, htHome: m.ht_home_score, htAway: m.ht_away_score, status: m.status, clock: parse(m.clock_json, null),
   length: m.length_minutes, report: m.report_text || '', highlights: m.highlights_url || '', motm: m.motm_slug || '',
   createdBy: m.created_by, updatedBy: m.updated_by, verifiedBy: m.verified_by, verifiedAt: m.verified_at, publishedAt: m.published_at, updatedAt: m.updated_at,
@@ -101,6 +101,7 @@ const SETUP_FIELDS = {
   is_lobi_home: v => (v ? 1 : 0), referee: v => oneLine(v, 80) || null, assistants: v => oneLine(v, 160) || null,
   weather: v => oneLine(v, 60) || null, pitch_condition: v => oneLine(v, 60) || null, attendance: v => int(v, 0, 100000),
   formation_home: v => (/^[1-5](-[1-5]){1,4}$/.test(String(v || '')) ? v : null), formation_away: v => (/^[1-5](-[1-5]){1,4}$/.test(String(v || '')) ? v : null),
+  formation_home_finish: v => (/^[1-5](-[1-5]){1,4}$/.test(String(v || '')) ? v : null), formation_away_finish: v => (/^[1-5](-[1-5]){1,4}$/.test(String(v || '')) ? v : null),
   possession_home: v => (v === '' || v === null || v === undefined ? null : int(v, 0, 100)),
   length_minutes: v => (Number(v) === 120 ? 120 : 90),
   report_text: v => clean(v, 40000) || null, highlights_url: v => (/^https:\/\/\S{6,400}$/.test(String(v || '').trim()) ? String(v).trim() : null),
@@ -108,7 +109,7 @@ const SETUP_FIELDS = {
 };
 const FIELD_KEYS = { competition: 'competition', matchday: 'matchday', venue: 'venue', date: 'match_date', kickoff: 'kickoff_time', home: 'home_team', away: 'away_team',
   lobiHome: 'is_lobi_home', referee: 'referee', assistants: 'assistants', weather: 'weather', pitch: 'pitch_condition', attendance: 'attendance',
-  formationHome: 'formation_home', formationAway: 'formation_away', possessionHome: 'possession_home', length: 'length_minutes', report: 'report_text',
+  formationHome: 'formation_home', formationAway: 'formation_away', formationHomeFinish: 'formation_home_finish', formationAwayFinish: 'formation_away_finish', possessionHome: 'possession_home', length: 'length_minutes', report: 'report_text',
   highlights: 'highlights_url', motm: 'motm_slug' };
 
 /** New match: from a fixture (eventId) or typed in (a friendly not in the fixtures). */
@@ -281,7 +282,9 @@ export async function applyEvents(db, user, id, ops, roster, { request = null } 
         .bind(v.id, id, v.side, v.event_type, v.player_slug, v.player_name, v.related_slug, v.related_name, v.minute, v.stoppage_minute, v.period, v.outcome, v.body_part, v.detail_type, v.pitch_zone, v.notes, by, at));
       logs.push(['add_event', v.id, `${EVENT_TYPES[v.event_type]} ${v.minute}'`, null, v, null]);
     }
-    results.push({ id: v.id, ok: true });
+    const twin = !old && (v.player_slug || v.player_name) && (await db.prepare(`SELECT id FROM sx_events WHERE match_id = ? AND is_deleted = 0 AND event_type = ? AND side = ? AND minute = ? AND COALESCE(player_slug, player_name, '') = COALESCE(?, ?, '') AND id <> ? LIMIT 1`)
+      .bind(id, v.event_type, v.side, v.minute, v.player_slug, v.player_name, v.id).first());
+    results.push({ id: v.id, ok: true, ...(twin ? { duplicateOf: twin.id } : {}) });
   }
   if (stmts.length) {
     for (let i = 0; i < stmts.length; i += 80) await db.batch(stmts.slice(i, i + 80));

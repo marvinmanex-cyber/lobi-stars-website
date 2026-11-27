@@ -103,9 +103,55 @@ FC, 21 events). By hand on the live site:
       the admin page needs a Super Admin.
 - [ ] Public pages show published matches only: a draft match has no /stats/matches/ page.
 
+## BST Analysis Form (built 27 Nov 2026)
+
+The paper match-analysis form, on screen: **/staff/statistics-center/bst-analysis/** (menu: BST Analysis Form).
+Staff only (statisticians and Super Admins); nothing from it is ever shown on the public website.
+
+**Library:** every analysis (match, opponent, date, Draft/Final, last saved, prepared by) with Open, PDF, Excel and,
+for Super Admins, Reopen. **New analysis:** choose a match that has none (one analysis per match). No match yet?
+Create it first (New match); the form never asks for match details or line-ups again.
+
+**Section 1, match sheet:** teams, date, time, venue and tournament (read only, from the match), the team list
+(starters 1–11, reserves 12–20; Lobi Stars or the opponent) with links to Match Setup, and the starting and finishing
+formations (4-3-3, 4-4-2, 4-2-3-1, 3-5-2, 5-3-2, 4-1-4-1, 3-4-3, 4-5-1 or custom), saved on the match.
+
+**Section 2, data collection:** 2-minute blocks per half (1st half 2' … 44', 45', then 45+2' …; 2nd half 47' … 90',
+90+2' …; extra time when the match has it). "+ Add stoppage block" adds a block (removable while empty; a block appears
+by itself when an event happened in added time). Choose Lobi Stars or the opponent. For the chosen block, every row
+has big − and + buttons (phones and tablets); the full grid below shows everything (tap a column to choose a block);
+the clock's current block is marked "now". Keyboard: ← → blocks, ↑ ↓ rows, + and −.
+
+| Row | Recorded where (once) |
+|---|---|
+| Offence/Attack, Defense, Dangerous Attack, Crossing | the form (`sx_bst_cells`), counts |
+| xG, xA | the form, 0.00–9.99 per block |
+| Shot on/off target, Blocked shots, Free kicks, Corners, Keeper saves, Fouls, Tackles won, Offsides, Cards | **events** (`sx_events`, shared with live entry): a + adds one event (no player; add the player later on Review), a − removes the latest in that block |
+| Goal Attempt | worked out: on target + off target + blocked |
+| Goal For / Goal Against | worked out from the goal events |
+
+Counts are added on the server (+1 / −1), so two people tapping at the same time both count. The Game Overview and
+the half notes save themselves 800 ms after typing stops; if someone else saved the same text in between, the save is
+refused and you choose "Keep my text" or "Use their text" (never a silent overwrite). The page shows "Saving…",
+"Saved HH:MM:SS" or "Offline — will sync" (changes are kept on the device and sent when the connection returns), and
+warns when someone else has the same analysis open.
+
+**Summary:** goal attempts per half and for the match, on target, shot accuracy, goals for and against, xG, and a
+momentum chart (Offence/Attack vs Defense per block).
+
+**Mark as Final** (needs 11 Lobi Stars starters, goals matching the score, nothing after full time, both Lobi
+formations): read only afterwards; only a Super Admin can reopen. Records who finalised it and when.
+
+**Exports:** PDF = the print page (A4 landscape, 2 pages: match sheet and team list, then the grid with totals and the
+momentum chart; Lobi Stars branding, "Prepared by", the date; "DRAFT" across a draft), Excel (.xlsx: Grid, Totals,
+Match & line-up; tick to include the opponent), CSV (the grid) and a **blank form** to print for paper use at the ground.
+
+Tables: `sx_bst_analyses` (one per match), `sx_bst_cells`, `sx_bst_presence`; `sx_matches.formation_home_finish` /
+`formation_away_finish`. Tests: `tests/stats-bst.unit.test.mjs`.
+
 ## Coming next (queued by the owner)
 
-1. BST Analysis Form (2-minute block grid, analyst metrics, PDF/Excel exports).
+1. Match Setup line-up picker like the Media Centre's (whole squad as cards, Starting / Substitute, formation) and public player-page figures.
 2. Opponent line-up registry and BST improvements.
 3. Phase 2: pitch maps, xG model, video clips, set pieces, player comparison, season analytics, scouting reports,
    training tags, scheduled reports.

@@ -5,6 +5,9 @@
 // POST match/clock { id, action, at } · POST match/status { id, status } · POST match/publish { id } · POST match/reopen { id } · POST match/remove { id }
 // GET players?season= (or season=career) · GET team?season= · GET activity?item=
 // GET export/events.csv?season=|matchId= · GET export/matches.csv?season= · GET settings · POST settings { competitions }
+// BST Analysis Form: GET bst · POST bst { matchId } · GET bst/one?id= · POST bst/cell { id, metric, side, period, block, delta|value }
+// POST bst/text { id, field, value, baseText } · POST bst/stoppage { id, period, count } · POST bst/final { id } · POST bst/reopen { id } (Super Admins)
+// POST bst/presence { id } · GET export/bst.xlsx?id=&opponent=1 · GET export/bst.csv?id=
 // Every change needs the session's CSRF token; a temporary password must be changed before anything else.
 import { signIn, getStatsSession, signOut, changePassword, csrfProblem, clearStatsCookie, json, IDLE_MS, setSxSetting, activityList, oneLine, sxLog, statsActor } from '../_lib/statsCentre.js';
 import {
@@ -13,6 +16,8 @@ import {
   EVENT_TYPES, LIVE_BUTTONS, PERIODS, OUTCOMES, BODY_PARTS, DETAIL_TYPES, STATUSES,
 } from '../_lib/statsCentreData.js';
 import { seasonOf } from '../_lib/stats.js';
+import { listAnalyses, createAnalysis, getAnalysis, setCell, setText, setStoppage, finalise, reopenAnalysis, heartbeat, bstSheets, METRICS, BST_FORMATIONS } from '../_lib/statsBst.js';
+import { buildXlsx, buildCsv } from '../_lib/xlsx.js';
 
 const PASSWORD_ONLY = new Set(['GET session', 'POST password', 'POST logout']);
 
@@ -88,6 +93,24 @@ export async function onRequest({ request, env, params }) {
       case 'GET export/matches.csv': {
         await sxLog(db, statsActor(s.user), 'export', { details: `Matches CSV (season ${season})`, request });
         return csv(await matchesCsv(db, { season }), `lobi-stars-matches-${season.replace(/[^\w-]/g, '-')}.csv`);
+      }
+      case 'GET bst': return json({ ...(await listAnalyses(db)), metrics: METRICS, formations: BST_FORMATIONS });
+      case 'POST bst': { const r = await createAnalysis(db, s.user, b.matchId, opts); return r.error ? json(r, r.id ? 409 : 400) : json(r); }
+      case 'GET bst/one': { const d = await getAnalysis(db, q.get('id'), s.user); return d ? json({ ...d, metrics: METRICS, formations: BST_FORMATIONS }) : json({ error: 'Analysis not found.' }, 404); }
+      case 'POST bst/cell': return out(await setCell(db, s.user, b.id, b, opts));
+      case 'POST bst/text': { const r = await setText(db, s.user, b.id, b, opts); return r.conflict ? json(r, 409) : out(r); }
+      case 'POST bst/stoppage': return out(await setStoppage(db, s.user, b.id, b, opts));
+      case 'POST bst/final': { const r = await finalise(db, s.user, b.id, opts); return r.error ? json(r, r.checks ? 422 : 400) : json(r); }
+      case 'POST bst/reopen': { const r = await reopenAnalysis(db, s.user, b.id, opts); return r.error ? json(r, 403) : json(r); }
+      case 'POST bst/presence': return json(await heartbeat(db, s.user, b.id));
+      case 'GET export/bst.xlsx': case 'GET export/bst.csv': {
+        const d = await getAnalysis(db, q.get('id'));
+        if (!d) return json({ error: 'Analysis not found.' }, 404);
+        const sheets = bstSheets(d, { includeOpponent: q.get('opponent') === '1' });
+        const base = `lobi-stars-analysis-${String(d.match.date).slice(0, 10)}-${(d.match.lobiHome ? d.match.away : d.match.home).toLowerCase().replace(/[^a-z0-9]+/g, '-')}${d.analysis.status === 'final' ? '' : '-DRAFT'}`;
+        await sxLog(db, statsActor(s.user), 'export', { itemType: 'bst', itemId: d.analysis.id, details: `BST ${route.endsWith('xlsx') ? 'Excel' : 'CSV'}`, request });
+        if (route.endsWith('csv')) return csv(buildCsv(sheets[0].columns, sheets[0].rows), `${base}.csv`);
+        return new Response(buildXlsx(sheets), { headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': `attachment; filename="${base}.xlsx"`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
       }
       case 'GET settings': return json(await settingsView(db));
       case 'POST settings': {

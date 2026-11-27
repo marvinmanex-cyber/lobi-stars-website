@@ -97,6 +97,9 @@ export async function ensureStatsCentreSchema(db) {
     db.prepare(`CREATE INDEX IF NOT EXISTS sx_events_match ON sx_events (match_id, is_deleted)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS sx_events_player ON sx_events (player_slug, event_type)`),
   ]);
+  // Added later (columns of existing tables): the finishing formations (BST Analysis Form, 27 Nov 2026).
+  const cols = new Set((await db.prepare(`PRAGMA table_info(sx_matches)`).all()).results.map(r => r.name));
+  for (const c of ['formation_home_finish', 'formation_away_finish']) if (!cols.has(c)) await db.prepare(`ALTER TABLE sx_matches ADD COLUMN ${c} TEXT`).run();
   ready = true;
 }
 

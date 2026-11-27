@@ -3,6 +3,7 @@
 // and sent when the connection returns; the top bar shows how many are still "unsynced". Events are sent with an
 // id made here, so sending the same event twice never records it twice.
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { bstRoute, type Ctx } from './bst';
 const $ = (id: string) => document.getElementById(id) as any;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 const day = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' }) : '');
@@ -66,6 +67,15 @@ async function boot() {
 window.addEventListener('hashchange', () => route());
 function route() {
   if (!S) return;
+  // BST Analysis Form pages have their own addresses (/staff/statistics-center/bst-analysis/...).
+  if (location.pathname.startsWith('/staff/statistics-center/bst-analysis')) {
+    for (const a of document.querySelectorAll('[data-nav]')) (a as HTMLElement).toggleAttribute('aria-current', false);
+    document.querySelector('[data-nav="bst"]')?.setAttribute('aria-current', 'page');
+    stopTick(); resetView();
+    view().innerHTML = '<p class="sx-small">Loading…</p>';
+    Promise.resolve(bstRoute(ctx)).catch((x: any) => { view().innerHTML = `<div class="sx-card"><p class="sx-err">${esc(x.message)}</p></div>`; });
+    return;
+  }
   const [, page = '', id = ''] = (location.hash || '#/').split('/');
   for (const a of document.querySelectorAll('[data-nav]')) (a as HTMLElement).toggleAttribute('aria-current', false);
   const nav = { '': 'home', matches: 'matches', match: 'matches', live: 'matches', review: 'matches', new: 'matches', players: 'players', team: 'team', exports: 'exports', settings: 'settings', definitions: 'definitions' }[page] || 'home';
@@ -89,7 +99,7 @@ async function dashboardView() {
   const d = await api(`dashboard?season=${encodeURIComponent(season)}`);
   const a = d.team.all;
   view().innerHTML = `
-    <div class="sx-row sx-noprint" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Season ${esc(season)}</h2><div class="sx-row">${seasonSelect(season)}<a class="sx-btn sx-btn--r" href="#/new">+ New match</a></div></div>
+    <div class="sx-row sx-noprint" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Season ${esc(season)}</h2><div class="sx-row">${seasonSelect(season)}<a class="sx-btn" href="/staff/statistics-center/bst-analysis/">BST Analysis Form</a><a class="sx-btn sx-btn--r" href="#/new">+ New match</a></div></div>
     <div class="sx-kpis">
       ${[['Played', a.p], ['Won', a.w], ['Drawn', a.d], ['Lost', a.l], ['Goals for', a.gf], ['Goals against', a.ga], ['Clean sheets', a.cleanSheets], ['Yellow cards', d.team.discipline.yellow], ['Red cards', d.team.discipline.red]]
         .map(([l, v]) => `<div class="sx-kpi"><b>${v}</b><span>${l}</span></div>`).join('')}
@@ -262,6 +272,7 @@ async function flush(id: string) {
       last = await api('match/events', { id, ops: cur.slice(0, n) });
       const bad = (last.results || []).filter((r: any) => !r.ok);
       if (bad.length) toast(`${bad.length} event(s) were not accepted: ${bad[0].error}`, false);
+      else if ((last.results || []).some((r: any) => r.duplicateOf) && cur.slice(0, n).length === 1) toast('Saved. Note: the same event for the same player and minute was already recorded. If it was entered twice, remove one.', false);
       store.set(qKey(id), queue(id).slice(n));
     }
   } catch (x: any) { if (x instanceof ApiError && x.status < 500 && x.status !== 401) { toast(`Not saved: ${x.message}`, false); store.set(qKey(id), queue(id).slice(1)); } }
@@ -678,5 +689,12 @@ function definitionsView() {
   ];
   view().innerHTML = `<h2>Stat definitions</h2><section class="sx-card"><dl>${D.map(([t, x]) => `<dt><b>${esc(t)}</b></dt><dd style="margin:0 0 12px">${esc(x)}</dd>`).join('')}</dl></section>`;
 }
+
+const ctx: Ctx = {
+  api, esc, toast, view, resetView, store, uid, day, when,
+  get S() { return S; },
+  enqueue: (matchId: string, op: any) => enqueue(matchId, op),
+  flush: (matchId: string) => flush(matchId),
+};
 
 boot();
