@@ -241,6 +241,9 @@ a{color:inherit;}
 </style>
 </head>
 <body>
+{/* The cookie notice first: it floats at the bottom of the screen, and placed here it shows with the first paint instead of
+    after the whole page is read (on long pages it was the late "largest element" on phones; SEO Scanner, 26 Nov 2026). */}
+{!bare && !adminPage && <CookieConsent />}
 {adminPage ? <><a href="#main" class="skip-link">Skip to content</a><main id="main" class="admin-main"><slot /></main></> : bare ? <main id="main" class="bare"><slot /></main> : <>
 <a href="#main" class="skip-link">Skip to content</a>
 <SiteHeader />
@@ -261,7 +264,6 @@ a{color:inherit;}
 <script is:inline>
   function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove('show');},3200);}
 </script>
-{!bare && !adminPage && <CookieConsent />}
 {!bare && !adminPage && <InstallPrompt />}
 {!bare && !adminPage && <KitchenNudge />}
 <script is:inline>

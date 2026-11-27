@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Faster news pages on phones (SEO Scanner speed warning)
+
+- **What:** the SEO Scanner warned that /news/ takes 4.7 s on phones to show its main content (Google wants under 2.5 s). The cause was the soft blurred copy of each story photo behind the picture: phones counted that big blurred layer as the page's main content, and it was drawn late.
+- **Fix 1:** the first 8 blurred fills on every page are now a tiny copy of the photo (16 px wide, a few hundred bytes) put straight into the page when the site is built. Blurred, they look the same; browsers no longer count them as the main content, and the page needs fewer downloads (integrations/postbuild.mjs).
+- **Fix 2:** the cookie notice is now at the start of each page instead of the end. It looks and works the same (it floats at the bottom of the screen) but shows with the first paint instead of after a long page has been read.
+- **Result (phone on slow 4G, measured locally):** /news/ main content at 3.0 to 4.3 s instead of 4.5 to 6.8 s; nothing jumps (CLS 0.003).
+- **Story page jumping (CLS 0.33 on /news/2026-11-20-story/):** could not be reproduced (measured 0.001 to 0.002). The scanner tests speed once a week, so the daily list repeats last week's result: press **Check again** on the Speed card for a fresh test.
+- **Staff:** nothing to do.
+
+---
+
 ## 2026-11-25: Site re-check, Paystack confirmations, SEO Scanner tests
 
 - **Whole live site re-checked:** all 100 pages in the sitemap and the 183 pictures, styles, scripts, PDFs and fonts they use load correctly.

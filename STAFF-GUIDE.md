@@ -4029,6 +4029,8 @@ never copies Google search results.
   scan takes a few minutes; you can leave the page, it carries on. On a
   **Speed** card, Check again also asks Google for a new speed test of that
   page (about a minute); otherwise speed is tested once a week (23 Nov 2026).
+  The daily issue list repeats the last weekly speed result until the next test,
+  so after a speed fix press Check again rather than waiting a week (27 Nov 2026).
 
 **The dashboard**
 1. **Score (0–100)** with its trend over 90 days, and the number of Critical,

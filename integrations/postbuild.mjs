@@ -13,6 +13,25 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeShareImages } from './og/index.mjs';
 
+// The blurred fill behind whole-picture frames (fitpic) at the top of a page: a tiny copy of the photo (16 px wide,
+// a few hundred bytes) put straight into the page. Blurred, it looks the same as the 240 px copy, but browsers do not
+// count such a low-detail picture as the page's largest element (LCP), so the real photo counts instead, and the
+// page needs fewer downloads. SEO Scanner: LCP 4.7 s on /news/ (mobile), 26 Nov 2026. Without sharp: the 240 px copy.
+const TINY_FILLS = 8;
+let sharpLib;
+const tinyCache = new Map();
+async function tinyFill(dist, urlPath) {
+  if (tinyCache.has(urlPath)) return tinyCache.get(urlPath);
+  let out = null;
+  try {
+    if (sharpLib === undefined) sharpLib = (await import('sharp')).default;
+    const file = path.join(dist, ...urlPath.split('/'));
+    if (sharpLib && existsSync(file)) out = `data:image/webp;base64,${(await sharpLib(file).resize(16).webp({ quality: 40 }).toBuffer()).toString('base64')}`;
+  } catch { sharpLib = sharpLib || null; out = null; }
+  tinyCache.set(urlPath, out);
+  return out;
+}
+
 async function walk(dir) {
   const out = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -133,6 +152,11 @@ export default function postbuild() {
             const small = `${base}-240w.webp`;
             return existsSync(path.join(dist, ...small.split('/'))) ? `--fit-bg:url(${q}${small}${q})` : m;
           });
+          // The first few fills on the page: the tiny copy, straight in the page (tinyFill above).
+          for (const m of [...html.matchAll(/--fit-bg:url\((&quot;|")(\/images\/[^"&)]+?-240w\.webp)\1\)/gi)].slice(0, TINY_FILLS)) {
+            const tiny = await tinyFill(dist, m[2]);
+            if (tiny) html = html.replace(m[0], `--fit-bg:url(${m[1]}${tiny}${m[1]})`);
+          }
           // The first of those fills is at the top of the page and can be its largest element (LCP), but a picture
           // named in a style is found late. Tell the browser about it in the <head> so it downloads at once (SEO
           // Scanner: LCP 4.7 s on /news/, Nov 2026). Same for the page's first high-priority picture.
@@ -140,7 +164,8 @@ export default function postbuild() {
           const heads = [];
           const lcpImg = html.match(/<img\b(?=[^>]*\bfetchpriority="high")[^>]*>/);
           // Only when the fill comes before the page's main picture (otherwise it is further down the page).
-          const fillFirst = firstFill && (!lcpImg || (firstFill.index ?? 0) < (lcpImg.index ?? 0));
+          // (Not when the top fills are already in the page as tiny copies: then the 240 px one is further down.)
+          const fillFirst = firstFill && !/--fit-bg:url\((?:&quot;|")data:/.test(html) && (!lcpImg || (firstFill.index ?? 0) < (lcpImg.index ?? 0));
           if (fillFirst && !html.includes(`rel="preload" as="image" href="${firstFill[1]}"`)) heads.push(`<link rel="preload" as="image" href="${firstFill[1]}" fetchpriority="high">`);
           if (lcpImg) {
             const src = lcpImg[0].match(/\ssrc="([^"]+)"/)?.[1], set = lcpImg[0].match(/\ssrcset="([^"]+)"/)?.[1], szs = lcpImg[0].match(/\ssizes="([^"]+)"/)?.[1];
