@@ -5406,3 +5406,10 @@ U substitution, I injury, V save, Z undo). Add the Statistics Center to your pho
 "Add to Home screen" / "Install app"); the screen stays on during live entry. Exports › **Google Sheets** gives a
 formula that keeps a sheet up to date. Settings › **Second check** (optional): a second person confirms a match
 before it is published.
+
+**Phase 2 (Analysis menu):** after choosing the player for a shot, goal, foul, free kick or offside you can tap
+where it happened on the pitch (or Skip). Set "Lobi Stars attack in the 1st half" in Match Setup so the pitch matches
+what you see. xG is worked out by itself for shots with a position. For corners and free kicks you can tap the
+routine and what came of it. Add the match video link and the kick-off time in the video in Match Setup to get
+"Watch clip" on Review. **Rate players** on Review after the match. The Analysis menu has season analytics, maps, set
+pieces, player comparison, scouting reports (with notes), training themes, monthly reports and the xG settings.

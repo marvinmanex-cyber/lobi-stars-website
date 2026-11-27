@@ -4,6 +4,7 @@
 // id made here, so sending the same event twice never records it twice.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { bstRoute, applyUi, type Ctx } from './bst';
+import { analysisHub, mapsView, setPiecesView, ratingsView, playerView, compareView, analyticsView, scoutingView, trainingView, reportsView, xgView, pickOnPitch, attacksRight } from './phase2';
 const $ = (id: string) => document.getElementById(id) as any;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 const day = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' }) : '');
@@ -81,6 +82,9 @@ function parentPage() {
   if (!page) return null;
   if (page === 'tag') return `/staff/statistics-center/#/review/${(location.hash.split('/')[2] || '')}`;
   if (page === 'recycle') return '/staff/statistics-center/#/settings';
+  if (page === 'ratings') return `/staff/statistics-center/#/review/${(location.hash.split('/')[2] || '')}`;
+  if (page === 'player') return '/staff/statistics-center/#/players';
+  if (['analytics', 'maps', 'set-pieces', 'compare', 'scouting', 'training', 'reports', 'xg'].includes(page)) return '/staff/statistics-center/#/analysis';
   return ['match', 'live', 'review', 'new'].includes(page) ? '/staff/statistics-center/#/matches' : '/staff/statistics-center/#/';
 }
 function updateBack() {
@@ -106,10 +110,11 @@ function route() {
   }
   const [, page = '', id = ''] = (location.hash || '#/').split('/');
   for (const a of document.querySelectorAll('[data-nav]')) (a as HTMLElement).toggleAttribute('aria-current', false);
-  const nav = { '': 'home', matches: 'matches', match: 'matches', live: 'matches', review: 'matches', new: 'matches', tag: 'matches', recycle: 'settings', players: 'players', team: 'team', exports: 'exports', settings: 'settings', definitions: 'definitions' }[page] || 'home';
+  const nav = { '': 'home', matches: 'matches', match: 'matches', live: 'matches', review: 'matches', new: 'matches', tag: 'matches', recycle: 'settings', ratings: 'matches', analysis: 'analysis', analytics: 'analysis', maps: 'analysis', 'set-pieces': 'analysis', player: 'players', compare: 'analysis', scouting: 'analysis', training: 'analysis', reports: 'analysis', xg: 'analysis', players: 'players', team: 'team', exports: 'exports', settings: 'settings', definitions: 'definitions' }[page] || 'home';
   document.querySelector(`[data-nav="${nav}"]`)?.setAttribute('aria-current', 'page');
   const run: Record<string, () => Promise<void> | void> = { '': dashboardView, matches: matchesView, new: newMatchView, match: () => setupView(id), live: () => liveView(id), review: () => reviewView(id),
-    players: playersView, team: teamView, exports: exportsView, settings: settingsView, definitions: definitionsView, tag: () => tagView(id), recycle: recycleView };
+    players: playersView, team: teamView, exports: exportsView, settings: settingsView, definitions: definitionsView, tag: () => tagView(id), recycle: recycleView, ratings: () => ratingsView(ctx, id), analysis: () => analysisHub(ctx), analytics: () => analyticsView(ctx), maps: () => mapsView(ctx), 'set-pieces': () => setPiecesView(ctx),
+    player: () => playerView(ctx, id), compare: () => compareView(ctx), scouting: () => scoutingView(ctx), training: () => trainingView(ctx), reports: () => reportsView(ctx), xg: () => xgView(ctx) };
   stopTick(); resetView();
   view().innerHTML = '<p class="sx-small">Loading…</p>';
   Promise.resolve((run[page] || dashboardView)()).catch((x: any) => { view().innerHTML = `<div class="sx-card"><p class="sx-err">${esc(x.message)}</p></div>`; });
@@ -226,6 +231,10 @@ async function setupView(id: string) {
       ${f('weather', 'Weather', `<span class="sx-row" style="flex-wrap:nowrap"><input name="NAME" maxlength="60" value="${v(m.weather)}" placeholder="Sunny, 31°C"><button type="button" class="sx-btn" id="wxFill" title="Weather at kick-off from Open-Meteo (free)">Fill in</button></span>`)}
       ${f('pitch', 'Pitch condition', `<input name="NAME" maxlength="60" value="${v(m.pitch)}" placeholder="Good, dry">`)}
       ${f('attendance', 'Attendance', `<input name="NAME" type="number" min="0" max="100000" value="${v(m.attendance)}">`)}
+      ${f('attack1h', 'Lobi Stars attack in the 1st half (as you watch)', `<select name="NAME"><option value="ltr" ${m.attack1h !== 'rtl' ? 'selected' : ''}>Left to right →</option><option value="rtl" ${m.attack1h === 'rtl' ? 'selected' : ''}>← Right to left</option></select>`)}
+      ${f('videoUrl', 'Match video link (YouTube, Vimeo or a file)', `<input name="NAME" type="url" maxlength="400" value="${v(m.videoUrl)}" placeholder="https://">`)}
+      ${f('videoOffset', 'Kick-off time in the video (seconds)', `<input name="NAME" type="number" min="0" max="86400" value="${v(m.videoOffset)}" placeholder="e.g. 95">`)}
+      ${f('videoOffset2', '2nd-half kick-off in the video (seconds, optional)', `<input name="NAME" type="number" min="0" max="86400" value="${v(m.videoOffset2)}" placeholder="e.g. 3720">`)}
       ${f('length', 'Match length', `<select name="NAME"><option value="90" ${m.length !== 120 ? 'selected' : ''}>90 minutes</option><option value="120" ${m.length === 120 ? 'selected' : ''}>120 minutes (extra time)</option></select>`)}
     </div><p><button class="sx-btn sx-btn--p" type="submit">Save details</button></p></fieldset></form>
 
@@ -528,6 +537,8 @@ function startFlow(type: string) {
   else if (type === 'corner' || type === 'offside') steps.push('player?');
   else steps.push('player');
   if (type === 'shot') steps.push('outcome');
+  if (['shot', 'goal', 'foul_committed', 'free_kick', 'offside'].includes(type)) steps.push('where');
+  if (type === 'corner' || type === 'free_kick') steps.push('routine', 'spout');
   if (type === 'injury') steps.push('injury');
   steps.push('minute');
   let i = 0;
@@ -586,6 +597,15 @@ function startFlow(type: string) {
         onPick(([slug, name]: any) => { ev.relatedSlug = slug; ev.relatedName = name; }); break;
       case 'reason': draw('Reason', `<div class="sx-picks">${pickBtn('"tactical"', '<b style="font-size:16px">Tactical</b>', '', true)}${pickBtn('"injury"', '<b style="font-size:16px">Injury</b>', '', true)}</div>`);
         onPick(v => { ev.outcome = v; ev.detail = v; }); break;
+      case 'where': {
+        draw('Where on the pitch? (optional)', '<div id="pickBox"></div>');
+        pickOnPitch(body.querySelector('#pickBox'), { teamAttacksRight: attacksRight(m, ev.side, ev.period), teamName: teamName(m, ev.side) }).then(p => { if (p) { ev.x = p.x; ev.y = p.y; } next(); });
+        break;
+      }
+      case 'routine': draw('Routine (optional)', `<div class="sx-picks">${S.routines.map((r: string) => pickBtn(`"${r}"`, `<b style="font-size:15px">${esc(words(r))}</b>`)).join('')}${pickBtn('null', '<b>—</b>', 'Skip')}</div>`);
+        onPick(v => { ev.routine = v; }); break;
+      case 'spout': draw('What came of it? (optional)', `<div class="sx-picks">${S.spOutcomes.map((r: string) => pickBtn(`"${r}"`, `<b style="font-size:15px">${esc(words(r))}</b>`)).join('')}${pickBtn('null', '<b>—</b>', 'Skip')}</div>`);
+        onPick(v => { ev.setPieceOutcome = v; }); break;
       case 'injury': draw('Did the player carry on?', `<div class="sx-picks">${pickBtn('"continued"', '<b style="font-size:16px">Carried on</b>', '', true)}${pickBtn('"off"', '<b style="font-size:16px">Went off</b>', '', true)}</div>`);
         onPick(v => { ev.outcome = v; }); break;
       case 'minute':
@@ -631,17 +651,26 @@ function editDialog(ev: any, data: any, done: (op: any) => void) {
     <label>Outcome${sel('outcome', [...new Set(Object.values(S.outcomes).flat() as string[])], e.outcome)}</label>
     <label>Type${sel('detail', S.detailTypes, e.detail)}</label>
     <label>Body part${sel('bodyPart', S.bodyParts, e.bodyPart)}</label>
-    <label>Note<input data-f="notes" maxlength="300" value="${esc(e.notes || '')}"></label></div>
+    <label>Note<input data-f="notes" maxlength="300" value="${esc(e.notes || '')}"></label>
+    <label>Position on the pitch (0–100, the team attacking →)<span class="sx-row" style="flex-wrap:nowrap"><input data-f="x" type="number" min="0" max="100" step="0.1" placeholder="x" value="${esc(e.x ?? '')}" aria-label="x"><input data-f="y" type="number" min="0" max="100" step="0.1" placeholder="y" value="${esc(e.y ?? '')}" aria-label="y"><button type="button" class="sx-btn" data-pickpos>Pick</button></span></label>
+    <label>xG typed by hand (else worked out)<input data-f="xgManual" type="number" min="0" max="1" step="0.01" value="${esc(e.xgSource === 'manual' ? e.xg : '')}" placeholder="${e.xg !== null && e.xg !== undefined ? `auto: ${e.xg}` : 'auto'}"></label>
+    <label>Set-piece routine${sel('routine', S.routines, e.routine)}</label><label>Set-piece outcome${sel('setPieceOutcome', S.spOutcomes, e.setPieceOutcome)}</label></div>
+    <div id="editPick"></div>
     <button type="button" class="sx-btn sx-btn--ok" data-save style="width:100%">Save</button>`;
   const setSel = (k: string, slug: any, name: any) => { const s = body.querySelector(`[data-f="${k}"]`); const v = JSON.stringify([slug || null, name]); for (const o of s.options) if (o.value === v) o.selected = true; };
   if (e.name) setSel('player', e.slug, e.name);
   if (e.relatedName) setSel('related', e.relatedSlug, e.relatedName);
+  body.querySelector('[data-pickpos]')?.addEventListener('click', () => {
+    const side = body.querySelector('[data-f="side"]').value, period = body.querySelector('[data-f="period"]').value;
+    pickOnPitch(body.querySelector('#editPick'), { teamAttacksRight: attacksRight(m, side, period), teamName: side === 'home' ? m.home : m.away }).then(pos => { body.querySelector('#editPick').innerHTML = ''; if (pos) { body.querySelector('[data-f="x"]').value = pos.x; body.querySelector('[data-f="y"]').value = pos.y; } });
+  });
   body.querySelector('[data-save]').addEventListener('click', () => {
     const g = (k: string) => body.querySelector(`[data-f="${k}"]`).value;
     const p = g('player') ? JSON.parse(g('player')) : [null, g('playerTyped').trim() || null];
     const r = g('related') ? JSON.parse(g('related')) : [null, g('relatedTyped').trim() || null];
     const out = { ...e, id: e.id || uid(), type: g('type'), side: g('side'), period: g('period'), minute: Number(g('minute')), stoppage: g('stoppage') === '' ? null : Number(g('stoppage')),
-      slug: p[0], name: p[1], relatedSlug: r[0], relatedName: r[1], outcome: g('outcome') || null, detail: g('detail') || null, bodyPart: g('bodyPart') || null, notes: g('notes') };
+      slug: p[0], name: p[1], relatedSlug: r[0], relatedName: r[1], outcome: g('outcome') || null, detail: g('detail') || null, bodyPart: g('bodyPart') || null, notes: g('notes'),
+      x: g('x') === '' ? null : Number(g('x')), y: g('y') === '' ? null : Number(g('y')), xgManual: g('xgManual'), routine: g('routine') || null, setPieceOutcome: g('setPieceOutcome') || null };
     if (!out.type) { toast('Choose the event.', false); return; }
     $('sheet').close();
     done({ op: 'save', event: out });
@@ -668,6 +697,7 @@ async function reviewView(id: string) {
         ${!locked && m.status !== 'review' ? '<button class="sx-btn" id="toReview">Mark ready for review</button>' : ''}
         ${S.settings.secondCheck && !locked ? `<button class="sx-btn" id="secondCheck">I have checked this match</button>` : ''}${m.secondCheckBy ? `<span class="sx-small">Checked by ${esc(m.secondCheckBy)}</span>` : ''}
         <a class="sx-btn" href="#/tag/${esc(id)}">Tag players</a>
+        <a class="sx-btn" href="#/ratings/${esc(id)}">Rate players</a>
         <button class="sx-btn" id="statPng">Stat graphic (PNG)</button>
         ${locked ? `<a class="sx-btn" href="https://wa.me/?text=${encodeURIComponent(shareText(d))}" target="_blank" rel="noopener">Share on WhatsApp</a>` : ''}
         <button class="sx-btn" id="print">Print match report</button>
@@ -689,6 +719,8 @@ async function reviewView(id: string) {
         <button class="sx-btn sx-btn--p" type="submit">Save</button></fieldset></form>
     </div>
 
+    <section class="sx-card" id="keyMoments"><h3>Key moments</h3><p class="sx-small">Loading…</p></section>
+    <section class="sx-card" id="trainTags"><h3>Training themes</h3><p class="sx-small">Loading…</p></section>
     <form class="sx-card" id="pl"><h3>Players: minutes, ratings, Man of the Match</h3><fieldset ${locked ? 'disabled' : ''} style="border:0;padding:0;margin:0">
       <p class="sx-small">Minutes are worked out from the substitutions and red cards. Type a number only to correct one. Ratings are the coach's (1–10).</p>
       <div class="sx-scroll"><table class="sx-t"><thead><tr><th>Player</th><th>Team</th><th class="n">Min</th><th>Correct minutes</th><th class="n">G</th><th class="n">A</th><th class="n">Sh</th><th class="n">YC</th><th class="n">RC</th><th>Rating</th><th>MOTM</th></tr></thead><tbody>
@@ -712,6 +744,18 @@ async function reviewView(id: string) {
   const reload = () => reviewView(id);
   const send = async (op: any) => { try { await api('match/events', { id, ops: [op] }); toast('Saved.'); reload(); } catch (x: any) { toast(x.message, false); } };
   $('print').addEventListener('click', () => window.print());
+  // Key moments with video clips (staff only), and training-theme tags for the match or an event.
+  api(`match/key-moments?id=${encodeURIComponent(id)}`).then((r: any) => {
+    $('keyMoments').innerHTML = `<h3>Key moments</h3>${r.video ? '' : '<p class="sx-small">Add the match video link and the kick-off time in the video on the Setup page to get "Watch clip" links.</p>'}<ul class="sx-feed">${r.moments.map((k: any) => `<li><span class="m">${k.minute}${k.stoppage ? `+${k.stoppage}` : ''}'</span><span class="d"><b>${esc(label(k.type))}</b> · ${esc(teamName(m, k.side))}<small>${esc(k.name || '')}${k.xg ? ` · xG ${k.xg}` : ''}</small></span>${k.clip ? `<a class="sx-btn" href="${esc(k.clip)}" target="_blank" rel="noopener">Watch clip</a>` : ''}</li>`).join('') || '<li class="sx-small">No goals, shots on target or cards yet.</li>'}</ul>`;
+  }).catch(() => {});
+  Promise.all([api('themes'), api(`match/tags?id=${encodeURIComponent(id)}`)]).then(([t, g]: any) => {
+    const active = t.themes.filter((x: any) => x.active);
+    const evName = (eid: string) => { const e = d.events.find((x: any) => x.id === eid); return e ? `${label(e.type)} ${e.minute}'${e.name ? ` · ${e.name}` : ''}` : 'an event'; };
+    $('trainTags').innerHTML = `<h3>Training themes</h3><ul class="sx-feed">${g.tags.map((x: any) => `<li><span class="d"><b>${esc(x.name)}</b><small>${x.event_id ? esc(evName(x.event_id)) : 'Whole match'}${x.note ? ` · ${esc(x.note)}` : ''}</small></span><button class="sx-btn" data-untag="${esc(x.id)}">Remove</button></li>`).join('') || '<li class="sx-small">Not tagged yet.</li>'}</ul>
+      ${active.length ? `<form class="sx-row" id="tagF" style="margin-top:8px"><label>Theme<select name="theme">${active.map((x: any) => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</select></label><label>What<select name="event"><option value="">The whole match</option>${d.events.map((e: any) => `<option value="${esc(e.id)}">${esc(evName(e.id))}</option>`).join('')}</select></label><label>Note<input name="note" maxlength="300"></label><button class="sx-btn sx-btn--p" type="submit">Tag</button></form>` : '<p class="sx-small">Create themes in Analysis › Training themes.</p>'}`;
+    $('tagF')?.addEventListener('submit', async (e: any) => { e.preventDefault(); try { await api('tags', { themeId: e.target.theme.value, matchId: e.target.event.value ? '' : id, eventId: e.target.event.value || '', note: e.target.note.value }); toast('Tagged.'); reload(); } catch (x: any) { toast(x.message, false); } });
+    $('trainTags').querySelectorAll('[data-untag]').forEach((b: any) => b.addEventListener('click', async () => { try { await api('tags/remove', { id: b.dataset.untag }); reload(); } catch (x: any) { toast(x.message, false); } }));
+  }).catch(() => {});
   $('secondCheck')?.addEventListener('click', async () => { if (!confirm('Confirm that you have checked every event, the line-ups and the score?')) return; try { await api('match/second-check', { id }); toast('Recorded. Someone else can now publish.'); reload(); } catch (x: any) { toast(x.message, false); } });
   $('draftReport')?.addEventListener('click', () => { const t = ($('post') as any).report; if (t.value.trim() && !confirm('Replace the report text with a draft from the events?')) return; t.value = draftReport(d); toast('Draft written: read it, edit it, then Save.'); });
   $('statPng').addEventListener('click', () => statGraphic(d));
@@ -756,7 +800,7 @@ async function playersView() {
   const d = await api(`players?season=${encodeURIComponent(sel)}`);
   view().innerHTML = `<div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Players · ${sel === 'career' ? 'all seasons' : esc(sel)}</h2>${seasonSelect(sel, `<option value="career" ${sel === 'career' ? 'selected' : ''}>All seasons (career)</option>`)}</div>
     <div class="sx-card sx-scroll"><p class="sx-small">From published matches only. Tap a name for the match-by-match log; "Profile" opens the player's public page.</p><table class="sx-t"><thead><tr><th>Player</th><th class="n">Apps</th><th class="n">Starts</th><th class="n">Min</th><th class="n">Goals</th><th class="n">Assists</th><th class="n">Shots</th><th class="n">On target</th><th class="n">YC</th><th class="n">RC</th><th class="n">Clean sheets</th><th class="n">MOTM</th><th></th></tr></thead><tbody>
-    ${d.players.map((p: any) => `<tr><td><button class="sx-btn" data-log="${esc(p.slug)}" style="min-height:36px">${esc(p.name)}</button></td><td class="n">${p.apps}</td><td class="n">${p.starts}</td><td class="n">${p.minutes}</td><td class="n">${p.goals}</td><td class="n">${p.assists}</td><td class="n">${p.shots}</td><td class="n">${p.shotsOnTarget}</td><td class="n">${p.yellow}</td><td class="n">${p.red}</td><td class="n">${p.cleanSheets}</td><td class="n">${p.motm}</td><td><a href="/squad/${esc(p.slug)}/" target="_blank" rel="noopener">Profile</a></td></tr>
+    ${d.players.map((p: any) => `<tr><td><button class="sx-btn" data-log="${esc(p.slug)}" style="min-height:36px">${esc(p.name)}</button> <a href="#/player/${esc(p.slug)}" class="sx-small">Player page</a></td><td class="n">${p.apps}</td><td class="n">${p.starts}</td><td class="n">${p.minutes}</td><td class="n">${p.goals}</td><td class="n">${p.assists}</td><td class="n">${p.shots}</td><td class="n">${p.shotsOnTarget}</td><td class="n">${p.yellow}</td><td class="n">${p.red}</td><td class="n">${p.cleanSheets}</td><td class="n">${p.motm}</td><td><a href="/squad/${esc(p.slug)}/" target="_blank" rel="noopener">Profile</a></td></tr>
       <tr data-logrow="${esc(p.slug)}" hidden><td colspan="13"><table class="sx-t"><tbody>${p.matches.map((x: any) => `<tr><td>${esc(day(x.date))}</td><td>${x.home ? 'v' : '@'} ${esc(x.opponent)}</td><td>${esc(x.score)}</td><td>${x.started ? 'Started' : 'Sub'}</td><td class="n">${x.minutes}'</td><td class="n">${x.goals ? `${x.goals} goal${x.goals > 1 ? 's' : ''}` : ''}</td><td class="n">${x.assists ? `${x.assists} assist${x.assists > 1 ? 's' : ''}` : ''}</td><td><a href="#/review/${esc(x.id)}">Match</a></td></tr>`).join('')}</tbody></table></td></tr>`).join('') || '<tr><td colspan="13" class="sx-small">No published matches yet.</td></tr>'}
     </tbody></table></div>`;
   view().querySelector('[data-season]')?.addEventListener('change', (e: any) => { store.set('sx_ps', e.target.value); playersView(); });
@@ -901,10 +945,13 @@ function settingsView() {
     <form class="sx-card" id="sf"><h3>Competitions</h3><p class="sx-small">One per line. Offered when creating and editing matches.${can ? '' : ' Only a senior statistician or a Super Admin can change them.'}</p>
       <textarea name="competitions" ${can ? '' : 'disabled'}>${esc(S.settings.competitions.join('\n'))}</textarea>${can ? '<p><button class="sx-btn sx-btn--p" type="submit">Save</button></p>' : ''}</form>
     <section class="sx-card"><h3>Seasons</h3><p class="sx-small">A match's season comes from its date and the club's season start (set in the website's site settings). Current season: <b>${esc(S.season)}</b>. Seasons with matches: ${S.seasons.map(esc).join(', ')}.</p></section>
+    <section class="sx-card"><h3>Monthly report email</h3><p class="sx-small">On the 1st of each month the season summary is made automatically (Analysis › Monthly reports). Tick to also email it to the Super Admins.</p>
+      <label class="sx-small" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="repEmail" ${S.settings.reportEmail ? 'checked' : ''} ${can ? '' : 'disabled'}> Email the monthly report</label></section>
     <section class="sx-card"><h3>Second check before publishing</h3><p class="sx-small">When on, a match can be published only after someone other than the publisher has pressed "I have checked this match" on its Review page (the four-eyes rule).</p>
       <label class="sx-small" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="scToggle" ${S.settings.secondCheck ? 'checked' : ''} ${can ? '' : 'disabled'}> Require a second check</label></section>
     <section class="sx-card"><h3>Recycle bin</h3><p class="sx-small">Removed matches, events and analyses are kept here and can be restored.</p><p><a class="sx-btn" href="#/recycle">Open the recycle bin</a></p></section>
     <section class="sx-card"><h3>Your account</h3><p>${esc(S.user.fullName)} ${S.user.admin ? '(Super Admin: everything)' : `(${esc(S.user.loginId)})${S.user.canPublish ? ' · may publish' : ''}`}</p><p class="sx-small">Signed out after ${S.idleMinutes / 60} hours without activity. Accounts are managed by the Super Admins in the website admin (Statistics Center).</p></section>`;
+  $('repEmail')?.addEventListener('change', async (e: any) => { try { const r = await api('settings', { reportEmail: e.target.checked }); S.settings = { ...S.settings, ...r }; toast('Saved.'); } catch (x: any) { e.target.checked = !e.target.checked; toast(x.message, false); } });
   $('scToggle')?.addEventListener('change', async (e: any) => { try { const r = await api('settings', { secondCheck: e.target.checked }); S.settings = { ...S.settings, ...r }; toast(e.target.checked ? 'A second check is now required before publishing.' : 'Second check switched off.'); } catch (x: any) { e.target.checked = !e.target.checked; toast(x.message, false); } });
   $('sf').addEventListener('submit', async (e: any) => {
     e.preventDefault();

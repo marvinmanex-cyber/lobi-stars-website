@@ -18,6 +18,8 @@ import {
 import { seasonOf } from '../_lib/stats.js';
 import { listAnalyses, createAnalysis, getAnalysis, setCell, setText, setStoppage, finalise, reopenAnalysis, heartbeat, bstSheets, METRICS, BST_FORMATIONS, createShare, listShares, revokeShare, TAGGABLE } from '../_lib/statsBst.js';
 import { sendEmail } from '../_lib/email.js';
+import { xgParams, saveXgParams, recalcXg, XG_DEFAULTS, ROUTINES, SP_OUTCOMES, saveRatings, addScoutingNote, removeScoutingNote, themes, saveTheme, addTag, removeTag, themeReport, ensurePhase2Schema } from '../_lib/statsPhase2.js';
+import { mapEvents, playerProfile, comparePlayers, seasonAnalytics, opponents, scoutingReport, buildMonthlyReport, reportsList, reportHtml, keyMoments } from '../_lib/statsAnalytics.js';
 import { matchWeather, makeSheetsKey, stopSheetsKey, sheetsCsv, secondCheck, secondCheckProblem } from '../_lib/statsExtras.js';
 import { superAdminEmails } from '../_lib/superAdmins.js';
 import { buildXlsx, buildCsv } from '../_lib/xlsx.js';
@@ -63,7 +65,7 @@ export async function onRequest({ request, env, params }) {
       case 'GET session': return json({
         user: s.user, csrf: s.csrf, idleMinutes: IDLE_MS / 60e3, season: current, seasons: await seasons(db, current),
         eventTypes: EVENT_TYPES, liveButtons: LIVE_BUTTONS, periods: PERIODS, outcomes: OUTCOMES, bodyParts: BODY_PARTS, detailTypes: DETAIL_TYPES, statuses: STATUSES,
-        roster: s.user.mustChange ? [] : await loadRoster(env, request.url), settings: await settingsView(db),
+        roster: s.user.mustChange ? [] : await loadRoster(env, request.url), settings: await settingsView(db), routines: ROUTINES, spOutcomes: SP_OUTCOMES,
       });
       case 'POST logout': await signOut(env, request, s); return json({ ok: true }, 200, { 'Set-Cookie': clearStatsCookie() });
       case 'POST password': return out(await changePassword(env, request, s, b));
@@ -95,6 +97,33 @@ export async function onRequest({ request, env, params }) {
         const url = `${new URL(request.url).origin}/api/stats-centre/sheet.csv?key=${r.key}`;
         return json({ ok: true, url, formula: `=IMPORTDATA("${url}")` });
       }
+      // ── Phase 2 ──
+      case 'GET maps': return json({ events: await mapEvents(db, { season: q.get('season') || '', matchId: q.get('matchId') || '', player: q.get('player') || '', period: q.get('period') || '', types: q.get('types') || '', from: q.get('from') || 0, to: q.get('to') || 130, team: q.get('team') || 'lobi' }) });
+      case 'GET player': return json(await playerProfile(db, oneLine(q.get('slug') || '', 80), season, await loadRoster(env, request.url)));
+      case 'GET compare': return json(await comparePlayers(db, String(q.get('slugs') || '').split(',').map(x => oneLine(x, 80)).filter(Boolean), season, { minMinutes: Math.max(0, Math.min(900, Number(q.get('min')) || 90)), roster: await loadRoster(env, request.url) }));
+      case 'GET analytics': return json(await seasonAnalytics(db, season, { competition: q.get('competition') || '', venue: q.get('venue') || '', opponent: q.get('opponent') || '' }));
+      case 'GET opponents': return json({ opponents: await opponents(db) });
+      case 'GET scouting': return json(await scoutingReport(db, oneLine(q.get('team') || '', 80)));
+      case 'POST scouting/note': return out(await addScoutingNote(db, s.user, b, opts));
+      case 'POST scouting/note-remove': return out(await removeScoutingNote(db, s.user, b.id, opts));
+      case 'GET themes': return json({ themes: await themes(db) });
+      case 'POST themes': return out(await saveTheme(db, s.user, b, opts));
+      case 'POST tags': return out(await addTag(db, s.user, b, opts));
+      case 'POST tags/remove': return out(await removeTag(db, s.user, b.id, opts));
+      case 'GET theme-report': return json(await themeReport(db, q.get('id')));
+      case 'GET match/tags': { await ensurePhase2Schema(db); return json({ tags: (await db.prepare(`SELECT g.id, g.theme_id, g.event_id, g.note, t.name FROM sx_training_tags g JOIN sx_training_themes t ON t.id = g.theme_id WHERE g.match_id = ? AND g.is_deleted = 0`).bind(q.get('id')).all()).results }); }
+      case 'GET reports': return json({ reports: await reportsList(db) });
+      case 'POST reports/generate': {
+        if (!s.user.canPublish) return json({ error: 'Only a senior statistician or a Super Admin can make a report.' }, 403);
+        const period = /^\d{4}-\d{2}$/.test(b.period || '') ? b.period : new Date(Date.now() + 3600e3).toISOString().slice(0, 7);
+        return out(await buildMonthlyReport(db, s.user, season, period, opts));
+      }
+      case 'GET report': { const r = await reportHtml(db, q.get('id')); return r ? json(r) : json({ error: 'Report not found.' }, 404); }
+      case 'GET xg': return json({ params: await xgParams(db), defaults: XG_DEFAULTS });
+      case 'POST xg': { if (!s.user.canPublish) return json({ error: 'Only a senior statistician or a Super Admin can change the model.' }, 403); return out(await saveXgParams(db, s.user, b, opts)); }
+      case 'POST xg/recalc': { if (!s.user.canPublish) return json({ error: 'Only a senior statistician or a Super Admin can recalculate.' }, 403); return out(await recalcXg(db, s.user, { matchId: b.matchId || '', season: b.matchId ? '' : (b.season || season) }, opts)); }
+      case 'POST ratings': return out(await saveRatings(db, s.user, b.id, b.rows, opts));
+      case 'GET match/key-moments': { const full = await getMatch(db, q.get('id')); return full ? json({ moments: keyMoments(full), video: !!full.match.videoUrl }) : json({ error: 'Match not found.' }, 404); }
       case 'GET match/media-lineup': return json({ lineup: await mediaLineup(db, q.get('id')) });
       case 'POST match/setup': return out(await saveSetup(db, s.user, b.id, b, opts));
       case 'POST match/lineups': return out(await saveLineups(db, s.user, b.id, b, await loadRoster(env, request.url), opts));
@@ -162,6 +191,7 @@ export async function onRequest({ request, env, params }) {
       case 'GET settings': return json(await settingsView(db));
       case 'POST settings': {
         if (!s.user.canPublish) return json({ error: 'Only a senior statistician or a Super Admin can change the settings.' }, 403);
+        if (b.reportEmail !== undefined) { await setSxSetting(db, 'report_email', b.reportEmail ? '1' : '0', s.user.fullName); await sxLog(db, statsActor(s.user), 'settings', { after: { reportEmail: !!b.reportEmail }, request }); return json({ ok: true, ...(await settingsView(db)) }); }
         if (b.secondCheck !== undefined) { await setSxSetting(db, 'second_check', b.secondCheck ? '1' : '0', s.user.fullName); await sxLog(db, statsActor(s.user), 'settings', { after: { secondCheck: !!b.secondCheck }, request }); return json({ ok: true, ...(await settingsView(db)) }); }
         const comps = [...new Set((Array.isArray(b.competitions) ? b.competitions : []).map(c => oneLine(c, 60)).filter(Boolean))].slice(0, 30);
         if (!comps.length) return json({ error: 'Keep at least one competition.' }, 400);

@@ -74,6 +74,7 @@
         <a href="/staff/statistics-center/#/matches" data-nav="matches">Matches</a>
         <a href="/staff/statistics-center/bst-analysis/" data-nav="bst">BST Analysis Form</a>
         <a href="/staff/statistics-center/#/players" data-nav="players">Players</a>
+        <a href="/staff/statistics-center/#/analysis" data-nav="analysis">Analysis</a>
         <a href="/staff/statistics-center/#/team" data-nav="team">Team</a>
         <a href="/staff/statistics-center/#/exports" data-nav="exports">Exports</a>
         <a href="/staff/statistics-center/#/settings" data-nav="settings">Settings</a>
@@ -277,6 +278,17 @@
   html.sx-dark .bst-pm { background: #0F1A30; color: #fff; border-color: #6E8BC4; } html.sx-dark .bst-grid .bst-sticky { background: var(--card); }
   html.sx-dark .bst-list li.ro, html.sx-dark .bst-grid tr.ro td, html.sx-dark .bst-grid tr.ro th { background: #101B31; } html.sx-dark .bst-grid .sel { background: #3B3412 !important; }
   html.sx-dark a { color: #FF8A9A; }
+
+  /* Phase 2 */
+  .p2-pitch { width: 100%; max-width: 820px; display: block; border-radius: 10px; }
+  .p2-pick .p2-pitch { max-width: 560px; touch-action: manipulation; }
+  .p2-tile { text-decoration: none; color: inherit; display: block; } .p2-tile:hover, .p2-tile:focus-visible { border-color: var(--red); }
+  .p2-stars { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .p2-stars button { min-width: 44px; min-height: 44px; border-radius: 10px; border: 2px solid var(--line); background: var(--card); color: var(--ink); font: 700 18px 'Barlow Condensed', sans-serif; cursor: pointer; }
+  .p2-stars button.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .p2-pbars { display: grid; gap: 6px; } .p2-pbar { display: grid; grid-template-columns: 70px 1fr; gap: 2px 8px; align-items: center; font-size: 13px; }
+  .p2-pbar span { grid-row: span 2; color: var(--muted); } .p2-pbar i { display: block; height: 12px; border-radius: 3px; font-style: normal; font-size: 10px; color: #fff; padding-left: 4px; line-height: 12px; min-width: 2px; }
+  .p2-pbar i.f { background: var(--ok); } .p2-pbar i.a { background: var(--red); }
 
   /* The printed report (A4 landscape) and the blank form */
   @page bstp { size: A4 landscape; margin: 10mm; }

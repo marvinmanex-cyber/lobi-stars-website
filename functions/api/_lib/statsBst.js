@@ -160,7 +160,7 @@ export function bstGrid(match, events, cells, stoppage = {}) {
     stop[p] = Math.min(15, n);
   }
   const cols = periods.map(p => ({ period: p, blocks: blocksFor(p, stop[p]) }));
-  const grid = { lobi: {}, opponent: {} };
+  const grid = { lobi: {}, opponent: {} }, xgClash = [], xgOwned = {};
   for (const side of ['lobi', 'opponent']) {
     const ms = sideOf(side), os = ms === 'home' ? 'away' : 'home';
     for (const m of METRICS) {
@@ -172,7 +172,23 @@ export function bstGrid(match, events, cells, stoppage = {}) {
       for (const [k, rule] of Object.entries(EVENT_ROWS)) if (e.side === ms && rule.test(e) && grid[side][k][e.period]?.[b] !== undefined) grid[side][k][e.period][b]++;
       if (e.type === 'goal') { const key = e.side === ms ? 'goal_for' : e.side === os ? 'goal_against' : null; if (key && grid[side][key][e.period]?.[b] !== undefined) grid[side][key][e.period][b]++; }
     }
-    for (const c of cells) if (c.side === side && grid[side][c.metric]?.[c.period]?.[c.block] !== undefined) grid[side][c.metric][c.period][c.block] = c.value;
+    const evXg = {}, evXa = {};
+    for (const e of evs) {
+      if (e.side !== ms || !(e.type === 'shot' || e.type === 'goal') || e.detail === 'own_goal' || !e.xg) continue;
+      const b = blockOf(e); if (!b) continue;
+      const k = `${e.period}|${b}`;
+      evXg[k] = (evXg[k] || 0) + e.xg;
+      if (e.relatedSlug || e.relatedName) evXa[k] = (evXa[k] || 0) + e.xg;
+    }
+    for (const c of cells) {
+      if (c.side !== side || grid[side][c.metric]?.[c.period]?.[c.block] === undefined) continue;
+      const k = `${c.period}|${c.block}`;
+      if ((c.metric === 'xg' && evXg[k]) || (c.metric === 'xa' && evXa[k])) { xgClash.push({ side, metric: c.metric, period: c.period, block: c.block, typed: c.value, fromShots: Math.round((c.metric === 'xg' ? evXg[k] : evXa[k]) * 100) / 100 }); continue; }
+      grid[side][c.metric][c.period][c.block] = c.value;
+    }
+    for (const [k, v] of Object.entries(evXg)) { const [p, b] = k.split('|'); if (grid[side].xg[p]?.[b] !== undefined) grid[side].xg[p][b] = Math.round(v * 100) / 100; }
+    for (const [k, v] of Object.entries(evXa)) { const [p, b] = k.split('|'); if (grid[side].xa[p]?.[b] !== undefined) grid[side].xa[p][b] = Math.round(v * 100) / 100; }
+    xgOwned[side] = { xg: Object.keys(evXg), xa: Object.keys(evXa) };
     for (const c of cols) for (const b of c.blocks) grid[side].goal_attempt[c.period][b] = grid[side].shot_on[c.period][b] + grid[side].shot_off[c.period][b] + grid[side].blocked[c.period][b];
   }
   const round = v => Math.round(v * 100) / 100;
@@ -182,7 +198,7 @@ export function bstGrid(match, events, cells, stoppage = {}) {
     for (const c of cols) { t[c.period] = round(Object.values(grid[side][m.key][c.period]).reduce((a, b) => a + b, 0)); t.full = round(t.full + t[c.period]); }
   }
   const acc = side => { const t = totals[side]; return t.goal_attempt.full ? Math.round((t.shot_on.full / t.goal_attempt.full) * 100) : null; };
-  return { cols, grid, totals, accuracy: { lobi: acc('lobi'), opponent: acc('opponent') }, stoppage: stop };
+  return { cols, grid, totals, accuracy: { lobi: acc('lobi'), opponent: acc('opponent') }, stoppage: stop, xgClash, xgOwned };
 }
 
 /** One analysis with the match, line-ups, grid, checks and who else has it open. */
@@ -231,6 +247,12 @@ export async function setCell(db, user, id, b, { request = null } = {}) {
   if (!CELL_METRICS.has(metric)) return { error: 'That row is worked out from the events or is calculated; it cannot be typed.' };
   if (!validBlock(period, block)) return { error: 'Unknown block.' };
   const decimal = metric === 'xg' || metric === 'xa';
+  if (decimal && Number(b.value) > 0) {
+    const full = await getMatch(db, a.match_id);
+    const side2 = side === 'lobi' ? (full.match.lobiHome ? 'home' : 'away') : (full.match.lobiHome ? 'away' : 'home');
+    const owned = full.events.some(e => e.side === side2 && (e.type === 'shot' || e.type === 'goal') && e.xg && e.period === period && blockOf(e) === block && (metric === 'xg' || e.relatedSlug || e.relatedName));
+    if (owned) return { error: `This block's ${metric === 'xg' ? 'xG' : 'xA'} comes from its shots (the shot owns its xG). Change the shot on the Review page instead.` };
+  }
   const old = await db.prepare(`SELECT value FROM sx_bst_cells WHERE analysis_id = ? AND metric = ? AND team_side = ? AND period = ? AND block = ?`).bind(a.id, metric, side, period, block).first();
   let value;
   if (decimal) {
@@ -359,6 +381,12 @@ export function bstQuality(d) {
     const v = d.grid[s][k][c.period][b];
     if (v < 0 || v > 9.99) add('error', `${k === 'xg' ? 'xG' : 'xA'} ${v} at ${b}' is outside 0.00–9.99.`, { period: c.period, block: b });
   }
+  for (const x of d.xgClash || []) add('warning', `${x.metric === 'xg' ? 'xG' : 'xA'} at ${x.block}' (${x.side === 'lobi' ? 'Lobi Stars' : 'opponent'}) was typed (${x.typed}) but its shots already give ${x.fromShots}: the shots' value is used. Set the typed value to 0 to tidy up.`, { period: x.period, block: x.block });
+  const shotsNoXg = d.events.filter(e => (e.type === 'shot' || (e.type === 'goal' && e.detail !== 'own_goal')) && (e.xg === null || e.xg === undefined)).length;
+  if (shotsNoXg) add('notice', `${shotsNoXg} shot${shotsNoXg === 1 ? '' : 's'} without xG (no position on the pitch). Add the position on the Review page to get xG automatically.`, { event: true });
+  const spNoRoutine = d.events.filter(e => ['corner', 'free_kick'].includes(e.type) && !e.routine).length;
+  if (spNoRoutine) add('notice', `${spNoRoutine} corner${spNoRoutine === 1 ? '' : 's'}/free kick${spNoRoutine === 1 ? '' : 's'} without a routine (optional, for the set-piece report).`, { event: true });
+  if (d.match.videoUrl && (d.match.videoOffset === null || d.match.videoOffset === undefined)) add('warning', 'A video link is set but not the kick-off time in the video: clip links will not work (Match Setup › Video).', { setup: true });
   const untagged = d.events.filter(e => TAGGABLE.has(e.type) && !e.slug && !e.name).length;
   if (untagged) add('notice', `${untagged} event${untagged === 1 ? '' : 's'} without a player. Use "Tag players" to add them (optional).`, { tag: true });
   return out;
@@ -367,7 +395,7 @@ export const TAGGABLE = new Set(['goal', 'shot', 'corner', 'free_kick', 'foul_co
 
 // ── Coach share links (Add-on 2): read only, expiring (1–30 days, default 14), revocable; staff notes only if ticked ──
 const sha256 = async s => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(s))))].map(b => b.toString(16).padStart(2, '0')).join('');
-export async function createShare(db, user, id, { days = 14, includeNotes = false } = {}, { request = null } = {}) {
+export async function createShare(db, user, id, { days = 14, includeNotes = false, includeVideo = false } = {}, { request = null } = {}) {
   const a = await row(db, id);
   if (!a) return { error: 'Analysis not found.' };
   const n = Math.max(1, Math.min(30, Math.round(Number(days) || 14)));
@@ -375,6 +403,7 @@ export async function createShare(db, user, id, { days = 14, includeNotes = fals
   const sid = newId('shr'), at = nowIso(), exp = new Date(Date.now() + n * 864e5).toISOString();
   await db.prepare(`INSERT INTO sx_share_links (id, analysis_id, token_hash, expires_at, include_notes, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`)
     .bind(sid, a.id, await sha256(token), exp, includeNotes ? 1 : 0, byName(user), at).run();
+  if (includeVideo) { try { await db.prepare(`UPDATE sx_share_links SET include_video = 1 WHERE id = ?`).bind(sid).run(); } catch { /* column added with Phase 2 */ } }
   await sxLog(db, statsActor(user), 'share_create', { itemType: 'bst', itemId: a.id, details: `Coach link for ${n} days${includeNotes ? ', with staff notes' : ''}`, request });
   return { ok: true, id: sid, token, expiresAt: exp };
 }
@@ -401,5 +430,5 @@ export async function sharedAnalysis(db, token) {
   await db.prepare(`UPDATE sx_share_links SET opens = opens + 1, last_opened_at = ? WHERE id = ?`).bind(nowIso(), s.id).run();
   if (!s.include_notes) { d.analysis.half1Note = ''; d.analysis.half2Note = ''; for (const e of d.events) e.notes = ''; }
   for (const l of d.lineups) { delete l.rating; }
-  return { ...d, expiresAt: s.expires_at };
+  return { ...d, expiresAt: s.expires_at, includeVideo: !!s.include_video };
 }

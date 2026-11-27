@@ -182,7 +182,32 @@ Tables: `sx_bst_analyses` (one per match), `sx_bst_cells`, `sx_bst_presence`; `s
 
 Code: `functions/api/_lib/statsExtras.js`; tests: `tests/stats-extras.unit.test.mjs`.
 
+## Phase 2 (built 27 Nov 2026)
+
+| Fact | Owner (recorded once) | Read by |
+|---|---|---|
+| Where an event happened (`pitch_x`, `pitch_y`, 0–100 in the acting team's attacking direction) | `sx_events` | maps, xG, zones (worked out) |
+| xG of a shot (`xg_value`, `xg_source` auto/manual) | the shot event | BST xG row (sum per block), xA (passer), analytics |
+| Set-piece routine and outcome (taker = the event's player; first contact = related player) | the corner / free kick event | set-piece report, scouting |
+| Video link, kick-off time in the video, 2nd half | `sx_matches` | clip links (worked out from the minute) |
+| Attacking direction in the 1st half | `sx_matches.attack_1h` | the pitch picker |
+| Coach rating and note | `sx_lineups` | player pages, comparison, analytics |
+| Scouting notes / training themes and tags / monthly reports | `sx_scouting_notes` / `sx_training_themes`, `sx_training_tags` / `sx_reports` | their pages |
+
+**How xG is calculated:** `xG = 1 / (1 + e^−z)`, `z = 0.686 + 0.49 × θ − 0.1553 × d` (+ header −0.8, other body part −0.5,
+direct free kick −0.4, counter-attack +0.3), θ = the angle of the goal mouth from the shot (radians), d = metres to the
+goal centre (pitch 105 × 68 m, goal 7.32 m). Penalties: 0.76. All values are settings (Analysis › xG model), with
+"Recalculate" (safe to run again; typed values kept). Examples: 5.5 m central 0.60, 11 m central 0.33 (header 0.18),
+25 m central 0.05.
+
+**Clip times:** 1st half: kick-off second + (minute − 1 + added) × 60 − 10 s; 2nd half the same from the 2nd-half kick-off
+second (or 1st-half kick-off + 62 minutes when not set). YouTube: an embed link with start and end (25 s); Vimeo: `#t=`;
+a file: `#t=start,end`.
+
+Code: `statsPhase2.js` (schema, xG, zones, clips, set pieces, ratings, notes, themes), `statsAnalytics.js` (maps, players,
+analytics, scouting, monthly report and its timer in `internal/checklist-run`), `src/scripts/statsCentre/phase2.ts`.
+Tests: `tests/stats-phase2.unit.test.mjs`.
+
 ## Coming next (queued by the owner)
 
-3. Phase 2: pitch maps, xG model, video clips, set pieces, player comparison, season analytics, scouting reports,
    training tags, scheduled reports.

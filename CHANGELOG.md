@@ -8,6 +8,23 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Statistics Center Phase 2: pitch maps, xG, video clips, set pieces, ratings, analytics, scouting, training, reports
+
+All staff only (nothing new on the public website). New **Analysis** menu.
+- **Where it happened:** an optional tap on a pitch after the player (live entry, Review); "Skip" is always there. Match Setup › "Lobi Stars attack in the 1st half" keeps maps drawn left to right for Lobi Stars. Zones are worked out.
+- **Automatic xG** for every shot with a position: a simple, open formula (angle and distance to goal, header, other body part, free kick, counter-attack); penalties a fixed 0.76 (all in Analysis › xG model, with "Recalculate"). A value typed on a shot wins. **xA** is worked out (the passer gets the shot's xG). The BST grid's xG and xA rows are the sum of the shots' xG; typing over them is refused and a clash is shown in the data-quality panel.
+- **Shot map, heat map, event map** (Analysis › Maps) with filters (season, team, event, player, half, minutes).
+- **Set pieces:** routine and outcome with one tap each when entering a corner or free kick (optional); Analysis › Set pieces: by routine, taker, side and opponent, set-piece goals for and against, routines we faced.
+- **Video clips:** Match Setup › video link and kick-off time in the video (and the 2nd half); every key moment on Review gets "Watch clip" (YouTube, Vimeo or a video file), and coach links can include them.
+- **Ratings** (Review › Rate players: all players on one screen, tap 1–10, a note); **player pages** for staff (Players › Player page: ratings trend and 5-match average, per-90 figures, xG, xA, tackles or saves) and **Compare players** (2–4, per-90 table and radar chart, minimum-minutes warning, position filter).
+- **Season analytics:** trends (goals, xG, shots, corners, fouls, cards, BST attacks), goals by 15 minutes, home and away, results by formation, goals by match state, top performers, discipline, and plain-language trends.
+- **Opposition scouting:** a one-page report per club from our matches (results, their goals by period, formations, key players, set pieces we faced, our best formation and XI against them) with staff notes; print or save as PDF.
+- **Training themes:** create themes and tag a match or an event on Review; a report by month.
+- **Monthly season summary:** made automatically on the 1st (for the month before) and on demand; emailed to the Super Admins when switched on in Settings.
+- Data-quality panel: shots without xG, corners/free kicks without a routine, typed xG clashing with shots, video link without a kick-off time.
+
+---
+
 ## 2026-11-27: Statistics Center: 10 best-practice improvements with free tools
 
 All free: no paid service, no new account.

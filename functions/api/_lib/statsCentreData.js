@@ -13,6 +13,7 @@ import { ensureStatsCentreSchema, sxLog, statsActor, newId, clean, oneLine, sxSe
 import { ensureTable as ensureMatchCentre, isHomeGame } from './matchCentre.js';
 import { savePlayerStats, seasonOf } from './stats.js';
 import { matchSlug } from './matchSlug.js';
+import { ensurePhase2Schema, xgFor, xgParams, zoneOf, ROUTINES, SP_OUTCOMES, SET_PIECES } from './statsPhase2.js';
 
 export const STATUSES = ['draft', 'live', 'review', 'published'];
 export const EVENT_TYPES = {
@@ -67,6 +68,7 @@ const matchView = m => m && ({
   homeScore: m.home_score, awayScore: m.away_score, htHome: m.ht_home_score, htAway: m.ht_away_score, status: m.status, clock: parse(m.clock_json, null),
   length: m.length_minutes, report: m.report_text || '', highlights: m.highlights_url || '', motm: m.motm_slug || '',
   secondCheckBy: m.second_check_by || '', secondCheckAt: m.second_check_at || '',
+  videoUrl: m.video_url || '', videoOffset: m.video_offset_seconds ?? null, videoOffset2: m.video_second_half_offset_seconds ?? null, attack1h: m.attack_1h || 'ltr',
   createdBy: m.created_by, updatedBy: m.updated_by, verifiedBy: m.verified_by, verifiedAt: m.verified_at, publishedAt: m.published_at, updatedAt: m.updated_at,
 });
 const parse = (s, f) => { try { return s ? JSON.parse(s) : f; } catch { return f; } };
@@ -105,13 +107,16 @@ const SETUP_FIELDS = {
   formation_home_finish: v => (/^[1-5](-[1-5]){1,4}$/.test(String(v || '')) ? v : null), formation_away_finish: v => (/^[1-5](-[1-5]){1,4}$/.test(String(v || '')) ? v : null),
   possession_home: v => (v === '' || v === null || v === undefined ? null : int(v, 0, 100)),
   length_minutes: v => (Number(v) === 120 ? 120 : 90),
+  video_url: v => (/^https:\/\/\S{6,400}$/.test(String(v || '').trim()) ? String(v).trim() : null),
+  video_offset_seconds: v => (v === '' || v === null || v === undefined ? null : int(v, 0, 86400)), video_second_half_offset_seconds: v => (v === '' || v === null || v === undefined ? null : int(v, 0, 86400)),
+  attack_1h: v => (v === 'rtl' ? 'rtl' : 'ltr'),
   report_text: v => clean(v, 40000) || null, highlights_url: v => (/^https:\/\/\S{6,400}$/.test(String(v || '').trim()) ? String(v).trim() : null),
   motm_slug: v => (/^[a-z0-9-]{2,80}$/.test(String(v || '')) ? v : null),
 };
 const FIELD_KEYS = { competition: 'competition', matchday: 'matchday', venue: 'venue', date: 'match_date', kickoff: 'kickoff_time', home: 'home_team', away: 'away_team',
   lobiHome: 'is_lobi_home', referee: 'referee', assistants: 'assistants', weather: 'weather', pitch: 'pitch_condition', attendance: 'attendance',
   formationHome: 'formation_home', formationAway: 'formation_away', formationHomeFinish: 'formation_home_finish', formationAwayFinish: 'formation_away_finish', possessionHome: 'possession_home', length: 'length_minutes', report: 'report_text',
-  highlights: 'highlights_url', motm: 'motm_slug' };
+  highlights: 'highlights_url', motm: 'motm_slug', videoUrl: 'video_url', videoOffset: 'video_offset_seconds', videoOffset2: 'video_second_half_offset_seconds', attack1h: 'attack_1h' };
 
 /** New match: from a fixture (eventId) or typed in (a friendly not in the fixtures). */
 export async function createMatch(db, user, b, { startMonth = 8, request = null } = {}) {
@@ -141,6 +146,7 @@ export async function createMatch(db, user, b, { startMonth = 8, request = null 
 }
 
 export async function saveSetup(db, user, id, b, { startMonth = 8, request = null } = {}) {
+  await ensurePhase2Schema(db);
   const m = await getMatchRow(db, id);
   if (!m) return { error: 'Match not found.' };
   if (m.status === 'published') return { error: 'This match is published. Reopen it for corrections first.' };
@@ -162,7 +168,7 @@ export async function saveSetup(db, user, id, b, { startMonth = 8, request = nul
 
 // ── Line-ups ──
 const lineupView = r => ({ id: r.id, side: r.side, slug: r.player_slug || null, name: r.player_name, number: r.shirt_number, position: r.position || '',
-  starter: !!r.is_starter, minutesOverride: r.minutes_override, rating: r.coach_rating, motm: !!r.is_motm });
+  starter: !!r.is_starter, minutesOverride: r.minutes_override, rating: r.coach_rating, ratingNote: r.rating_note || '', motm: !!r.is_motm });
 
 /** Replaces both line-ups. Lobi Stars players must be in the squad list (by slug); opponents by name and number. */
 export async function saveLineups(db, user, id, b, roster, { request = null } = {}) {
@@ -211,10 +217,11 @@ export async function saveLineups(db, user, id, b, roster, { request = null } = 
 // ── Events ──
 const eventView = r => ({ id: r.id, side: r.side, type: r.event_type, slug: r.player_slug || null, name: r.player_name || '', relatedSlug: r.related_slug || null,
   relatedName: r.related_name || '', minute: r.minute, stoppage: r.stoppage_minute, period: r.period, outcome: r.outcome || '', bodyPart: r.body_part || '',
-  detail: r.detail_type || '', zone: r.pitch_zone || '', scoreHome: r.score_home_at_time, scoreAway: r.score_away_at_time, notes: r.notes || '',
+  detail: r.detail_type || '', zone: r.pitch_zone || '', x: r.pitch_x ?? null, y: r.pitch_y ?? null, xg: r.xg_value ?? null, xgSource: r.xg_source || null, routine: r.routine_type || '', setPieceOutcome: r.set_piece_outcome || '', scoreHome: r.score_home_at_time, scoreAway: r.score_away_at_time, notes: r.notes || '',
   createdBy: r.created_by, createdAt: r.created_at, updatedBy: r.updated_by, updatedAt: r.updated_at, deleted: !!r.is_deleted });
 const chrono = (a, b) => (PERIOD_ORDER[a.period] - PERIOD_ORDER[b.period]) || (a.minute - b.minute) || ((a.stoppage || 0) - (b.stoppage || 0)) || String(a.createdAt).localeCompare(String(b.createdAt));
 
+const coord = v => (v === '' || v === null || v === undefined || !Number.isFinite(Number(v)) ? null : Math.max(0, Math.min(100, Math.round(Number(v) * 100) / 100)));
 /** Checks one event from the page. Returns { value } or { error }. */
 export function parseEvent(e, { lobiSide, bySlug }) {
   const id = String(e?.id || '');
@@ -244,6 +251,10 @@ export function parseEvent(e, { lobiSide, bySlug }) {
     id, side, event_type: type, player_slug: p.slug, player_name: p.name, related_slug: r.slug, related_name: r.name, minute, stoppage_minute: stoppage, period,
     outcome: outcomes ? pick(e?.outcome, outcomes) : null, body_part: type === 'goal' || type === 'shot' ? pick(e?.bodyPart, BODY_PARTS) : null,
     detail_type: pick(e?.detail, DETAIL_TYPES), pitch_zone: /^[A-Za-z0-9_-]{1,12}$/.test(String(e?.zone || '')) ? e.zone : null, notes: oneLine(e?.notes, 300) || null,
+    // Phase 2: where it happened (0–100, the acting team attacking towards x = 100), xG typed by hand (else worked out), set-piece routine and outcome.
+    pitch_x: coord(e?.x), pitch_y: coord(e?.y),
+    xg_manual: e?.xgManual === '' || e?.xgManual === null || e?.xgManual === undefined || !(Number(e.xgManual) >= 0 && Number(e.xgManual) <= 1) ? null : Math.round(Number(e.xgManual) * 1000) / 1000,
+    routine_type: SET_PIECES.has(type) ? pick(e?.routine, ROUTINES) : null, set_piece_outcome: SET_PIECES.has(type) ? pick(e?.setPieceOutcome, SP_OUTCOMES) : null,
   } };
 }
 
@@ -253,6 +264,8 @@ export function parseEvent(e, { lobiSide, bySlug }) {
  * ops: [{ op: 'save', event } | { op: 'delete', id } | { op: 'restore', id }]
  */
 export async function applyEvents(db, user, id, ops, roster, { request = null } = {}) {
+  await ensurePhase2Schema(db);
+  const params = await xgParams(db);
   const m = await getMatchRow(db, id);
   if (!m) return { error: 'Match not found.' };
   if (m.status === 'published') return { error: 'This match is published. Reopen it for corrections first.' };
@@ -278,15 +291,19 @@ export async function applyEvents(db, user, id, ops, roster, { request = null } 
     const p = parseEvent(o?.event, ctx);
     if (p.error) { results.push({ id: o?.event?.id || null, ok: false, error: p.error }); continue; }
     const v = p.value, old = existing.get(v.id);
+    if (v.pitch_x !== null && v.pitch_y !== null) v.pitch_zone = zoneOf(v.pitch_x, v.pitch_y);
+    const isShot = (v.event_type === 'shot' || v.event_type === 'goal') && v.detail_type !== 'own_goal';
+    v.xg_value = !isShot ? null : v.xg_manual !== null ? v.xg_manual : xgFor({ ...v, type: v.event_type, detail: v.detail_type }, params);
+    v.xg_source = !isShot || v.xg_value === null ? null : v.xg_manual !== null ? 'manual' : 'auto';
     if (old) {
       stmts.push(db.prepare(`UPDATE sx_events SET side = ?, event_type = ?, player_slug = ?, player_name = ?, related_slug = ?, related_name = ?, minute = ?, stoppage_minute = ?, period = ?,
-        outcome = ?, body_part = ?, detail_type = ?, pitch_zone = ?, notes = ?, updated_by = ?, updated_at = ?, is_deleted = 0 WHERE id = ? AND match_id = ?`)
-        .bind(v.side, v.event_type, v.player_slug, v.player_name, v.related_slug, v.related_name, v.minute, v.stoppage_minute, v.period, v.outcome, v.body_part, v.detail_type, v.pitch_zone, v.notes, by, at, v.id, id));
+        outcome = ?, body_part = ?, detail_type = ?, pitch_zone = ?, notes = ?, pitch_x = ?, pitch_y = ?, xg_value = ?, xg_source = ?, routine_type = ?, set_piece_outcome = ?, updated_by = ?, updated_at = ?, is_deleted = 0 WHERE id = ? AND match_id = ?`)
+        .bind(v.side, v.event_type, v.player_slug, v.player_name, v.related_slug, v.related_name, v.minute, v.stoppage_minute, v.period, v.outcome, v.body_part, v.detail_type, v.pitch_zone, v.notes, v.pitch_x, v.pitch_y, v.xg_value, v.xg_source, v.routine_type, v.set_piece_outcome, by, at, v.id, id));
       logs.push(['edit_event', v.id, `${EVENT_TYPES[v.event_type]} ${v.minute}'`, eventView(old), v, null]);
     } else {
-      stmts.push(db.prepare(`INSERT INTO sx_events (id, match_id, side, event_type, player_slug, player_name, related_slug, related_name, minute, stoppage_minute, period, outcome, body_part, detail_type, pitch_zone, notes, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-        .bind(v.id, id, v.side, v.event_type, v.player_slug, v.player_name, v.related_slug, v.related_name, v.minute, v.stoppage_minute, v.period, v.outcome, v.body_part, v.detail_type, v.pitch_zone, v.notes, by, at));
+      stmts.push(db.prepare(`INSERT INTO sx_events (id, match_id, side, event_type, player_slug, player_name, related_slug, related_name, minute, stoppage_minute, period, outcome, body_part, detail_type, pitch_zone, notes, pitch_x, pitch_y, xg_value, xg_source, routine_type, set_piece_outcome, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .bind(v.id, id, v.side, v.event_type, v.player_slug, v.player_name, v.related_slug, v.related_name, v.minute, v.stoppage_minute, v.period, v.outcome, v.body_part, v.detail_type, v.pitch_zone, v.notes, v.pitch_x, v.pitch_y, v.xg_value, v.xg_source, v.routine_type, v.set_piece_outcome, by, at));
       logs.push(['add_event', v.id, `${EVENT_TYPES[v.event_type]} ${v.minute}'`, null, v, null]);
     }
     const twin = !old && (v.player_slug || v.player_name) && (await db.prepare(`SELECT id FROM sx_events WHERE match_id = ? AND is_deleted = 0 AND event_type = ? AND side = ? AND minute = ? AND COALESCE(player_slug, player_name, '') = COALESCE(?, ?, '') AND id <> ? LIMIT 1`)
@@ -365,7 +382,7 @@ export function derive(match, lineups, events) {
   const ensure = (side, slug, name, extra = {}) => {
     const k = playerKey(side, slug, name);
     if (!players.has(k)) players.set(k, { key: k, side, slug: slug || null, name: name || '', number: null, position: '', starter: false, on: null, off: null, minutes: 0,
-      goals: 0, ownGoals: 0, assists: 0, shots: 0, shotsOnTarget: 0, foulsCommitted: 0, foulsWon: 0, yellow: 0, red: 0, offsides: 0, saves: 0, corners: 0, keyPasses: 0,
+      xg: 0, xa: 0, goals: 0, ownGoals: 0, assists: 0, shots: 0, shotsOnTarget: 0, foulsCommitted: 0, foulsWon: 0, yellow: 0, red: 0, offsides: 0, saves: 0, corners: 0, keyPasses: 0,
       tackles: 0, interceptions: 0, rating: null, motm: false, minutesOverride: null, inLineup: false, ...extra });
     return players.get(k);
   };
@@ -373,11 +390,17 @@ export function derive(match, lineups, events) {
     const p = ensure(l.side, l.slug, l.name);
     Object.assign(p, { number: l.number, position: l.position, starter: l.starter, inLineup: true, rating: l.rating, motm: l.motm, minutesOverride: l.minutesOverride, on: l.starter ? 0 : null });
   }
-  const team = side => ({ goals: 0, shots: 0, shotsOnTarget: 0, corners: 0, fouls: 0, yellow: 0, red: 0, offsides: 0, saves: 0, freeKicks: 0, throwIns: 0, penalties: 0, keyPasses: 0, tackles: 0, interceptions: 0, side });
+  const team = side => ({ xg: 0, goals: 0, shots: 0, shotsOnTarget: 0, corners: 0, fouls: 0, yellow: 0, red: 0, offsides: 0, saves: 0, freeKicks: 0, throwIns: 0, penalties: 0, keyPasses: 0, tackles: 0, interceptions: 0, side });
   const T = { home: team('home'), away: team('away') };
   const other = s => (s === 'home' ? 'away' : 'home');
+  const r3 = v => Math.round(v * 1000) / 1000;
   for (const e of evs) {
     const t = T[e.side];
+    if ((e.type === 'shot' || e.type === 'goal') && e.detail !== 'own_goal' && e.xg) {
+      t.xg = r3(t.xg + e.xg);
+      if (e.slug || e.name) { const sp = ensure(e.side, e.slug, e.name); sp.xg = r3(sp.xg + e.xg); }
+      if (e.relatedSlug || e.relatedName) { const pp = ensure(e.side, e.relatedSlug, e.relatedName); pp.xa = r3(pp.xa + e.xg); }
+    }
     const p = e.slug || e.name ? ensure(e.type === 'goal' && e.detail === 'own_goal' ? other(e.side) : e.side, e.slug, e.name) : null;
     switch (e.type) {
       case 'goal':
@@ -461,6 +484,7 @@ export function validate(match, lineups, events) {
 
 /** One match with everything the staff screens need. */
 export async function getMatch(db, id) {
+  await ensurePhase2Schema(db);
   const m = await getMatchRow(db, id);
   if (!m) return null;
   const lineups = (await db.prepare(`SELECT * FROM sx_lineups WHERE match_id = ? ORDER BY side, is_starter DESC, sort`).bind(id).all()).results.map(lineupView);
@@ -638,7 +662,7 @@ export async function matchesCsv(db, { season = '' } = {}) {
 export async function settingsView(db) {
   const s = await sxSettings(db);
   const list = (k, d) => { try { const v = JSON.parse(s[k] || 'null'); return Array.isArray(v) && v.length ? v : d; } catch { return d; } };
-  return { secondCheck: s.second_check === '1', sheetsMade: s.sheets_key_hash ? s.sheets_key_made || '' : null, competitions: list('competitions', DEFAULT_COMPETITIONS), labels: { ...EVENT_TYPES, ...(() => { try { return JSON.parse(s.labels || '{}'); } catch { return {}; } })() } };
+  return { reportEmail: s.report_email === '1', secondCheck: s.second_check === '1', sheetsMade: s.sheets_key_hash ? s.sheets_key_made || '' : null, competitions: list('competitions', DEFAULT_COMPETITIONS), labels: { ...EVENT_TYPES, ...(() => { try { return JSON.parse(s.labels || '{}'); } catch { return {}; } })() } };
 }
 
 // ── Public (published only) ──
