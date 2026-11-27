@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: "BST Analysis Form" is now "Analysis Form"
+
+- The menu item, the page title, the dashboard button, the Attacks chart and the retention labels now say **Analysis Form**. The web address (/staff/statistics-center/bst-analysis/) is unchanged, so saved links keep working.
+
+---
+
 ## 2026-11-27: Statistics Center fits every phone and tablet; VS centred
 
 - **Nothing is cut off any more.** Every table is measured against the screen it is on. If it is too wide, it becomes one block per row, each value with its column name beside it. It is checked again when the screen turns or the page changes.

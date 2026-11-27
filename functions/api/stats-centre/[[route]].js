@@ -227,7 +227,7 @@ export async function onRequest({ request, env, params }) {
         if (!d) return json({ error: 'Analysis not found.' }, 404);
         const sheets = bstSheets(d, { includeOpponent: q.get('opponent') === '1' });
         const base = `lobi-stars-analysis-${String(d.match.date).slice(0, 10)}-${(d.match.lobiHome ? d.match.away : d.match.home).toLowerCase().replace(/[^a-z0-9]+/g, '-')}${d.analysis.status === 'final' ? '' : '-DRAFT'}`;
-        await sxLog(db, statsActor(s.user), 'export', { itemType: 'bst', itemId: d.analysis.id, details: `BST ${route.endsWith('xlsx') ? 'Excel' : 'CSV'}`, request });
+        await sxLog(db, statsActor(s.user), 'export', { itemType: 'bst', itemId: d.analysis.id, details: `Analysis Form ${route.endsWith('xlsx') ? 'Excel' : 'CSV'}`, request });
         if (route.endsWith('csv')) return csv(buildCsv(sheets[0].columns, sheets[0].rows), `${base}.csv`);
         return new Response(buildXlsx(sheets), { headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': `attachment; filename="${base}.xlsx"`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
       }

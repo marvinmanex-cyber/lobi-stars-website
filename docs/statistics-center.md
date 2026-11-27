@@ -105,9 +105,9 @@ FC, 21 events). By hand on the live site:
       the admin page needs a Super Admin.
 - [ ] Public pages show published matches only: a draft match has no /stats/matches/ page.
 
-## BST Analysis Form (built 27 Nov 2026)
+## Analysis Form (formerly "BST Analysis Form") (built 27 Nov 2026)
 
-The paper match-analysis form, on screen: **/staff/statistics-center/bst-analysis/** (menu: BST Analysis Form).
+The paper match-analysis form, on screen: **/staff/statistics-center/bst-analysis/** (menu: Analysis Form).
 Staff only (statisticians and Super Admins); nothing from it is ever shown on the public website.
 
 **Library:** every analysis (match, opponent, date, Draft/Final, last saved, prepared by) with Open, PDF, Excel and,

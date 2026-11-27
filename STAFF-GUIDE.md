@@ -5381,7 +5381,7 @@ itself with their own Super Admin email, password and code, and can do everythin
 **Exports:** Exports page (season events and matches as CSV); one match's events and a printable report on its
 Review page.
 
-**BST Analysis Form** (menu: BST Analysis Form): **New analysis** › choose the match. Section 1 shows the match
+**Analysis Form (formerly "BST Analysis Form")** (menu: Analysis Form): **New analysis** › choose the match. Section 1 shows the match
 and team list from Match Setup (edit them there) and asks only for the starting and finishing formations. In
 Section 2 choose the team (Lobi Stars or the opponent) and the 2-minute block (◀ ▶, or tap a column in the grid;
 "now" follows the match clock), then tap − or + on each row. Shots, corners, free kicks, saves, fouls, tackles,
@@ -5392,8 +5392,8 @@ Landscape and Save as PDF); **Excel** and **CSV** download the grid; "Blank form
 empty form for paper use.
 
 **Opponents (Add-on 2):** in Match Setup the opponent's saved players are offered as you type, and "Copy line-up from
-our last match against them" fills the list (check it, then save). **Tag players** (Review page or the BST form) lists
-events without a player: tap the player for each one. On the BST form choose Lobi Stars, the opponent or **Both**;
+our last match against them" fills the list (check it, then save). **Tag players** (Review page or the Analysis Form) lists
+events without a player: tap the player for each one. On the Analysis Form choose Lobi Stars, the opponent or **Both**;
 **Undo / Redo** fix a wrong tap (Ctrl+Z / Ctrl+Y on a computer); the **clock** buttons are on the form too;
 **Summary** shows the match at a glance; **Dark** and **Big buttons** help at evening matches and on tablets.
 **Share with the coach** makes a private read-only link (choose how many days; switch it off any time). Removed

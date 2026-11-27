@@ -24,8 +24,8 @@ const parse = (s, f) => { try { return s ? JSON.parse(s) : f; } catch { return f
 export const POLICY_DEFAULTS = [
   ['core_match_data', 'Matches, events, line-ups, final scores', null, 'keep', 'Kept forever; old seasons are archived, never deleted.'],
   ['player_season_stats', 'Player statistics (worked out, not stored)', null, 'keep', 'Worked out from the events.'],
-  ['bst_final', 'BST analyses marked Final', null, 'keep', 'Staff only.'],
-  ['bst_draft', 'BST drafts never finalised', 365, 'archive', 'Archived after 365 days, deleted after another 365.'],
+  ['bst_final', 'Analysis Forms marked Final', null, 'keep', 'Staff only.'],
+  ['bst_draft', 'Analysis Form drafts never finalised', 365, 'archive', 'Archived after 365 days, deleted after another 365.'],
   ['lineup_revisions', 'Line-up history', 1095, 'purge', 'Full history for 3 seasons, then only the last version of each line-up.'],
   ['audit_log', 'Activity log', 1095, 'purge', '3 years.'],
   ['soft_deleted', 'Recycle bin (removed analyses, notes, tags, opponent players)', 90, 'purge', 'Match history in the recycle bin is never deleted.'],
@@ -49,7 +49,7 @@ export const CLASSIFICATION = [
   { data: 'Event notes', table: 'sx_events.notes', classification: 'personal_note', policy: 'personal_notes' },
   { data: 'Youth / minor flag', table: 'sx_player_privacy', classification: 'youth_or_minor', policy: 'personal_notes' },
   { data: 'Opponent players (name, number, position)', table: 'sx_opponent_players', classification: 'opponent_personal', policy: 'opponent_registry' },
-  { data: 'BST analyses (overview, half notes, grid)', table: 'sx_bst_analyses, sx_bst_cells', classification: 'performance', policy: 'bst_final / bst_draft' },
+  { data: 'Analysis Forms (overview, half notes, grid)', table: 'sx_bst_analyses, sx_bst_cells', classification: 'performance', policy: 'bst_final / bst_draft' },
   { data: 'Line-up history', table: 'sx_lineup_revisions', classification: 'performance', policy: 'lineup_revisions' },
   { data: '"Who is editing"', table: 'sx_lineup_presence, sx_bst_presence', classification: 'operational', policy: 'sync_queue_presence' },
   { data: 'Activity log', table: 'sx_activity', classification: 'operational', policy: 'audit_log' },
@@ -88,6 +88,7 @@ export async function ensureRetentionSchema(db) {
   // Seed the policies once (values are settings from then on).
   const at = nowIso();
   await db.batch(POLICY_DEFAULTS.map(([k, l, d, a, n]) => db.prepare(`INSERT OR IGNORE INTO sx_retention_policies (id, data_key, label, retention_days, action, notes, updated_by, updated_at) VALUES (?, ?, ?, ?, ?, ?, 'default', ?)`).bind(newId('rtp'), k, l, d, a, n, at)));
+  await db.batch(POLICY_DEFAULTS.filter(([k]) => k.startsWith('bst_')).map(([k, l]) => db.prepare(`UPDATE sx_retention_policies SET label = ? WHERE data_key = ? AND label LIKE 'BST%'`).bind(l, k)));
   const s = await sxSettings(db);
   if (!s.retention_installed_at) await setSxSetting(db, 'retention_installed_at', at, 'system');
   ready = true;

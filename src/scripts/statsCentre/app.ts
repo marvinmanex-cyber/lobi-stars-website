@@ -140,7 +140,7 @@ async function dashboardView() {
   const d = await api(`dashboard?season=${encodeURIComponent(season)}`);
   const a = d.team.all;
   view().innerHTML = `
-    <div class="sx-row sx-noprint" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Season ${esc(season)}</h2><div class="sx-row">${seasonSelect(season)}<a class="sx-btn" href="/staff/statistics-center/bst-analysis/">BST Analysis Form</a><span class="sx-row"><button class="sx-btn" type="button" id="practice">Practice match</button><a class="sx-btn sx-btn--r" href="#/new">+ New match</a></span></div></div>
+    <div class="sx-row sx-noprint" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Season ${esc(season)}</h2><div class="sx-row">${seasonSelect(season)}<a class="sx-btn" href="/staff/statistics-center/bst-analysis/">Analysis Form</a><span class="sx-row"><button class="sx-btn" type="button" id="practice">Practice match</button><a class="sx-btn sx-btn--r" href="#/new">+ New match</a></span></div></div>
     <div class="sx-kpis">
       ${[['Played', a.p], ['Won', a.w], ['Drawn', a.d], ['Lost', a.l], ['Goals for', a.gf], ['Goals against', a.ga], ['Clean sheets', a.cleanSheets], ['Yellow cards', d.team.discipline.yellow], ['Red cards', d.team.discipline.red]]
         .map(([l, v]) => `<div class="sx-kpi"><b>${v}</b><span>${l}</span></div>`).join('')}
@@ -977,7 +977,7 @@ async function tagView(id: string) {
   const pct = all.length ? Math.round((done / all.length) * 100) : 100;
   const players = (side: string) => { const lu = d.lineups.filter((l: any) => l.side === side); return lu.length ? lu : side === lobiSide(m) ? S.roster : []; };
   view().innerHTML = matchHead(m, 'review') + `
-    <section class="sx-card"><h3>Tag players</h3><p class="sx-small">Events recorded without a player (fast live entry, BST grid taps). One tap on a player adds them; nothing is recorded twice.</p>
+    <section class="sx-card"><h3>Tag players</h3><p class="sx-small">Events recorded without a player (fast live entry, Analysis Form grid taps). One tap on a player adds them; nothing is recorded twice.</p>
       <div class="sx-prog" role="progressbar" aria-valuemin="0" aria-valuemax="${all.length}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
       <p><b>${done} of ${all.length} events tagged</b></p>${locked ? '<p class="sx-err">This match is published: reopen it on the Review page to tag players.</p>' : ''}</section>
     ${todo.map((e: any) => `<section class="sx-card" data-ev="${esc(e.id)}"><p><b>${e.minute}${e.stoppage ? `+${e.stoppage}` : ''}' · ${esc(label(e.type))}</b> · ${esc(teamName(m, e.type === 'goal' && e.detail === 'own_goal' ? (e.side === 'home' ? 'away' : 'home') : e.side))}${e.outcome ? ` · ${esc(words(e.outcome))}` : ''}</p>

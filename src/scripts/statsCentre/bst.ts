@@ -56,7 +56,7 @@ async function library(c: Ctx) {
   const { esc } = c;
   const d = await c.api('bst');
   c.view().innerHTML = `
-    <div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">BST Analysis Form</h2><a class="sx-btn" href="${BASE}blank/" target="_blank" rel="noopener">Blank form (print)</a></div>
+    <div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Analysis Form</h2><a class="sx-btn" href="${BASE}blank/" target="_blank" rel="noopener">Blank form (print)</a></div>
     <section class="sx-card"><h3>New analysis</h3>
       ${d.matchesWithout.length ? `<form id="bstNew" class="sx-row"><label style="flex:1 1 280px">Match<select name="matchId">${d.matchesWithout.map((m: any) => `<option value="${esc(m.id)}">${esc(fxText(m.home, m.away))} · ${esc(c.day(m.date))}</option>`).join('')}</select></label><button class="sx-btn sx-btn--r" type="submit">Start the analysis</button></form>
         <p class="sx-small">Everything known about the match (teams, date, venue, competition, line-ups, formations) is filled in from Match Setup.</p>`
