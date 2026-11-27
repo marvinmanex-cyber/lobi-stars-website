@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Statistics Center: "Install the app" prompt
+
+- When the Statistics Center is opened on a phone or tablet, a card now asks to install it as an app (home-screen icon, opens full screen, keeps taps when the signal drops). Free, no app store.
+- **Android (Chrome, Edge, Samsung Internet):** one tap on **Install the app**.
+- **iPhone / iPad:** Apple allows no install button, so the card shows the steps: Safari › **Share** › **Add to Home Screen**.
+- **Not now** hides it for 7 days. It never shows once installed. It can be opened again any time from the **Install the app** link under the sign-in form, or from Settings › Install the app.
+
+---
+
 ## 2026-11-27: Statistics Center professional add-ons
 
 - **Passes:** each match has a new **Passes** page for recording passes after the match (from video or notes): who passed, to whom, complete or lost, and where it started and ended. This gives completion %, progressive passes, passes into the final third and into the box, per player and per team.

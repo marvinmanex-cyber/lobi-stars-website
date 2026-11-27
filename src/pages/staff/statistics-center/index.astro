@@ -42,6 +42,7 @@
           <button class="sx-btn sx-btn--p" type="submit">Sign in</button>
           <p class="sx-err" id="loginErr" role="alert" hidden></p>
         </form>
+          <p class="sx-small" style="margin-top:12px;text-align:center"><a href="#" data-install>📲 Install the app on your phone</a></p>
         <p class="sx-small">Statisticians: your Login ID and first password come from a Super Admin. Super Admins: use your website email and password.</p>
       </div>
       </div>
@@ -285,6 +286,13 @@
   .sx-pcard.sx-unavail { opacity: .55; border-style: dashed; border-color: var(--red); } .sx-avtag { display: block; color: var(--red); font-weight: 700; font-size: 12px; }
   body.sx-ro #practice, body.sx-ro a[href="#/new"], body.sx-ro #publish, body.sx-ro #reopen, body.sx-ro #toReview, body.sx-ro #secondCheck, body.sx-ro .sx-btn--r { display: none !important; }
   dialog.sx-card::backdrop { background: rgba(0,0,0,.45); }
+  /* Install-the-app prompt (a bottom sheet on phones, a centred card on wider screens) */
+  #sxInstall { position: fixed; inset: 0; z-index: 1000; background: rgba(8, 20, 45, .55); display: flex; align-items: flex-end; justify-content: center; padding: 0; }
+  .sx-inst-card { background: #fff; color: var(--ink, #16181D); width: 100%; max-width: 480px; border-radius: 18px 18px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); border-top: 4px solid var(--red, #C8102E); box-shadow: 0 -8px 30px rgba(0,0,0,.25); }
+  @media (min-width: 640px) { #sxInstall { align-items: center; padding: 16px; } .sx-inst-card { border-radius: 18px; } }
+  .sx-inst-head { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; } .sx-inst-head img { border-radius: 14px; border: 1px solid #E2E4E9; } .sx-inst-head h2 { margin: 0; font-size: 22px; }
+  .sx-inst-steps { padding-left: 20px; margin: 8px 0; } .sx-inst-steps li { margin: 6px 0; } .sx-inst-ico { display: inline-block; padding: 0 6px; border: 1px solid #C9CED8; border-radius: 6px; }
+  .sx-inst-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; } .sx-inst-row .sx-btn { flex: 1 1 140px; }
   .p2-tile { text-decoration: none; color: inherit; display: block; } .p2-tile:hover, .p2-tile:focus-visible { border-color: var(--red); }
   .p2-stars { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
   .p2-stars button { min-width: 44px; min-height: 44px; border-radius: 10px; border: 2px solid var(--line); background: var(--card); color: var(--ink); font: 700 18px 'Barlow Condensed', sans-serif; cursor: pointer; }

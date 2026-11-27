@@ -19,7 +19,7 @@ const HEADERS = {
 
 // Install as an app on a phone or tablet (home-screen icon, full screen).
 const MANIFEST = {
-  name: 'Lobi Stars Statistics Center', short_name: 'Lobi Stats', start_url: '/staff/statistics-center/', scope: '/staff/statistics-center/', display: 'standalone',
+  id: '/staff/statistics-center/', name: 'Lobi Stars Statistics Center', short_name: 'Lobi Stats', orientation: 'any', lang: 'en-GB', start_url: '/staff/statistics-center/', scope: '/staff/statistics-center/', display: 'standalone',
   background_color: '#142E5A', theme_color: '#1C3F7A', description: 'Match statistics, event by event (Lobi Stars FC staff).',
   icons: [{ src: '/images/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '/images/icon-512.png', sizes: '512x512', type: 'image/png' }, { src: '/images/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }],
 };

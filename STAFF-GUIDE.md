@@ -5442,3 +5442,5 @@ notes**; keep such files inside the club.
 - **Practice match:** on the Matches page, for training new statisticians. It is never published or counted.
 - **Definitions:** a senior statistician can change a definition (a new version with a note). Old matches keep their version.
 - **Coach accounts:** a Super Admin adds them in Admin › Statistics Center with Account type **Coach**. Coaches see everything and change nothing.
+
+**Statistics Center as an app on your phone:** open lobistarsfc.com/staff/statistics-center/ on your phone. A card asks to install it. On Android press **Install the app**. On iPhone, open the page in Safari, tap **Share**, then **Add to Home Screen**. The **Lobi Stats** icon then opens it full screen. Missed the card? Tap **Install the app on your phone** under the sign-in form (or Settings › Install the app).

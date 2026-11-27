@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { bstRoute, applyUi, type Ctx } from './bst';
 import { retentionView, inventoryView } from './retention';
+import { setupInstall, showInstall } from './install';
 import { matchLinks, passesView, advancedView, seasonAdvancedView, availabilityView, markAvailability, wellnessView, developmentView, milestonesView, definitionsProView, oppositionPackView, startPractice } from './pro';
 import { analysisHub, mapsView, setPiecesView, ratingsView, playerView, compareView, analyticsView, scoutingView, trainingView, reportsView, xgView, pickOnPitch, attacksRight } from './phase2';
 const $ = (id: string) => document.getElementById(id) as any;
@@ -1029,6 +1030,7 @@ function settingsView() {
     <section class="sx-card"><h3>Second check before publishing</h3><p class="sx-small">When on, a match can be published only after someone other than the publisher has pressed "I have checked this match" on its Review page (the four-eyes rule).</p>
       <label class="sx-small" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="scToggle" ${S.settings.secondCheck ? 'checked' : ''} ${can ? '' : 'disabled'}> Require a second check</label></section>
     <section class="sx-card"><h3>Recycle bin</h3><p class="sx-small">Removed matches, events and analyses are kept here and can be restored.</p><p><a class="sx-btn" href="#/recycle">Open the recycle bin</a></p></section>
+    <section class="sx-card"><h3>Install the app</h3><p class="sx-small">Put the Statistics Center on your phone's home screen: it opens full screen like an app and keeps working when the signal drops. Free, no app store needed.</p><p><button class="sx-btn sx-btn--p" type="button" data-install>Install the app</button></p></section>
     <section class="sx-card"><h3>Data retention &amp; privacy</h3><p class="sx-small">How long things are kept, archiving old seasons, youth players and anonymising.</p><p><a class="sx-btn" href="#/retention">Open data retention</a> <a class="sx-btn" href="#/inventory">What we keep</a></p></section>
     <section class="sx-card"><h3>Your account</h3><p>${esc(S.user.fullName)} ${S.user.admin ? '(Super Admin: everything)' : `(${esc(S.user.loginId)})${S.user.canPublish ? ' · may publish' : ''}`}</p><p class="sx-small">Signed out after ${S.idleMinutes / 60} hours without activity. Accounts are managed by the Super Admins in the website admin (Statistics Center).</p></section>`;
   $('repEmail')?.addEventListener('change', async (e: any) => { try { const r = await api('settings', { reportEmail: e.target.checked }); S.settings = { ...S.settings, ...r }; toast('Saved.'); } catch (x: any) { e.target.checked = !e.target.checked; toast(x.message, false); } });
@@ -1045,4 +1047,6 @@ const ctx: Ctx = {
   flush: (matchId: string) => flush(matchId),
 };
 
+setupInstall();
+document.addEventListener('click', e => { if ((e.target as HTMLElement).closest?.('[data-install]')) { e.preventDefault(); showInstall(); } });
 boot();
