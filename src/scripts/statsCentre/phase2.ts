@@ -64,7 +64,11 @@ export async function analysisHub(c: Ctx) {
     ['maps', 'Shot, heat and event maps', 'Where shots, fouls, tackles and other actions happened'], ['set-pieces', 'Set pieces', 'Corners and free kicks by routine, taker and side; set-piece goals'],
     ['compare', 'Compare players', 'Per-90 figures and ratings, 2–4 players side by side'], ['scouting', 'Opposition scouting', 'A one-page report on a club from our matches against them, with notes'],
     ['training', 'Training themes', 'Tag matches and events to training themes and see how they went'], ['reports', 'Monthly reports', 'The season summary, made each month (and on demand)'],
-    ['xg', 'xG model', 'How xG is worked out, the settings and recalculation']];
+    ['xg', 'xG model', 'How xG is worked out, the settings and recalculation'],
+    ['season-advanced', 'Advanced season numbers', 'Expected points, game state, field tilt, pressing (PPDA), goalkeepers'], ['opposition', 'Opposition pack (PDF)', 'A branded, printable report on a club before we play them'],
+    ['availability', 'Injuries & availability', 'Who cannot play, with automatic suspensions from cards'], ['wellness', 'Training load & wellness', 'Players\' check-ins from their phones, load jumps and alerts'],
+    ['development', 'Player development', 'Targets with progress, and a radar against the squad'], ['milestones', 'Milestones & records', 'Appearance and goal milestones, club records, ready to post'],
+    ['definitions', 'Stat definitions', 'What every number means, with versions']];
   c.view().innerHTML = `<h2>Analysis</h2><div class="sx-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">${items.map(([k, t, d]) => `<a class="sx-card p2-tile" href="#/${k}"><h3>${t}</h3><p class="sx-small">${d}</p></a>`).join('')}</div>
     <p class="sx-small">Staff only: nothing on these pages is shown on the public website. Player pages: Players › a player's name.</p>`;
 }

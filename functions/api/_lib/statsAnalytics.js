@@ -10,7 +10,7 @@ const LABELS = { goal: 'Goal', shot: 'Shot', corner: 'Corner', free_kick: 'Free 
 /** The recorded matches of a season (review or published), fully loaded, oldest first; optional filters. */
 export async function loadMatches(db, { season = '', competition = '', venue = '', opponent = '', includeDrafts = false } = {}) {
   await ensurePhase2Schema(db);
-  const where = ['is_deleted = 0', includeDrafts ? '1 = 1' : "status IN ('review', 'published')"], args = [];
+  const where = ['is_deleted = 0', 'is_practice = 0', includeDrafts ? '1 = 1' : "status IN ('review', 'published')"], args = [];
   if (season) { where.push('season = ?'); args.push(season); }
   if (competition) { where.push('competition = ?'); args.push(competition); }
   if (venue === 'home') where.push('is_lobi_home = 1'); else if (venue === 'away') where.push('is_lobi_home = 0');
@@ -146,7 +146,7 @@ export async function seasonAnalytics(db, season, filters = {}) {
 // ── Opposition scouting ──
 export async function opponents(db) {
   await ensureStatsCentreSchema(db);
-  const { results } = await db.prepare(`SELECT CASE WHEN is_lobi_home = 1 THEN away_team ELSE home_team END AS opp, COUNT(*) AS n, MAX(match_date) AS last FROM sx_matches WHERE is_deleted = 0 GROUP BY opp ORDER BY last DESC`).all();
+  const { results } = await db.prepare(`SELECT CASE WHEN is_lobi_home = 1 THEN away_team ELSE home_team END AS opp, COUNT(*) AS n, MAX(match_date) AS last FROM sx_matches WHERE is_deleted = 0 AND is_practice = 0 GROUP BY opp ORDER BY last DESC`).all();
   const merged = new Map();
   for (const r of results) { const k = teamKey(r.opp); const m = merged.get(k) || { key: k, name: r.opp, matches: 0, last: r.last }; m.matches += r.n; if (r.last > m.last) m.last = r.last; merged.set(k, m); }
   return [...merged.values()];
@@ -225,7 +225,7 @@ export async function monthlyReportTick(env, now = Date.now()) {
   const period = prev.toISOString().slice(0, 7);
   await ensurePhase2Schema(db);
   if (await db.prepare(`SELECT id FROM sx_reports WHERE type = 'monthly' AND period = ?`).bind(period).first()) return { skipped: true, period };
-  const anyMatch = await db.prepare(`SELECT id, season FROM sx_matches WHERE is_deleted = 0 AND status IN ('review', 'published') ORDER BY match_date DESC LIMIT 1`).first();
+  const anyMatch = await db.prepare(`SELECT id, season FROM sx_matches WHERE is_deleted = 0 AND is_practice = 0 AND status IN ('review', 'published') ORDER BY match_date DESC LIMIT 1`).first();
   if (!anyMatch) return { skipped: true, reason: 'no matches' };
   const r = await buildMonthlyReport(db, null, anyMatch.season, period);
   const s = await sxSettings(db);

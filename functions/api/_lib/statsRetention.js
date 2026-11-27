@@ -15,6 +15,7 @@ import { seasonExport, eventsCsv, matchesCsv } from './statsCentreData.js';
 import { ensureBstSchema } from './statsBst.js';
 import { ensurePhase2Schema } from './statsPhase2.js';
 import { ensureLineupSchema } from './lineupService.js';
+import { ensureProSchema } from './statsPro.js';
 
 const nowIso = () => new Date().toISOString();
 const DAY = 864e5;
@@ -37,6 +38,9 @@ export const POLICY_DEFAULTS = [
   ['personal_notes', 'Coach rating notes and event notes', 1095, 'anonymise', '3 seasons (2 for youth players), or when the player leaves: the note text is removed, the numbers kept.'],
   ['scouting_notes', 'Scouting notes', 1825, 'archive', 'Archived after 5 seasons.'],
   ['scheduled_reports', 'Monthly reports', 730, 'archive', 'Archived after 24 months.'],
+  ['practice_matches', 'Practice matches (training statisticians)', 30, 'purge', 'Never published or counted; deleted after 30 days.'],
+  ['wellness', 'Players\' training load and wellness check-ins', 730, 'purge', 'Health information: 2 years, then deleted.'],
+  ['availability', 'Injury and availability records (after they are cleared)', 1095, 'purge', 'Health information: 3 years after the player is available again.'],
 ];
 const FOREVER = new Set(['core_match_data', 'player_season_stats', 'bst_final', 'video_links']);
 export const CLASSIFICATION = [
@@ -55,6 +59,10 @@ export const CLASSIFICATION = [
   { data: 'Monthly reports', table: 'sx_reports', classification: 'performance', policy: 'scheduled_reports' },
   { data: 'Season archives', table: 'sx_archive_exports + backup storage', classification: 'performance', policy: 'core_match_data' },
   { data: 'Video links', table: 'sx_matches.video_url', classification: 'performance', policy: 'video_links' },
+  { data: 'Training load and wellness check-ins', table: 'sx_wellness', classification: 'health', policy: 'wellness' },
+  { data: 'Injury and availability', table: 'sx_availability', classification: 'health', policy: 'availability' },
+  { data: 'Player development targets', table: 'sx_player_targets', classification: 'performance', policy: 'core_match_data' },
+  { data: 'Practice matches', table: 'sx_matches (is_practice = 1)', classification: 'operational', policy: 'practice_matches' },
   { data: 'Nightly backups', table: 'backup storage (encrypted)', classification: 'all of the above', policy: 'backups' },
 ];
 
@@ -62,7 +70,7 @@ let ready = false;
 export async function ensureRetentionSchema(db) {
   await ensureStatsCentreSchema(db);
   if (ready) return;
-  await ensureBstSchema(db); await ensurePhase2Schema(db); await ensureLineupSchema(db);
+  await ensureBstSchema(db); await ensurePhase2Schema(db); await ensureLineupSchema(db); await ensureProSchema(db);
   await db.batch([
     db.prepare(`CREATE TABLE IF NOT EXISTS sx_retention_policies (id TEXT PRIMARY KEY, data_key TEXT NOT NULL UNIQUE, label TEXT NOT NULL, retention_days INTEGER, action TEXT NOT NULL, notes TEXT, updated_by TEXT, updated_at TEXT)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS sx_retention_runs (id TEXT PRIMARY KEY, started_at TEXT NOT NULL, finished_at TEXT, mode TEXT NOT NULL, counts_json TEXT, errors TEXT, started_by TEXT)`),
@@ -230,6 +238,25 @@ export const HANDLERS = {
     let k; try { k = await count(db, `SELECT COUNT(*) n, MIN(created_at) oldest, MAX(created_at) newest FROM sx_scouting_notes WHERE is_deleted = 0 AND archived_at IS NULL AND created_at < ?`, [c]); } catch { return { wouldArchive: 0 }; }
     if (live && k.n) { await db.prepare(`UPDATE sx_scouting_notes SET archived_at = ? WHERE is_deleted = 0 AND archived_at IS NULL AND created_at < ?`).bind(nowIso(), c).run(); return { archived: k.n }; }
     return { wouldArchive: k.n, oldest: k.oldest, newest: k.newest };
+  },
+  async practice_matches(db, days, live) {
+    const c = cutoffIso(days);
+    const ids = (await db.prepare(`SELECT id FROM sx_matches WHERE is_practice = 1 AND created_at < ? LIMIT 50`).bind(c).all()).results.map(r => r.id);
+    if (!live) return { wouldPurge: ids.length };
+    for (const id of ids) await db.batch([db.prepare(`DELETE FROM sx_events WHERE match_id = ?`).bind(id), db.prepare(`DELETE FROM sx_lineups WHERE match_id = ?`).bind(id), db.prepare(`DELETE FROM sx_matches WHERE id = ? AND is_practice = 1`).bind(id)]);
+    return { purged: ids.length };
+  },
+  async wellness(db, days, live) {
+    const c = cutoffIso(days).slice(0, 10);
+    let k; try { k = await count(db, `SELECT COUNT(*) n, MIN(entry_date) oldest, MAX(entry_date) newest FROM sx_wellness WHERE entry_date < ?`, [c]); } catch { return { wouldPurge: 0 }; }
+    if (live && k.n) { const r = await db.prepare(`DELETE FROM sx_wellness WHERE entry_date < ?`).bind(c).run(); return { purged: r.meta?.changes || 0 }; }
+    return { wouldPurge: k.n, oldest: k.oldest, newest: k.newest };
+  },
+  async availability(db, days, live) {
+    const c = cutoffIso(days);
+    let k; try { k = await count(db, `SELECT COUNT(*) n, MIN(cleared_at) oldest, MAX(cleared_at) newest FROM sx_availability WHERE cleared_at IS NOT NULL AND cleared_at < ?`, [c]); } catch { return { wouldPurge: 0 }; }
+    if (live && k.n) { const r = await db.prepare(`DELETE FROM sx_availability WHERE cleared_at IS NOT NULL AND cleared_at < ?`).bind(c).run(); return { purged: r.meta?.changes || 0 }; }
+    return { wouldPurge: k.n, oldest: k.oldest, newest: k.newest };
   },
   async scheduled_reports(db, days, live) {
     const c = cutoffIso(days);
@@ -401,6 +428,8 @@ export async function anonymisePlayer(db, user, slug, { reason, full = false }, 
   let notes = 0;
   try { notes += (await db.prepare(`UPDATE sx_lineups SET rating_note = NULL WHERE player_slug = ? AND rating_note IS NOT NULL`).bind(s).run()).meta?.changes || 0; } catch { /* no rating notes yet */ }
   notes += (await db.prepare(`UPDATE sx_events SET notes = NULL WHERE player_slug = ? AND notes IS NOT NULL`).bind(s).run()).meta?.changes || 0;
+  try { notes += (await db.prepare(`UPDATE sx_wellness SET note = NULL WHERE slug = ? AND note IS NOT NULL`).bind(s).run()).meta?.changes || 0; } catch { /* none */ }
+  try { notes += (await db.prepare(`UPDATE sx_availability SET notes = NULL, reason = NULL WHERE slug = ? AND (notes IS NOT NULL OR reason IS NOT NULL)`).bind(s).run()).meta?.changes || 0; } catch { /* none */ }
   if (full) {
     const nums = (await db.prepare(`SELECT shirt_number FROM sx_lineups WHERE player_slug = ? AND shirt_number IS NOT NULL ORDER BY rowid DESC LIMIT 1`).bind(s).first());
     const label = `Former player #${nums?.shirt_number ?? '?'}`;

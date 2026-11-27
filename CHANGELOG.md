@@ -8,6 +8,24 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Statistics Center professional add-ons
+
+- **Passes:** each match has a new **Passes** page for recording passes after the match (from video or notes): who passed, to whom, complete or lost, and where it started and ended. This gives completion %, progressive passes, passes into the final third and into the box, per player and per team.
+- **Advanced numbers** (match **Advanced** page and Analysis › Advanced season numbers): expected points (what the chances "should" have given), game state (how we play when winning, drawing or losing), field tilt, pressing (PPDA), shot quality and big chances, plus a pass network diagram.
+- **Goalkeepers:** saves, save %, **goals prevented** (quality of shots on target faced minus goals conceded), saves by area and body part, and distribution.
+- **Injuries & availability:** mark players injured, ill, suspended or doubtful, with an expected return date. Suspensions from red cards and every 5th yellow card (changeable) are added automatically. Unavailable players are marked on the line-up picker.
+- **Training load & wellness:** each player gets a private phone link. After every session they rate the effort (1–10) and how they feel (sleep, soreness, energy, stress, mood). The page warns when a player's load jumps too fast (over 1.5 × the usual week) or a player feels poorly. This is health information: staff only, kept 2 years.
+- **Branded match report and opposition pack:** club-styled pages made for **Save as PDF / print** (score, xG timeline, shot map, expected result, players, goalkeeper and coach's notes; for opponents: results, when goals come, formations, set pieces, key players, what worked for us and the scouting notes).
+- **Player development:** targets with progress bars (for example "10 goals this season"), and a radar chart against squad players in the same position.
+- **Milestones & records:** found automatically when a match is published (first appearance and goal, 50/100… appearances, 10/25… goals, hat-tricks, clean sheets, club records such as wins in a row). Each has a "Copy post" button for social media.
+- **Public stats hub** (lobistarsfc.com/stats/hub/): season and all-time leaders, club records, head-to-head against every club, a player-against-player comparison and recent milestones. Youth players stay hidden unless allowed.
+- **Practice matches:** a "Practice match" button for training new statisticians. A practice match is never published or counted and is deleted after 30 days.
+- **Versioned definitions:** stat definitions now have versions. A senior statistician can change them with a note, and every match records the version it was recorded under.
+- **Coach accounts (view only):** Admin › Statistics Center can now add a **Coach** account. It sees everything and can change nothing.
+- **Staff:** nothing to do. Optional: make wellness links for the players (Analysis › Training load & wellness), and coach accounts for the coaching staff (HANDOVER-TODO A44).
+
+---
+
 ## 2026-11-27: Statistics Center data retention, archiving and privacy
 
 - **Match history is never deleted.** Matches, events, line-ups and scores stay forever. Old seasons are **archived**: the whole season is saved (JSON and CSV files with a checksum) in the backup storage, and the season becomes read only. Public pages and career totals keep showing it. A Super Admin can unlock it with a reason.

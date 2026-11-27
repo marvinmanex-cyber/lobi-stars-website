@@ -5429,3 +5429,16 @@ then show them as "Academy player" unless **Show publicly** is ticked (only with
 **Left on** date when a player leaves: their notes are removed overnight and their numbers stay. **Anonymise…** removes
 every note about a player at once and cannot be undone. Exports leave out staff notes unless you tick **Include staff
 notes**; keep such files inside the club.
+
+**Professional add-ons (27 Nov 2026):**
+
+- **Passes:** after a match, open the match and press **Passes**. Choose the team, minute, who passed, the result and who received it. Then tap where the pass started and where it ended.
+- **Advanced:** each match's Advanced page shows expected points, game state, field tilt, pressing, shot quality, goalkeepers and a pass network.
+- **Match report (PDF):** opens a club-styled report; press **Save as PDF / print**. For the next opponent, use Analysis › **Opposition pack**.
+- **Injuries & availability:** under Analysis. Press **Change** next to a player. Suspensions from cards are added by themselves. The line-up picker shows unavailable players faded with the reason.
+- **Training load & wellness:** under Analysis. Press **Make link** for a player and **Send on WhatsApp**; only send it to that player. Players fill it in after every session. Watch the **Ratio** column: over 1.5 (in red) means the load jumped and the player is at higher injury risk.
+- **Player development:** set targets per player and see a radar against squad players in the same position.
+- **Milestones:** appear after publishing; press **Copy post** to share.
+- **Practice match:** on the Matches page, for training new statisticians. It is never published or counted.
+- **Definitions:** a senior statistician can change a definition (a new version with a note). Old matches keep their version.
+- **Coach accounts:** a Super Admin adds them in Admin › Statistics Center with Account type **Coach**. Coaches see everything and change nothing.

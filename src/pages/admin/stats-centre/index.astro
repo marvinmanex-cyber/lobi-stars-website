@@ -22,6 +22,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
         <label>Full name<input name="fullName" required maxlength="80" placeholder="e.g. Jiki Benjamin" /></label>
         <label>Login ID <small>(name + 2–4 digits)</small><input name="loginId" required maxlength="34" pattern="[A-Za-z]{2,30}[0-9]{2,4}" placeholder="e.g. Jiki01" /></label>
         <label>Temporary password <small>(at least 8 characters)</small><span class="sxa-pw"><input name="password" required minlength="8" maxlength="72" /><button type="button" class="btn-o" data-gen>Make one</button></span></label>
+        <label>Account type<select name="role"><option value="statistician">Statistician (records matches)</option><option value="coach">Coach (views everything, changes nothing)</option></select></label>
         <label class="sxa-check"><input type="checkbox" name="canPublish" /> May publish</label>
         <button class="btn-p" type="submit">Add statistician</button>
       </form>
@@ -91,9 +92,9 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     $('users').innerHTML = d.users.length ? d.users.map((u: any) => `<tr data-id="${esc(u.id)}" data-name="${esc(u.fullName)}">
       <td><b>${esc(u.fullName)}</b><br /><small class="muted">Added ${esc(when(u.createdAt))}</small></td>
       <td><code>${esc(u.loginId)}</code></td>
-      <td>${u.active ? '<span class="pill">Active</span>' : '<span class="pill off">Switched off</span>'} ${u.canPublish ? '<span class="pill blue">May publish</span>' : ''} ${u.locked ? '<span class="pill warn">Locked</span>' : ''} ${u.mustChange ? '<span class="pill warn">Temporary password</span>' : ''}</td>
+      <td>${u.active ? '<span class="pill">Active</span>' : '<span class="pill off">Switched off</span>'} ${u.role === 'coach' ? '<span class="pill blue">Coach (view only)</span>' : ''} ${u.canPublish ? '<span class="pill blue">May publish</span>' : ''} ${u.locked ? '<span class="pill warn">Locked</span>' : ''} ${u.mustChange ? '<span class="pill warn">Temporary password</span>' : ''}</td>
       <td>${esc(when(u.lastLogin))}</td>
-      <td><div class="acts"><button data-a="reset_password">Reset password</button><button data-a="full_name">Rename</button><button data-a="${u.canPublish ? 'publish_off' : 'publish_on'}">${u.canPublish ? 'Stop publishing' : 'Allow publishing'}</button>${u.locked ? '<button data-a="unlock">Unlock</button>' : ''}<button data-a="sign_out">Sign out</button><button data-a="${u.active ? 'disable' : 'enable'}">${u.active ? 'Switch off' : 'Switch on'}</button></div></td></tr>`).join('')
+      <td><div class="acts"><button data-a="reset_password">Reset password</button><button data-a="full_name">Rename</button>${u.role === 'coach' ? '' : `<button data-a="${u.canPublish ? 'publish_off' : 'publish_on'}">${u.canPublish ? 'Stop publishing' : 'Allow publishing'}</button>`}<button data-a="${u.role === 'coach' ? 'role_statistician' : 'role_coach'}">${u.role === 'coach' ? 'Make statistician' : 'Make coach (view only)'}</button>${u.locked ? '<button data-a="unlock">Unlock</button>' : ''}<button data-a="sign_out">Sign out</button><button data-a="${u.active ? 'disable' : 'enable'}">${u.active ? 'Switch off' : 'Switch on'}</button></div></td></tr>`).join('')
       : '<tr><td colspan="5" class="muted">No statisticians yet. Add the first one below.</td></tr>';
     $('activity').innerHTML = d.activity.length ? d.activity.map((a: any) => `<tr><td>${esc(when(a.at))}</td><td>${esc(a.actor_name || a.actor_kind)}</td><td>${esc(String(a.action).replace(/_/g, ' '))}${a.item_title ? `<br /><small class="muted">${esc(a.item_title)}</small>` : ''}</td><td><small>${esc(a.details || '')}</small></td></tr>`).join('')
       : '<tr><td colspan="4" class="muted">Nothing yet.</td></tr>';
@@ -101,7 +102,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   $('addForm').addEventListener('click', (e: Event) => { if ((e.target as HTMLElement).closest('[data-gen]')) $('addForm').password.value = tempPassword(); });
   $('addForm').addEventListener('submit', async (e: Event) => {
     e.preventDefault(); const f = e.target as any;
-    try { draw(await api({ action: 'create', fullName: f.fullName.value, loginId: f.loginId.value, password: f.password.value, canPublish: f.canPublish.checked })); msg(`Added. Login ID ${f.loginId.value}, temporary password ${f.password.value}`); f.reset(); }
+    try { draw(await api({ action: 'create', fullName: f.fullName.value, loginId: f.loginId.value, password: f.password.value, canPublish: f.canPublish.checked, role: f.role.value })); msg(`Added. Login ID ${f.loginId.value}, temporary password ${f.password.value}`); f.reset(); }
     catch (err: any) { msg(err.message, false); }
   });
   $('users').addEventListener('click', async (e: Event) => {

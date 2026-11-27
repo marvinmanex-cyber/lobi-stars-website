@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { bstRoute, applyUi, type Ctx } from './bst';
 import { retentionView, inventoryView } from './retention';
+import { matchLinks, passesView, advancedView, seasonAdvancedView, availabilityView, markAvailability, wellnessView, developmentView, milestonesView, definitionsProView, oppositionPackView, startPractice } from './pro';
 import { analysisHub, mapsView, setPiecesView, ratingsView, playerView, compareView, analyticsView, scoutingView, trainingView, reportsView, xgView, pickOnPitch, attacksRight } from './phase2';
 const $ = (id: string) => document.getElementById(id) as any;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
@@ -61,7 +62,8 @@ async function boot() {
   try { S = await api('session'); }
   catch (x: any) { if (x.status !== 401 && x.status !== 403) { show('vLogin'); $('loginErr').textContent = x.message; $('loginErr').hidden = false; } return; }
   if (S.user.mustChange) { show('vPassword'); return; }
-  $('who').textContent = `${S.user.fullName}${S.user.admin ? ' · Super Admin' : S.user.canPublish ? ' · may publish' : ''}`;
+  $('who').textContent = `${S.user.fullName}${S.user.admin ? ' · Super Admin' : S.user.readOnly ? ' · coach (view only)' : S.user.canPublish ? ' · may publish' : ''}`;
+  document.body.classList.toggle('sx-ro', !!S.user.readOnly);
   show('vApp');
   updateSync(); flushAll();
   route();
@@ -111,10 +113,12 @@ function route() {
   }
   const [, page = '', id = ''] = (location.hash || '#/').split('/');
   for (const a of document.querySelectorAll('[data-nav]')) (a as HTMLElement).toggleAttribute('aria-current', false);
-  const nav = { '': 'home', matches: 'matches', match: 'matches', live: 'matches', review: 'matches', new: 'matches', tag: 'matches', recycle: 'settings', retention: 'settings', inventory: 'settings', ratings: 'matches', analysis: 'analysis', analytics: 'analysis', maps: 'analysis', 'set-pieces': 'analysis', player: 'players', compare: 'analysis', scouting: 'analysis', training: 'analysis', reports: 'analysis', xg: 'analysis', players: 'players', team: 'team', exports: 'exports', settings: 'settings', definitions: 'definitions' }[page] || 'home';
+  const nav = { '': 'home', matches: 'matches', match: 'matches', live: 'matches', review: 'matches', new: 'matches', tag: 'matches', passes: 'matches', advanced: 'matches', 'season-advanced': 'analysis', availability: 'players', wellness: 'players', development: 'players', milestones: 'players', opposition: 'analysis', recycle: 'settings', retention: 'settings', inventory: 'settings', ratings: 'matches', analysis: 'analysis', analytics: 'analysis', maps: 'analysis', 'set-pieces': 'analysis', player: 'players', compare: 'analysis', scouting: 'analysis', training: 'analysis', reports: 'analysis', xg: 'analysis', players: 'players', team: 'team', exports: 'exports', settings: 'settings', definitions: 'definitions' }[page] || 'home';
   document.querySelector(`[data-nav="${nav}"]`)?.setAttribute('aria-current', 'page');
-  const run: Record<string, () => Promise<void> | void> = { '': dashboardView, matches: matchesView, new: newMatchView, match: () => setupView(id), live: () => liveView(id), review: () => reviewView(id),
-    players: playersView, team: teamView, exports: exportsView, settings: settingsView, definitions: definitionsView, tag: () => tagView(id), recycle: recycleView, retention: () => retentionView(ctx), inventory: () => inventoryView(ctx), ratings: () => ratingsView(ctx, id), analysis: () => analysisHub(ctx), analytics: () => analyticsView(ctx), maps: () => mapsView(ctx), 'set-pieces': () => setPiecesView(ctx),
+  const run: Record<string, () => Promise<void> | void> = { '': dashboardView, matches: matchesView, new: newMatchView, match: () => setupView(id).then(() => markAvailability(ctx, view())), live: () => liveView(id), review: () => reviewView(id),
+    players: playersView, team: teamView, exports: exportsView, settings: settingsView, definitions: () => definitionsProView(ctx),
+    passes: () => passesView(ctx, id), advanced: () => advancedView(ctx, id), 'season-advanced': () => seasonAdvancedView(ctx), availability: () => availabilityView(ctx), wellness: () => wellnessView(ctx),
+    development: () => developmentView(ctx, id), milestones: () => milestonesView(ctx), opposition: () => oppositionPackView(ctx), tag: () => tagView(id), recycle: recycleView, retention: () => retentionView(ctx), inventory: () => inventoryView(ctx), ratings: () => ratingsView(ctx, id), analysis: () => analysisHub(ctx), analytics: () => analyticsView(ctx), maps: () => mapsView(ctx), 'set-pieces': () => setPiecesView(ctx),
     player: () => playerView(ctx, id), compare: () => compareView(ctx), scouting: () => scoutingView(ctx), training: () => trainingView(ctx), reports: () => reportsView(ctx), xg: () => xgView(ctx) };
   stopTick(); resetView();
   view().innerHTML = '<p class="sx-small">Loading…</p>';
@@ -133,7 +137,7 @@ async function dashboardView() {
   const d = await api(`dashboard?season=${encodeURIComponent(season)}`);
   const a = d.team.all;
   view().innerHTML = `
-    <div class="sx-row sx-noprint" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Season ${esc(season)}</h2><div class="sx-row">${seasonSelect(season)}<a class="sx-btn" href="/staff/statistics-center/bst-analysis/">BST Analysis Form</a><a class="sx-btn sx-btn--r" href="#/new">+ New match</a></div></div>
+    <div class="sx-row sx-noprint" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Season ${esc(season)}</h2><div class="sx-row">${seasonSelect(season)}<a class="sx-btn" href="/staff/statistics-center/bst-analysis/">BST Analysis Form</a><span class="sx-row"><button class="sx-btn" type="button" id="practice">Practice match</button><a class="sx-btn sx-btn--r" href="#/new">+ New match</a></span></div></div>
     <div class="sx-kpis">
       ${[['Played', a.p], ['Won', a.w], ['Drawn', a.d], ['Lost', a.l], ['Goals for', a.gf], ['Goals against', a.ga], ['Clean sheets', a.cleanSheets], ['Yellow cards', d.team.discipline.yellow], ['Red cards', d.team.discipline.red]]
         .map(([l, v]) => `<div class="sx-kpi"><b>${v}</b><span>${l}</span></div>`).join('')}
@@ -170,6 +174,7 @@ async function matchesView() {
     if (!confirm('Remove this match from the lists? It is kept in the database and can be restored by a Super Admin.')) return;
     try { await api('match/remove', { id: b.dataset.remove }); toast('Removed.'); matchesView(); } catch (x: any) { toast(x.message, false); }
   }, L1);
+  $('practice')?.addEventListener('click', () => startPractice(ctx));
 }
 
 async function newMatchView() {
@@ -206,8 +211,8 @@ async function loadMatch(id: string) {
 const matchHead = (m: any, here: string) => `
   <div class="sx-row sx-noprint" style="justify-content:space-between;margin-bottom:12px">
     <div><h2 style="margin:0">${esc(m.home)} ${m.homeScore}–${m.awayScore} ${esc(m.away)}</h2><p class="sx-small" style="margin:0">${esc(m.competition)} · ${esc(day(m.date))} · ${pill(m.status)}</p></div>
-    <div class="sx-row">${[['match', 'Setup'], ['live', 'Live entry'], ['review', 'Review & publish']].filter(([k]) => !(k === 'live' && m.status === 'published')).map(([k, t]) => `<a class="sx-btn ${k === here ? 'sx-btn--p' : ''}" href="#/${k}/${esc(m.id)}">${t}</a>`).join('')}</div>
-  </div>`;
+    <div class="sx-row">${[['match', 'Setup'], ['live', 'Live entry'], ['review', 'Review & publish']].filter(([k]) => !(k === 'live' && m.status === 'published')).map(([k, t]) => `<a class="sx-btn ${k === here ? 'sx-btn--p' : ''}" href="#/${k}/${esc(m.id)}">${t}</a>`).join('')}${matchLinks(ctx, m)}</div>
+  </div>${m.practice ? '<p class="sx-note">Practice match: for training only. It is never published or counted, and is deleted after 30 days.</p>' : ''}`;
 
 async function setupView(id: string) {
   const d = await loadMatch(id);
@@ -872,7 +877,7 @@ async function playersView() {
   const d = await api(`players?season=${encodeURIComponent(sel)}`);
   view().innerHTML = `<div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Players · ${sel === 'career' ? 'all seasons' : esc(sel)}</h2>${seasonSelect(sel, `<option value="career" ${sel === 'career' ? 'selected' : ''}>All seasons (career)</option>`)}</div>
     <div class="sx-card sx-scroll"><p class="sx-small">From published matches only. Tap a name for the match-by-match log; "Profile" opens the player's public page.</p><table class="sx-t"><thead><tr><th>Player</th><th class="n">Apps</th><th class="n">Starts</th><th class="n">Min</th><th class="n">Goals</th><th class="n">Assists</th><th class="n">Shots</th><th class="n">On target</th><th class="n">YC</th><th class="n">RC</th><th class="n">Clean sheets</th><th class="n">MOTM</th><th></th></tr></thead><tbody>
-    ${d.players.map((p: any) => `<tr><td><button class="sx-btn" data-log="${esc(p.slug)}" style="min-height:36px">${esc(p.name)}</button> <a href="#/player/${esc(p.slug)}" class="sx-small">Player page</a></td><td class="n">${p.apps}</td><td class="n">${p.starts}</td><td class="n">${p.minutes}</td><td class="n">${p.goals}</td><td class="n">${p.assists}</td><td class="n">${p.shots}</td><td class="n">${p.shotsOnTarget}</td><td class="n">${p.yellow}</td><td class="n">${p.red}</td><td class="n">${p.cleanSheets}</td><td class="n">${p.motm}</td><td><a href="/squad/${esc(p.slug)}/" target="_blank" rel="noopener">Profile</a></td></tr>
+    ${d.players.map((p: any) => `<tr><td><button class="sx-btn" data-log="${esc(p.slug)}" style="min-height:36px">${esc(p.name)}</button> <a href="#/player/${esc(p.slug)}" class="sx-small">Player page</a> <a href="#/development/${esc(p.slug)}" class="sx-small">Development</a></td><td class="n">${p.apps}</td><td class="n">${p.starts}</td><td class="n">${p.minutes}</td><td class="n">${p.goals}</td><td class="n">${p.assists}</td><td class="n">${p.shots}</td><td class="n">${p.shotsOnTarget}</td><td class="n">${p.yellow}</td><td class="n">${p.red}</td><td class="n">${p.cleanSheets}</td><td class="n">${p.motm}</td><td><a href="/squad/${esc(p.slug)}/" target="_blank" rel="noopener">Profile</a></td></tr>
       <tr data-logrow="${esc(p.slug)}" hidden><td colspan="13"><table class="sx-t"><tbody>${p.matches.map((x: any) => `<tr><td>${esc(day(x.date))}</td><td>${x.home ? 'v' : '@'} ${esc(x.opponent)}</td><td>${esc(x.score)}</td><td>${x.started ? 'Started' : 'Sub'}</td><td class="n">${x.minutes}'</td><td class="n">${x.goals ? `${x.goals} goal${x.goals > 1 ? 's' : ''}` : ''}</td><td class="n">${x.assists ? `${x.assists} assist${x.assists > 1 ? 's' : ''}` : ''}</td><td><a href="#/review/${esc(x.id)}">Match</a></td></tr>`).join('')}</tbody></table></td></tr>`).join('') || '<tr><td colspan="13" class="sx-small">No published matches yet.</td></tr>'}
     </tbody></table></div>`;
   view().querySelector('[data-season]')?.addEventListener('change', (e: any) => { store.set('sx_ps', e.target.value); playersView(); });
@@ -1033,26 +1038,6 @@ function settingsView() {
     try { const r = await api('settings', { competitions: e.target.competitions.value.split('\n') }); S.settings = { ...S.settings, competitions: r.competitions }; toast('Saved.'); } catch (x: any) { toast(x.message, false); }
   });
 }
-function definitionsView() {
-  const D: [string, string][] = [
-    ['Goal', 'The ball crosses the line and the referee gives it. Record it for the team the goal counts for. An own goal: type "Own goal", and choose the player from the other team who put it in. A goal also counts as a shot on target.'],
-    ['Assist', 'The last pass or touch by a team-mate that led directly to the goal. No assist for an own goal, or a penalty won by the scorer.'],
-    ['Shot', 'Any attempt to score. On target: it would have gone in without a save or a defender on the line (goals count as on target). Off target: wide or over. Blocked: stopped by an outfield player. Woodwork: hit the post or bar and did not go in.'],
-    ['Key pass', 'A pass that leads straight to a shot that does not score (Phase 2).'],
-    ['Corner', 'A corner kick taken by the team.'],
-    ['Foul', 'A foul given by the referee: record it for the player who committed it. "Foul won" is for the player fouled.'],
-    ['Yellow / red card', 'Shown by the referee. A second yellow is recorded as a red card (type "second yellow"). A sent-off player cannot appear in later events.'],
-    ['Offside', 'Given against the attacking player.'],
-    ['Substitution', 'Player going off, player coming on, and the reason. The league allows 5.'],
-    ['Save', 'The goalkeeper stops a shot on target. Record it for the goalkeeper\'s team.'],
-    ['Tackle, interception, clearance, block, aerial duel', 'Defensive actions (Phase 2: recorded in Review, not on the live screen yet).'],
-    ['Minutes played', 'Worked out: a starter plays from 0 until substituted or sent off (or full time); a substitute from the minute they came on. Added time counts as the period\'s last minute. Correct a player\'s minutes on the Review page if needed.'],
-    ['Clean sheet', 'A goalkeeper who played at least 60 minutes in a match where Lobi Stars conceded no goals.'],
-    ['Possession', 'Typed in after the match (an estimate) until pass-by-pass recording arrives in Phase 2.'],
-  ];
-  view().innerHTML = `<h2>Stat definitions</h2><section class="sx-card"><dl>${D.map(([t, x]) => `<dt><b>${esc(t)}</b></dt><dd style="margin:0 0 12px">${esc(x)}</dd>`).join('')}</dl></section>`;
-}
-
 const ctx: Ctx = {
   api, esc, toast, view, resetView, store, uid, day, when,
   get S() { return S; },

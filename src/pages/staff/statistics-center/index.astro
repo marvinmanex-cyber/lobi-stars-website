@@ -282,6 +282,9 @@
   /* Phase 2 */
   .p2-pitch { width: 100%; max-width: 820px; display: block; border-radius: 10px; }
   .p2-pick .p2-pitch { max-width: 560px; touch-action: manipulation; }
+  .sx-pcard.sx-unavail { opacity: .55; border-style: dashed; border-color: var(--red); } .sx-avtag { display: block; color: var(--red); font-weight: 700; font-size: 12px; }
+  body.sx-ro #practice, body.sx-ro a[href="#/new"], body.sx-ro #publish, body.sx-ro #reopen, body.sx-ro #toReview, body.sx-ro #secondCheck, body.sx-ro .sx-btn--r { display: none !important; }
+  dialog.sx-card::backdrop { background: rgba(0,0,0,.45); }
   .p2-tile { text-decoration: none; color: inherit; display: block; } .p2-tile:hover, .p2-tile:focus-visible { border-color: var(--red); }
   .p2-stars { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
   .p2-stars button { min-width: 44px; min-height: 44px; border-radius: 10px; border: 2px solid var(--line); background: var(--card); color: var(--ink); font: 700 18px 'Barlow Condensed', sans-serif; cursor: pointer; }

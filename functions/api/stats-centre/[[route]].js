@@ -25,6 +25,13 @@ import { matchWeather, makeSheetsKey, stopSheetsKey, sheetsCsv, secondCheck, sec
 import { superAdminEmails } from '../_lib/superAdmins.js';
 import { policies, retentionState, savePolicy, setRetentionSwitch, previewPolicy, runRetention, retentionRuns, seasonsList, archiveSeason, unarchiveSeason, verifyArchive, noteOffsite, readFile, privacyList, setPrivacy, anonymisePlayer, CLASSIFICATION, isSeasonArchived } from '../_lib/statsRetention.js';
 import { listBackups } from '../_lib/autoBackup.js';
+import { scoutingReport as scoutingFor } from '../_lib/statsAnalytics.js';
+import { ensureProSchema, definitions, newDefinitionsVersion, matchAdvanced, seasonAdvanced, availability, setAvailability, setYellowBan, makeWellnessLink, revokeWellnessLink, wellnessOverview,
+  development, saveTarget, updateMilestones, milestones, matchReportHtml, oppositionPackHtml, PRO_LABELS } from '../_lib/statsPro.js';
+
+// Coach accounts view everything and change nothing (only these are allowed for them).
+const COACH_POSTS = new Set(['POST logout', 'POST password', 'POST lineup/heartbeat', 'POST bst/presence']);
+const htmlPage = body => new Response(body, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex', 'X-Frame-Options': 'SAMEORIGIN' } });
 
 // Changes refused while the match's season is archived (read only; a Super Admin can still correct it).
 const MATCH_WRITES = new Set(['POST match/setup', 'POST match/lineups', 'POST match/events', 'POST match/clock', 'POST match/status', 'POST match/publish', 'POST match/reopen', 'POST match/remove', 'POST lineup/changes', 'POST lineup/confirm', 'POST lineup/reopen', 'POST lineup/restore', 'POST ratings']);
@@ -58,6 +65,7 @@ export async function onRequest({ request, env, params }) {
     }
     const key = `${method} ${route}`;
     if (s.user.mustChange && !PASSWORD_ONLY.has(key)) return json({ error: 'Please choose your own password first.', mustChange: true }, 403);
+    if (s.user.readOnly && method === 'POST' && !COACH_POSTS.has(key)) return json({ error: 'Coach accounts can view everything but cannot change anything.', readOnly: true }, 403);
     const b = method === 'POST' ? await request.json().catch(() => ({})) : {};
     const q = new URL(request.url).searchParams;
     const site = await siteSettings(env, request.url);
@@ -77,7 +85,7 @@ export async function onRequest({ request, env, params }) {
       case 'GET session': return json({
         user: s.user, csrf: s.csrf, idleMinutes: IDLE_MS / 60e3, season: current, seasons: await seasons(db, current),
         eventTypes: EVENT_TYPES, liveButtons: LIVE_BUTTONS, periods: PERIODS, outcomes: OUTCOMES, bodyParts: BODY_PARTS, detailTypes: DETAIL_TYPES, statuses: STATUSES,
-        roster: s.user.mustChange ? [] : await loadRoster(env, request.url), settings: await settingsView(db), routines: ROUTINES, spOutcomes: SP_OUTCOMES,
+        roster: s.user.mustChange ? [] : await loadRoster(env, request.url), settings: await settingsView(db), routines: ROUTINES, spOutcomes: SP_OUTCOMES, pro: { avail: PRO_LABELS.AVAIL, sessions: PRO_LABELS.SESSION_TYPES, targets: PRO_LABELS.TARGET_METRICS },
       });
       case 'POST logout': await signOut(env, request, s); return json({ ok: true }, 200, { 'Set-Cookie': clearStatsCookie() });
       case 'POST password': return out(await changePassword(env, request, s, b));
@@ -164,7 +172,13 @@ export async function onRequest({ request, env, params }) {
       }
       case 'POST match/clock': return out(await setClock(db, s.user, b.id, b, opts));
       case 'POST match/status': return out(await setStatus(db, s.user, b.id, b.status, opts));
-      case 'POST match/publish': { const sc = await secondCheckProblem(db, s.user, b.id); if (sc) return json({ error: sc }, 400); const r = await publish(db, s.user, b.id, opts); return r.error ? json(r, r.check ? 422 : 400) : json(r); }
+      case 'POST match/publish': {
+        const sc = await secondCheckProblem(db, s.user, b.id); if (sc) return json({ error: sc }, 400);
+        const r = await publish(db, s.user, b.id, opts);
+        if (r.error) return json(r, r.check ? 422 : 400);
+        let fresh = []; try { fresh = await updateMilestones(db); } catch (err) { console.error('[stats-centre] milestones', err); }
+        return json({ ...r, milestones: fresh });
+      }
       case 'POST match/reopen': return out(await reopen(db, s.user, b.id, opts));
       case 'POST match/remove': return out(await removeMatch(db, s.user, b.id, opts));
 
@@ -267,6 +281,23 @@ export async function onRequest({ request, env, params }) {
         if (String(b.confirm || '').trim().toUpperCase() !== 'ANONYMISE') return json({ error: 'Type ANONYMISE to confirm (this cannot be undone).' }, 400);
         return out(await anonymisePlayer(db, s.user, oneLine(b.slug || '', 80), { reason: b.reason, full: !!b.full }, opts));
       }
+      // ── Professional add-ons ──
+      case 'GET definitions': return json(await definitions(db));
+      case 'POST definitions': return out(await newDefinitionsVersion(db, s.user, b, opts));
+      case 'GET match/advanced': { const full = await getMatch(db, q.get('id')); return full ? json({ match: full.match, lineups: full.lineups, advanced: matchAdvanced(full), derived: full.derived }) : json({ error: 'Match not found.' }, 404); }
+      case 'GET season-advanced': return json(await seasonAdvanced(db, season));
+      case 'GET availability': return json(await availability(db, season));
+      case 'POST availability': return out(await setAvailability(db, s.user, b, opts));
+      case 'POST availability/yellow-ban': return s.user.canPublish ? out(await setYellowBan(db, s.user, b.n)) : json({ error: 'Only a senior statistician or a Super Admin can change this.' }, 403);
+      case 'GET wellness': return json({ players: await wellnessOverview(db) });
+      case 'POST wellness/link': { const r = await makeWellnessLink(db, s.user, oneLine(b.slug || '', 80), opts); return r.error ? json(r, 400) : json({ ok: true, url: `${new URL(request.url).origin}/staff/statistics-center/wellness/${r.token}/` }); }
+      case 'POST wellness/revoke': return out(await revokeWellnessLink(db, s.user, oneLine(b.slug || '', 80), opts));
+      case 'GET development': return json(await development(db, oneLine(q.get('slug') || '', 80), season, await loadRoster(env, request.url)));
+      case 'POST targets': return out(await saveTarget(db, s.user, b, opts));
+      case 'GET milestones': return json({ milestones: await milestones(db) });
+      case 'POST milestones/refresh': return json({ ok: true, fresh: await updateMilestones(db), milestones: await milestones(db) });
+      case 'GET report/match.html': { const h = await matchReportHtml(db, q.get('id'), { includeNotes: q.get('notes') !== '0' }); if (!h) return json({ error: 'Match not found.' }, 404); await sxLog(db, statsActor(s.user), 'export', { itemType: 'match', itemId: q.get('id'), details: 'Match report (PDF page)', request }); return htmlPage(h); }
+      case 'GET report/opposition.html': { const team = oneLine(q.get('team') || '', 80); if (!team) return json({ error: 'Choose a club.' }, 400); await ensureProSchema(db); return htmlPage(await oppositionPackHtml(db, team, await scoutingFor(db, team))); }
       default: return json({ error: 'Not found.' }, 404);
     }
   } catch (err) {

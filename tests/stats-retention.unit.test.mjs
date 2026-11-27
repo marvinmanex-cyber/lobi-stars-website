@@ -36,7 +36,7 @@ async function published(date = DEMO_EVENT.event_date) {
 test('policies are seeded once; keep-forever data cannot get a deletion period; only a Super Admin changes them', async () => {
   await ensureRetentionSchema(db);
   const p = await policies(db);
-  assert.equal(p.length, 16);
+  assert.equal(p.length, 19);
   assert.equal(p.find(x => x.key === 'core_match_data').forever, true);
   assert.match((await savePolicy(db, ADMIN, 'core_match_data', { days: 365, action: 'purge' })).error, /kept forever/);
   assert.match((await savePolicy(db, SENIOR, 'audit_log', { days: 400 })).error, /Super Admin/);

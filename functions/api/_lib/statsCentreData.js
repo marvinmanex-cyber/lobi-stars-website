@@ -22,6 +22,7 @@ export const EVENT_TYPES = {
   tackle: 'Tackle', interception: 'Interception', clearance: 'Clearance', block: 'Block', aerial_duel: 'Aerial duel',
   gk_save: 'Save', gk_claim: 'Goalkeeper claim', foul_committed: 'Foul', foul_won: 'Foul won', yellow_card: 'Yellow card', red_card: 'Red card',
   offside: 'Offside', substitution: 'Substitution', injury: 'Injury', stoppage: 'Stoppage', var_decision: 'VAR decision',
+  pass: 'Pass',
 };
 // Phase 1 one-tap buttons on the live screen (the rest can be added in review; Phase 2 adds passes and zones).
 export const LIVE_BUTTONS = ['goal', 'shot', 'corner', 'foul_committed', 'yellow_card', 'red_card', 'offside', 'substitution', 'injury', 'gk_save'];
@@ -34,6 +35,7 @@ export const OUTCOMES = {
   var_decision: ['goal_given', 'goal_disallowed', 'penalty_given', 'penalty_cancelled', 'red_card', 'no_change'],
   substitution: ['tactical', 'injury'],
   injury: ['continued', 'off'],
+  pass: ['complete', 'incomplete'],
 };
 export const BODY_PARTS = ['right_foot', 'left_foot', 'head', 'other'];
 export const DETAIL_TYPES = ['open_play', 'penalty', 'free_kick', 'corner', 'own_goal', 'counter', 'set_piece', 'tactical', 'injury', 'second_yellow'];
@@ -68,6 +70,7 @@ const matchView = m => m && ({
   pitch: m.pitch_condition, attendance: m.attendance, formationHome: m.formation_home, formationAway: m.formation_away, formationHomeFinish: m.formation_home_finish || '', formationAwayFinish: m.formation_away_finish || '', possessionHome: m.possession_home,
   homeScore: m.home_score, awayScore: m.away_score, htHome: m.ht_home_score, htAway: m.ht_away_score, status: m.status, clock: parse(m.clock_json, null),
   length: m.length_minutes, report: m.report_text || '', highlights: m.highlights_url || '', motm: m.motm_slug || '',
+  practice: !!m.is_practice, definitionsVersion: m.definitions_version ?? null,
   secondCheckBy: m.second_check_by || '', secondCheckAt: m.second_check_at || '',
   videoUrl: m.video_url || '', videoOffset: m.video_offset_seconds ?? null, videoOffset2: m.video_second_half_offset_seconds ?? null, attack1h: m.attack_1h || 'ltr',
   createdBy: m.created_by, updatedBy: m.updated_by, verifiedBy: m.verified_by, verifiedAt: m.verified_at, publishedAt: m.published_at, updatedAt: m.updated_at,
@@ -93,7 +96,7 @@ export async function listMatches(db, { season = '', status = '', competition = 
 
 export async function seasons(db, current) {
   await ensureStatsCentreSchema(db);
-  const { results } = await db.prepare(`SELECT DISTINCT season FROM sx_matches WHERE is_deleted = 0 ORDER BY season DESC`).all();
+  const { results } = await db.prepare(`SELECT DISTINCT season FROM sx_matches WHERE is_deleted = 0 AND is_practice = 0 ORDER BY season DESC`).all();
   return [...new Set([current, ...results.map(r => r.season)].filter(Boolean))].sort().reverse();
 }
 
@@ -123,7 +126,11 @@ const FIELD_KEYS = { competition: 'competition', matchday: 'matchday', venue: 'v
 export async function createMatch(db, user, b, { startMonth = 8, request = null } = {}) {
   await ensureStatsCentreSchema(db);
   let row;
-  if (b.eventId) {
+  if (b.practice) {
+    // A practice match (training new statisticians): never published, never in any total, removed for good when deleted.
+    const d = new Date().toISOString().slice(0, 10);
+    row = { event_id: null, competition: 'Practice', match_date: d, venue: 'Practice', home_team: 'Lobi Stars FC', away_team: oneLine(b.away, 80) || 'Practice United', is_lobi_home: 1, kickoff_time: null, practice: 1 };
+  } else if (b.eventId) {
     const e = await db.prepare(`SELECT * FROM events WHERE id = ?`).bind(String(b.eventId)).first();
     if (!e) return { error: 'That fixture was not found.' };
     const had = await db.prepare(`SELECT id FROM sx_matches WHERE event_id = ? AND is_deleted = 0`).bind(e.id).first();
@@ -139,9 +146,10 @@ export async function createMatch(db, user, b, { startMonth = 8, request = null 
       is_lobi_home: isLobi(home) ? 1 : 0, kickoff_time: /^\d{2}:\d{2}$/.test(b.kickoff || '') ? b.kickoff : null };
   }
   const id = newId('sxm'), at = nowIso();
-  await db.prepare(`INSERT INTO sx_matches (id, event_id, season, competition, match_date, kickoff_time, venue, home_team, away_team, is_lobi_home, created_by, updated_by, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(id, row.event_id, seasonOf(row.match_date, startMonth), row.competition, row.match_date, row.kickoff_time, row.venue,
-    row.home_team, row.away_team, row.is_lobi_home, byName(user), byName(user), at, at).run();
+  let defs = null; try { defs = (await db.prepare(`SELECT MAX(version) AS v FROM sx_definitions`).first())?.v ?? null; } catch { /* definitions not set up yet */ }
+  await db.prepare(`INSERT INTO sx_matches (id, event_id, season, competition, match_date, kickoff_time, venue, home_team, away_team, is_lobi_home, is_practice, definitions_version, created_by, updated_by, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(id, row.event_id, row.practice ? 'Practice' : seasonOf(row.match_date, startMonth), row.competition, row.match_date, row.kickoff_time, row.venue,
+    row.home_team, row.away_team, row.is_lobi_home, row.practice ? 1 : 0, defs, byName(user), byName(user), at, at).run();
   await sxLog(db, statsActor(user), 'create_match', { itemType: 'match', itemId: id, itemTitle: titleOf(row), after: row, request });
   return { ok: true, id };
 }
@@ -159,7 +167,7 @@ export async function saveSetup(db, user, id, b, { startMonth = 8, request = nul
     if (v !== m[col]) { sets[col] = v; before[col] = m[col]; }
   }
   if (!Object.keys(sets).length) return { ok: true, unchanged: true };
-  if (sets.match_date) sets.season = seasonOf(sets.match_date, startMonth);
+  if (sets.match_date && !m.is_practice) sets.season = seasonOf(sets.match_date, startMonth);
   sets.updated_by = byName(user); sets.updated_at = nowIso();
   const cols = Object.keys(sets);
   await db.prepare(`UPDATE sx_matches SET ${cols.map(c => `${c} = ?`).join(', ')} WHERE id = ?`).bind(...cols.map(c => sets[c]), id).run();
@@ -218,7 +226,7 @@ export async function saveLineups(db, user, id, b, roster, { request = null } = 
 // ── Events ──
 const eventView = r => ({ id: r.id, side: r.side, type: r.event_type, slug: r.player_slug || null, name: r.player_name || '', relatedSlug: r.related_slug || null,
   relatedName: r.related_name || '', minute: r.minute, stoppage: r.stoppage_minute, period: r.period, outcome: r.outcome || '', bodyPart: r.body_part || '',
-  detail: r.detail_type || '', zone: r.pitch_zone || '', x: r.pitch_x ?? null, y: r.pitch_y ?? null, xg: r.xg_value ?? null, xgSource: r.xg_source || null, routine: r.routine_type || '', setPieceOutcome: r.set_piece_outcome || '', scoreHome: r.score_home_at_time, scoreAway: r.score_away_at_time, notes: r.notes || '',
+  detail: r.detail_type || '', zone: r.pitch_zone || '', x: r.pitch_x ?? null, y: r.pitch_y ?? null, endX: r.end_x ?? null, endY: r.end_y ?? null, xg: r.xg_value ?? null, xgSource: r.xg_source || null, routine: r.routine_type || '', setPieceOutcome: r.set_piece_outcome || '', scoreHome: r.score_home_at_time, scoreAway: r.score_away_at_time, notes: r.notes || '',
   createdBy: r.created_by, createdAt: r.created_at, updatedBy: r.updated_by, updatedAt: r.updated_at, deleted: !!r.is_deleted });
 const chrono = (a, b) => (PERIOD_ORDER[a.period] - PERIOD_ORDER[b.period]) || (a.minute - b.minute) || ((a.stoppage || 0) - (b.stoppage || 0)) || String(a.createdAt).localeCompare(String(b.createdAt));
 
@@ -253,7 +261,7 @@ export function parseEvent(e, { lobiSide, bySlug }) {
     outcome: outcomes ? pick(e?.outcome, outcomes) : null, body_part: type === 'goal' || type === 'shot' ? pick(e?.bodyPart, BODY_PARTS) : null,
     detail_type: pick(e?.detail, DETAIL_TYPES), pitch_zone: /^[A-Za-z0-9_-]{1,12}$/.test(String(e?.zone || '')) ? e.zone : null, notes: oneLine(e?.notes, 300) || null,
     // Phase 2: where it happened (0–100, the acting team attacking towards x = 100), xG typed by hand (else worked out), set-piece routine and outcome.
-    pitch_x: coord(e?.x), pitch_y: coord(e?.y),
+    pitch_x: coord(e?.x), pitch_y: coord(e?.y), end_x: type === 'pass' ? coord(e?.endX) : null, end_y: type === 'pass' ? coord(e?.endY) : null,
     xg_manual: e?.xgManual === '' || e?.xgManual === null || e?.xgManual === undefined || !(Number(e.xgManual) >= 0 && Number(e.xgManual) <= 1) ? null : Math.round(Number(e.xgManual) * 1000) / 1000,
     routine_type: SET_PIECES.has(type) ? pick(e?.routine, ROUTINES) : null, set_piece_outcome: SET_PIECES.has(type) ? pick(e?.setPieceOutcome, SP_OUTCOMES) : null,
   } };
@@ -298,13 +306,13 @@ export async function applyEvents(db, user, id, ops, roster, { request = null } 
     v.xg_source = !isShot || v.xg_value === null ? null : v.xg_manual !== null ? 'manual' : 'auto';
     if (old) {
       stmts.push(db.prepare(`UPDATE sx_events SET side = ?, event_type = ?, player_slug = ?, player_name = ?, related_slug = ?, related_name = ?, minute = ?, stoppage_minute = ?, period = ?,
-        outcome = ?, body_part = ?, detail_type = ?, pitch_zone = ?, notes = ?, pitch_x = ?, pitch_y = ?, xg_value = ?, xg_source = ?, routine_type = ?, set_piece_outcome = ?, updated_by = ?, updated_at = ?, is_deleted = 0 WHERE id = ? AND match_id = ?`)
-        .bind(v.side, v.event_type, v.player_slug, v.player_name, v.related_slug, v.related_name, v.minute, v.stoppage_minute, v.period, v.outcome, v.body_part, v.detail_type, v.pitch_zone, v.notes, v.pitch_x, v.pitch_y, v.xg_value, v.xg_source, v.routine_type, v.set_piece_outcome, by, at, v.id, id));
+        outcome = ?, body_part = ?, detail_type = ?, pitch_zone = ?, notes = ?, pitch_x = ?, pitch_y = ?, xg_value = ?, xg_source = ?, routine_type = ?, set_piece_outcome = ?, end_x = ?, end_y = ?, updated_by = ?, updated_at = ?, is_deleted = 0 WHERE id = ? AND match_id = ?`)
+        .bind(v.side, v.event_type, v.player_slug, v.player_name, v.related_slug, v.related_name, v.minute, v.stoppage_minute, v.period, v.outcome, v.body_part, v.detail_type, v.pitch_zone, v.notes, v.pitch_x, v.pitch_y, v.xg_value, v.xg_source, v.routine_type, v.set_piece_outcome, v.end_x, v.end_y, by, at, v.id, id));
       logs.push(['edit_event', v.id, `${EVENT_TYPES[v.event_type]} ${v.minute}'`, eventView(old), v, null]);
     } else {
-      stmts.push(db.prepare(`INSERT INTO sx_events (id, match_id, side, event_type, player_slug, player_name, related_slug, related_name, minute, stoppage_minute, period, outcome, body_part, detail_type, pitch_zone, notes, pitch_x, pitch_y, xg_value, xg_source, routine_type, set_piece_outcome, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-        .bind(v.id, id, v.side, v.event_type, v.player_slug, v.player_name, v.related_slug, v.related_name, v.minute, v.stoppage_minute, v.period, v.outcome, v.body_part, v.detail_type, v.pitch_zone, v.notes, v.pitch_x, v.pitch_y, v.xg_value, v.xg_source, v.routine_type, v.set_piece_outcome, by, at));
+      stmts.push(db.prepare(`INSERT INTO sx_events (id, match_id, side, event_type, player_slug, player_name, related_slug, related_name, minute, stoppage_minute, period, outcome, body_part, detail_type, pitch_zone, notes, pitch_x, pitch_y, xg_value, xg_source, routine_type, set_piece_outcome, end_x, end_y, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .bind(v.id, id, v.side, v.event_type, v.player_slug, v.player_name, v.related_slug, v.related_name, v.minute, v.stoppage_minute, v.period, v.outcome, v.body_part, v.detail_type, v.pitch_zone, v.notes, v.pitch_x, v.pitch_y, v.xg_value, v.xg_source, v.routine_type, v.set_piece_outcome, v.end_x, v.end_y, by, at));
       logs.push(['add_event', v.id, `${EVENT_TYPES[v.event_type]} ${v.minute}'`, null, v, null]);
     }
     const twin = !old && (v.player_slug || v.player_name) && (await db.prepare(`SELECT id FROM sx_events WHERE match_id = ? AND is_deleted = 0 AND event_type = ? AND side = ? AND minute = ? AND COALESCE(player_slug, player_name, '') = COALESCE(?, ?, '') AND id <> ? LIMIT 1`)
@@ -372,6 +380,21 @@ export async function setClock(db, user, id, { action, at }, { request = null } 
 }
 
 // ── Working out the numbers ──
+/**
+ * Pass types from the start and end points (0–100, attacking towards x = 100; a pass without positions counts only
+ * as a pass). Progressive: moves the ball at least 25% of the way to the goal it attacks (or into the box) and ends in
+ * the opponents' half or beyond the start by 30 m. Final third: ends beyond x = 66.7 having started before it. Box:
+ * ends in the penalty area (x ≥ 84.3, y between 20.4 and 79.6).
+ */
+export function passFlags(e) {
+  const x = e.x ?? e.pitch_x, y = e.y ?? e.pitch_y, ex = e.endX ?? e.end_x, ey = e.endY ?? e.end_y;
+  if (x === null || x === undefined || ex === null || ex === undefined) return { progressive: false, finalThird: false, box: false };
+  const inBox = (px, py) => px >= 84.3 && py >= 20.4 && py <= 79.6;
+  const box = inBox(ex, ey ?? 50) && !inBox(x, y ?? 50);
+  const before = 100 - x, after = 100 - ex;
+  const progressive = ex > x && (box || (after <= before * 0.75 && (ex >= 50 || (ex - x) * 1.05 >= 30)));
+  return { progressive, finalThird: x < 66.7 && ex >= 66.7, box };
+}
 const playerKey = (side, slug, name) => (slug ? `s:${slug}` : `${side}:${String(name || '').toLowerCase()}`);
 
 /** Everything about one match worked out from its line-ups and events. */
@@ -384,14 +407,14 @@ export function derive(match, lineups, events) {
     const k = playerKey(side, slug, name);
     if (!players.has(k)) players.set(k, { key: k, side, slug: slug || null, name: name || '', number: null, position: '', starter: false, on: null, off: null, minutes: 0,
       xg: 0, xa: 0, goals: 0, ownGoals: 0, assists: 0, shots: 0, shotsOnTarget: 0, foulsCommitted: 0, foulsWon: 0, yellow: 0, red: 0, offsides: 0, saves: 0, corners: 0, keyPasses: 0,
-      tackles: 0, interceptions: 0, rating: null, motm: false, minutesOverride: null, inLineup: false, ...extra });
+      tackles: 0, interceptions: 0, passes: 0, passesComplete: 0, progressivePasses: 0, finalThirdPasses: 0, boxPasses: 0, rating: null, motm: false, minutesOverride: null, inLineup: false, ...extra });
     return players.get(k);
   };
   for (const l of lineups) {
     const p = ensure(l.side, l.slug, l.name);
     Object.assign(p, { number: l.number, position: l.position, starter: l.starter, inLineup: true, rating: l.rating, motm: l.motm, minutesOverride: l.minutesOverride, on: l.starter ? 0 : null });
   }
-  const team = side => ({ xg: 0, goals: 0, shots: 0, shotsOnTarget: 0, corners: 0, fouls: 0, yellow: 0, red: 0, offsides: 0, saves: 0, freeKicks: 0, throwIns: 0, penalties: 0, keyPasses: 0, tackles: 0, interceptions: 0, side });
+  const team = side => ({ xg: 0, goals: 0, shots: 0, shotsOnTarget: 0, corners: 0, fouls: 0, yellow: 0, red: 0, offsides: 0, saves: 0, freeKicks: 0, throwIns: 0, penalties: 0, keyPasses: 0, tackles: 0, interceptions: 0, passes: 0, passesComplete: 0, progressivePasses: 0, finalThirdPasses: 0, boxPasses: 0, side });
   const T = { home: team('home'), away: team('away') };
   const other = s => (s === 'home' ? 'away' : 'home');
   const r3 = v => Math.round(v * 1000) / 1000;
@@ -425,6 +448,15 @@ export function derive(match, lineups, events) {
       case 'pass_key': t.keyPasses++; if (p) p.keyPasses++; break;
       case 'tackle': t.tackles++; if (p) p.tackles++; break;
       case 'interception': t.interceptions++; if (p) p.interceptions++; break;
+      case 'pass': {
+        const done = e.outcome !== 'incomplete', f = passFlags(e);
+        t.passes++; if (done) t.passesComplete++;
+        if (p) { p.passes++; if (done) p.passesComplete++; }
+        if (done && f.progressive) { t.progressivePasses++; if (p) p.progressivePasses++; }
+        if (done && f.finalThird) { t.finalThirdPasses++; if (p) p.finalThirdPasses++; }
+        if (done && f.box) { t.boxPasses++; if (p) p.boxPasses++; }
+        break;
+      }
       case 'substitution': {
         if (p && p.off === null) p.off = at(e);
         if (e.relatedSlug || e.relatedName) { const q = ensure(e.side, e.relatedSlug, e.relatedName); if (q.on === null) q.on = at(e); }
@@ -498,6 +530,8 @@ export async function getMatch(db, id) {
 // ── Publishing ──
 const TIMELINE = { goal: 'goal', yellow_card: 'yellow', red_card: 'red', substitution: 'sub' };
 export async function publish(db, user, id, { request = null } = {}) {
+  const pm = await getMatchRow(db, id);
+  if (pm?.is_practice) return { error: 'A practice match cannot be published. It is for training only.' };
   if (!user.canPublish) return { error: 'Only a senior statistician can publish. Ask a Super Admin to allow it on your account.' };
   const full = await getMatch(db, id);
   if (!full) return { error: 'Match not found.' };
@@ -572,6 +606,11 @@ export async function removeMatch(db, user, id, { request = null } = {}) {
   const m = await getMatchRow(db, id);
   if (!m) return { error: 'Match not found.' };
   if (m.status === 'published') return { error: 'A published match cannot be removed. Reopen it first.' };
+  if (m.is_practice) {
+    await db.batch([db.prepare(`DELETE FROM sx_events WHERE match_id = ?`).bind(id), db.prepare(`DELETE FROM sx_lineups WHERE match_id = ?`).bind(id), db.prepare(`DELETE FROM sx_matches WHERE id = ? AND is_practice = 1`).bind(id)]);
+    await sxLog(db, statsActor(user), 'remove_match', { itemType: 'match', itemId: id, itemTitle: titleOf(m), details: 'Practice match deleted', request });
+    return { ok: true };
+  }
   await db.prepare(`UPDATE sx_matches SET is_deleted = 1, updated_by = ?, updated_at = ? WHERE id = ?`).bind(byName(user), nowIso(), id).run();
   await sxLog(db, statsActor(user), 'remove_match', { itemType: 'match', itemId: id, itemTitle: titleOf(m), details: 'Removed from the lists (kept in the database)', request });
   return { ok: true };
@@ -596,7 +635,11 @@ export function playerTotals(snapshots) {
     const { ga } = resultOf(s.match, s.match.lobiHome);
     for (const p of s.derived.players) {
       if (p.side !== lobiSide || !p.slug) continue;
-      const t = by.get(p.slug) || { slug: p.slug, name: p.name, apps: 0, starts: 0, minutes: 0, goals: 0, assists: 0, shots: 0, shotsOnTarget: 0, yellow: 0, red: 0, saves: 0, cleanSheets: 0, motm: 0, matches: [] };
+      const t = by.get(p.slug) || { slug: p.slug, name: p.name, position: '', apps: 0, starts: 0, minutes: 0, goals: 0, assists: 0, shots: 0, shotsOnTarget: 0, yellow: 0, red: 0, saves: 0, cleanSheets: 0, motm: 0,
+        xg: 0, xa: 0, passes: 0, passesComplete: 0, progressivePasses: 0, keyPasses: 0, tackles: 0, interceptions: 0, matches: [] };
+      if (p.position) t.position = p.position;
+      t.xg = Math.round((t.xg + (p.xg || 0)) * 100) / 100; t.xa = Math.round((t.xa + (p.xa || 0)) * 100) / 100;
+      for (const k of ['passes', 'passesComplete', 'progressivePasses', 'keyPasses', 'tackles', 'interceptions']) t[k] += p[k] || 0;
       if (p.played) { t.apps++; if (p.starter) t.starts++; }
       t.minutes += p.minutes; t.goals += p.goals; t.assists += p.assists; t.shots += p.shots; t.shotsOnTarget += p.shotsOnTarget; t.yellow += p.yellow; t.red += p.red; t.saves += p.saves;
       if (p.motm) t.motm++;
@@ -633,7 +676,7 @@ export async function dashboard(db, season) {
   const snaps = await publishedMatches(db, season);
   const players = playerTotals(snaps), team = teamTotals(snaps);
   const top = (k) => players.filter(p => p[k] > 0).sort((a, b) => b[k] - a[k])[0] || null;
-  const open = (await db.prepare(`SELECT * FROM sx_matches WHERE is_deleted = 0 AND status <> 'published' ORDER BY match_date DESC LIMIT 20`).all()).results.map(matchView);
+  const open = (await db.prepare(`SELECT * FROM sx_matches WHERE is_deleted = 0 AND is_practice = 0 AND status <> 'published' ORDER BY match_date DESC LIMIT 20`).all()).results.map(matchView);
   return { season, team, topScorer: top('goals'), topAssister: top('assists'), recent: team.recent, open };
 }
 

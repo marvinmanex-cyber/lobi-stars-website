@@ -114,6 +114,14 @@ export async function ensureStatsCentreSchema(db) {
   // Added later (columns of existing tables): the finishing formations (BST Analysis Form, 27 Nov 2026).
   const cols = new Set((await db.prepare(`PRAGMA table_info(sx_matches)`).all()).results.map(r => r.name));
   for (const c of ['formation_home_finish', 'formation_away_finish']) if (!cols.has(c)) await db.prepare(`ALTER TABLE sx_matches ADD COLUMN ${c} TEXT`).run();
+  // Professional add-ons (27 Nov 2026): practice matches, the definitions version a match was recorded under,
+  // pass end points, and read-only coach accounts.
+  if (!cols.has('is_practice')) await db.prepare(`ALTER TABLE sx_matches ADD COLUMN is_practice INTEGER NOT NULL DEFAULT 0`).run();
+  if (!cols.has('definitions_version')) await db.prepare(`ALTER TABLE sx_matches ADD COLUMN definitions_version INTEGER`).run();
+  const evCols = new Set((await db.prepare(`PRAGMA table_info(sx_events)`).all()).results.map(r => r.name));
+  for (const c of ['end_x', 'end_y']) if (!evCols.has(c)) await db.prepare(`ALTER TABLE sx_events ADD COLUMN ${c} REAL`).run();
+  const uCols = new Set((await db.prepare(`PRAGMA table_info(sx_users)`).all()).results.map(r => r.name));
+  if (!uCols.has('role')) await db.prepare(`ALTER TABLE sx_users ADD COLUMN role TEXT NOT NULL DEFAULT 'statistician'`).run();
   ready = true;
 }
 
@@ -167,7 +175,7 @@ export function passwordProblem(p, loginId = '') {
   return null;
 }
 const userView = u => u && ({ id: u.id, loginId: u.login_id, fullName: u.full_name, mustChange: !!u.must_change_password, active: !!u.is_active,
-  canPublish: !!u.can_publish, locked: !!(u.locked_until && Date.parse(u.locked_until) > Date.now()), lockedUntil: u.locked_until,
+  canPublish: !!u.can_publish, role: u.role || 'statistician', locked: !!(u.locked_until && Date.parse(u.locked_until) > Date.now()), lockedUntil: u.locked_until,
   createdAt: u.created_at, createdBy: u.created_by, lastLogin: u.last_login_at });
 export async function listUsers(db) {
   await ensureStatsCentreSchema(db);
@@ -176,7 +184,9 @@ export async function listUsers(db) {
 const getUser = async (db, id) => { await ensureStatsCentreSchema(db); return db.prepare(`SELECT * FROM sx_users WHERE id = ?`).bind(id).first(); };
 const endSessions = (db, userId, why) => db.prepare(`UPDATE sx_sessions SET ended_at = ?, ended_why = ? WHERE user_id = ? AND ended_at IS NULL`).bind(nowIso(), why, userId).run();
 
-export async function createUser(env, admin, request, { loginId, fullName, password, canPublish }) {
+export async function createUser(env, admin, request, { loginId, fullName, password, canPublish, role }) {
+  const coach = role === 'coach';
+  if (coach) canPublish = false;
   const db = env.DB;
   await ensureStatsCentreSchema(db);
   loginId = String(loginId || '').trim(); fullName = oneLine(fullName, 80);
@@ -184,9 +194,9 @@ export async function createUser(env, admin, request, { loginId, fullName, passw
   if (bad) return { error: bad };
   if (await db.prepare(`SELECT id FROM sx_users WHERE login_key = ?`).bind(loginId.toLowerCase()).first()) return { error: 'That Login ID is already used.' };
   const id = newId('sxu'), at = nowIso();
-  await db.prepare(`INSERT INTO sx_users (id, login_id, login_key, full_name, password_hash, must_change_password, can_publish, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`)
-    .bind(id, loginId, loginId.toLowerCase(), fullName, await hashPassword(String(password)), canPublish ? 1 : 0, admin.email || admin.name, at, at).run();
-  await sxLog(db, adminActor(admin), 'create_user', { itemType: 'user', itemId: id, itemTitle: `${fullName} (${loginId})`, after: { loginId, fullName, canPublish: !!canPublish }, request });
+  await db.prepare(`INSERT INTO sx_users (id, login_id, login_key, full_name, password_hash, must_change_password, can_publish, role, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`)
+    .bind(id, loginId, loginId.toLowerCase(), fullName, await hashPassword(String(password)), canPublish ? 1 : 0, coach ? 'coach' : 'statistician', admin.email || admin.name, at, at).run();
+  await sxLog(db, adminActor(admin), 'create_user', { itemType: 'user', itemId: id, itemTitle: `${fullName} (${loginId})`, after: { loginId, fullName, canPublish: !!canPublish, role: coach ? 'coach' : 'statistician' }, request });
   return { ok: true, id };
 }
 
@@ -209,7 +219,13 @@ export async function updateUser(env, admin, request, id, { action, fullName, pa
     await db.prepare(`UPDATE sx_users SET is_active = ?, failed_attempts = 0, locked_until = NULL, updated_at = ? WHERE id = ?`).bind(action === 'enable' ? 1 : 0, at, id).run();
     if (action === 'disable') await endSessions(db, id, 'account disabled');
     await log(action === 'enable' ? 'enable_user' : 'disable_user');
+  } else if (action === 'role_coach' || action === 'role_statistician') {
+    const role = action === 'role_coach' ? 'coach' : 'statistician';
+    await db.prepare(`UPDATE sx_users SET role = ?, can_publish = CASE WHEN ? = 'coach' THEN 0 ELSE can_publish END, updated_at = ? WHERE id = ?`).bind(role, role, at, id).run();
+    await endSessions(db, id, 'account type changed');
+    await log('change_role', { before: { role: u.role || 'statistician' }, after: { role } });
   } else if (action === 'publish_on' || action === 'publish_off') {
+    if (action === 'publish_on' && u.role === 'coach') return { error: 'A coach account views only; it cannot publish.' };
     await db.prepare(`UPDATE sx_users SET can_publish = ?, updated_at = ? WHERE id = ?`).bind(action === 'publish_on' ? 1 : 0, at, id).run();
     await log(action === 'publish_on' ? 'allow_publish' : 'stop_publish', { before: { canPublish: !!u.can_publish }, after: { canPublish: action === 'publish_on' } });
   } else if (action === 'unlock') {
@@ -291,7 +307,7 @@ export async function getStatsSession(request, env, { touch = true } = {}) {
   if (!token || !/^[\w-]{20,80}$/.test(token)) return null;
   const db = env.DB;
   await ensureStatsCentreSchema(db);
-  const s = await db.prepare(`SELECT s.*, u.login_id, u.full_name, u.is_active, u.must_change_password, u.can_publish FROM sx_sessions s LEFT JOIN sx_users u ON u.id = s.user_id WHERE s.id = ? AND s.ended_at IS NULL`)
+  const s = await db.prepare(`SELECT s.*, u.login_id, u.full_name, u.is_active, u.must_change_password, u.can_publish, u.role FROM sx_sessions s LEFT JOIN sx_users u ON u.id = s.user_id WHERE s.id = ? AND s.ended_at IS NULL`)
     .bind(await sha256Hex(token)).first();
   if (!s) return null;
   const now = Date.now();
@@ -310,7 +326,7 @@ export async function getStatsSession(request, env, { touch = true } = {}) {
   if (now - Date.parse(s.last_seen) > IDLE_MS) { await end('no activity for 4 hours'); return null; }
   if (now - Date.parse(s.created_at) > MAX_MS) { await end('14 hours'); return null; }
   if (touch && now - Date.parse(s.last_seen) > 30e3) await db.prepare(`UPDATE sx_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
-  return { id: s.id, csrf: s.csrf, user: { id: s.user_id, loginId: s.login_id, fullName: s.full_name, mustChange: !!s.must_change_password, canPublish: !!s.can_publish } };
+  return { id: s.id, csrf: s.csrf, user: { id: s.user_id, loginId: s.login_id, fullName: s.full_name, mustChange: !!s.must_change_password, canPublish: !!s.can_publish && s.role !== 'coach', role: s.role || 'statistician', readOnly: s.role === 'coach' } };
 }
 export async function signOut(env, request, session) {
   await env.DB.prepare(`UPDATE sx_sessions SET ended_at = ?, ended_why = 'signed out' WHERE id = ? AND ended_at IS NULL`).bind(nowIso(), session.id).run();

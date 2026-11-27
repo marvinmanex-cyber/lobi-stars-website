@@ -251,7 +251,7 @@ Code: `functions/api/_lib/statsRetention.js` (policies, nightly job, handlers, s
 rotation `backupsToDelete` in `autoBackup.js`. Page: `#/retention` and `#/inventory` (`src/scripts/statsCentre/retention.ts`).
 Tests: `tests/stats-retention.unit.test.mjs`.
 
-Tables: `sx_retention_policies` (16 seeded defaults: data_key, label, retention_days or NULL = forever, action keep |
+Tables: `sx_retention_policies` (19 seeded defaults: data_key, label, retention_days or NULL = forever, action keep |
 archive | anonymise | purge), `sx_retention_runs` (each run: mode, counts, errors), `sx_seasons` (active | archived,
 off-site copy date), `sx_archive_exports` (file path, SHA-256 checksum, size, verified), `sx_archive_files` (only used
 when the backup bucket is missing, as a fallback), `sx_player_privacy` (youth, youth_public, left_at, anonymised_at,
@@ -275,3 +275,39 @@ full_anon). New columns: `archived_at` on BST analyses, scouting notes and repor
 `hiddenYouth`. Exports include notes only with `?notes=1`.
 
 This is a technical safeguard, not legal advice; the club should confirm the periods with its data-protection adviser.
+
+## Professional add-ons (built 27 Nov 2026)
+
+Code:
+- `functions/api/_lib/statsPro.js`
+- core changes in `statsCentreData.js` (the `pass` event with `end_x`/`end_y`, `passFlags`, pass totals in `derive` and `playerTotals`, practice matches, `definitions_version`) and `statsCentre.js` (`sx_users.role`: statistician | coach; `readOnly` sessions)
+- UI `src/scripts/statsCentre/pro.ts`
+- public `/stats/hub/` (`src/pages/stats/hub.astro` with `/api/stats/hub.json`) and `/staff/statistics-center/wellness/<token>/`
+
+Tests: `tests/stats-pro.unit.test.mjs`.
+
+Tables:
+- `sx_availability` (status, reason, dates; `cleared_at` when available again)
+- `sx_wellness_links` (hashed token, one active per player)
+- `sx_wellness` (UNIQUE player + date + session; load = RPE × minutes)
+- `sx_player_targets`
+- `sx_milestones` (key = what + who + threshold, so each is found once)
+- `sx_definition_versions` and `sx_definitions` (version 1 seeded; matches get the current version when created)
+
+**Formulas:**
+- **Expected points:** exact win/draw/loss chances from each shot's xG (two Poisson-binomial distributions); xPts = 3·P(win) + P(draw).
+- **Game state:** minutes, goals and xG split by the score at the time.
+- **Field tilt:** our share of positioned actions in the attacking third (x ≥ 66.7), or of final-third passes when there are no positions.
+- **PPDA:** opponent passes with x < 60 ÷ our tackles, interceptions and fouls with x ≥ 40. Without positions, all of them, marked approximate.
+- **Goals prevented:** xG of the on-target shots faced minus goals conceded (own goals excluded).
+- **Progressive pass:** ends at least 25% closer to the goal and in the opponents' half (or gains 30 m), or enters the box.
+- **Load ratio:** last 7 days ÷ (last 28 days ÷ 4); flagged when over 1.5 or under 0.8.
+- **Wellness:** the average of the five 1–5 answers; flagged at 2.5 or below.
+- **Suspensions:** a red card, or every Nth yellow (setting `yellow_ban`, default 5), in the latest published match means suspended for the next match.
+
+**Rules:**
+- Coach sessions are refused on every POST except sign-out, password, line-up and BST presence (HTTP 403).
+- Practice matches (`is_practice = 1`, season "Practice") cannot be published. They are left out of seasons, analytics and opponents, are deleted for good when removed, and are purged after 30 days.
+- Retention adds three policies: `practice_matches` (30), `wellness` (730) and `availability` (1095 after clearing). Anonymising a player also clears their wellness and availability notes.
+- Milestones are worked out again after each publish.
+- The public hub uses `redactSnapshot` and `hiddenYouth`, like the other public output.

@@ -33,6 +33,7 @@ export async function onRequestGet({ request, env }) {
         + `</ol><div class="st-share"><a href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Share on WhatsApp</a><button type="button" data-share-text="${esc(text)}">Share</button></div></section>`;
     }).join('') + '</div>';
   }
+  if (data.played) html += `<p style="margin:28px 0 0"><a class="btn-o" href="/stats/hub/">Stats hub: records, all-time leaders, head-to-head and player comparison →</a></p>`;
   // Match by match: matches published in the Statistics Center, each with its own stats page.
   try {
     const list = (await publicSlugs(env.DB, 40)).filter(r => !data.season || seasonOf(r.date, startMonth) === data.season);
