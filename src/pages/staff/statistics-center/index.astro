@@ -151,6 +151,21 @@
   .sx-nav a { color: rgba(255,255,255,.8); text-decoration: none; padding: 12px 12px; font: 700 14px 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; border-bottom: 3px solid transparent; }
   .sx-nav a[aria-current=page] { color: #fff; border-color: var(--gold); }
   .sx-main { max-width: 1180px; margin: 0 auto; padding: 16px; outline: none; }
+  /* Match Setup line-up: the whole squad as cards (like the Media Centre's Matchday Desk). */
+  .sx-count { margin: 0; font: 700 18px 'Barlow Condensed', sans-serif; color: var(--warn); }
+  .sx-note { background: var(--navy-l); border-radius: 10px; padding: 10px 12px; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .sx-pcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+  fieldset { min-width: 0; }
+  .sx-pcards { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)) !important; }
+  .sx-pcard { display: grid; grid-template-columns: 48px 1fr; gap: 8px 10px; align-items: center; padding: 10px; border: 2px solid var(--line); border-radius: 12px; background: #fff; }
+  .sx-pcard select { grid-column: 1 / -1; width: 100% !important; }
+  .sx-pcard[hidden] { display: none; }
+  .sx-pcard.r-s { border-color: var(--ok); background: #F0FAF4; } .sx-pcard.r-b { border-color: var(--navy); background: var(--navy-l); }
+  .sx-pcard img, .sx-pini { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: var(--navy-l); }
+  .sx-pini { display: grid; place-items: center; font: 700 16px 'Barlow Condensed', sans-serif; color: var(--navy); }
+  .sx-pinfo { display: grid; min-width: 0; line-height: 1.25; } .sx-pinfo b { font-weight: 600; overflow-wrap: anywhere; } .sx-pinfo small { color: var(--muted); }
+  .sx-pinfo input[data-num] { width: 46px; min-height: 30px; padding: 2px 4px; font-size: 14px; display: inline-block; }
+  .sx-pcard select { width: auto; min-height: 44px; }
   /* The Back button on every page except the dashboard. */
   .sx-backbar { max-width: 1180px; margin: 0 auto; padding: 12px 16px 0; }
   .sx-backbar + .sx-main { padding-top: 10px; }

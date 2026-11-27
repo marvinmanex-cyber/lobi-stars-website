@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Statistics Center: line-up picker like the Media Centre's, and public player figures
+
+- **Match Setup line-up** (owner's request): the whole squad from the Squad page as cards (photo, shirt number, name, position) with **Starting / Substitute / —** for each player, like the Media Centre's Matchday Desk; a live count "Starting XI: n of 11 · Substitutes: n", warnings for more than 11 starters, more than 14 substitutes or a shirt number used twice; position filters (GK, DF, MF, FW); the **starting and finishing formations** on the same card (also for the opponent).
+- **Filled in from the Media Centre:** when the media team has prepared the line-up for the same fixture on the Matchday Desk (or it is already on the match page), the picker is filled in with it (and the formation); with a line-up already saved here, a "Use that line-up" button offers it. Read only: nothing changes in the Media Centre.
+- **Player pages:** only public figures from published matches (appearances, starts, minutes, goals, assists, cards, clean sheets for goalkeepers, Man of the Match, match by match with links). Coach ratings, notes, analysis data and staff names are never shown (checked by a test).
+- **Staff:** nothing to do.
+
+---
+
 ## 2026-11-27: Statistics Center: Back button on every page
 
 - A **← Back** button under the menu on every Statistics Center page except the dashboard (owner's request). It returns to the page you came from, or to the parent page when a link was opened directly (match screens → Matches; an analysis → all analyses).

@@ -27,8 +27,10 @@ Nothing to install: the tables are created automatically on first use.
 ## The flow
 
 1. **New match**: pick the fixture (teams, date, venue, competition are filled in) or type a friendly.
-2. **Setup**: match details and line-ups. Lobi Stars players come from the squad list (real player pages);
-   opponents are typed by name and number.
+2. **Setup**: match details, then the line-up: the whole squad (the Squad page list) as cards with Starting /
+   Substitute / —, a live "Starting XI: n of 11" count, warnings (12+ starters, a shirt number twice) and the
+   starting and finishing formations. When the Media Centre's Matchday Desk already has a line-up for the same fixture
+   (or the match page has one), it is filled in (read only from there). Opponents are typed by name and number.
 3. **Live entry** (phone or tablet): Kick-off, then one tap per action: Goal, Shot, Corner, Foul, Yellow, Red,
    Offside, Substitution, Injury, Save. Each asks team → player → details → minute (filled from the clock).
    Undo last is one tap. **Works without a connection**: taps are kept on the device and sent when the
@@ -151,7 +153,6 @@ Tables: `sx_bst_analyses` (one per match), `sx_bst_cells`, `sx_bst_presence`; `s
 
 ## Coming next (queued by the owner)
 
-1. Match Setup line-up picker like the Media Centre's (whole squad as cards, Starting / Substitute, formation) and public player-page figures.
-2. Opponent line-up registry and BST improvements.
+1. Opponent line-up registry and BST improvements.
 3. Phase 2: pitch maps, xG model, video clips, set pieces, player comparison, season analytics, scouting reports,
    training tags, scheduled reports.

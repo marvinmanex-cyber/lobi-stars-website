@@ -219,8 +219,6 @@ async function setupView(id: string) {
       ${f('away', 'Away team', `<input name="NAME" maxlength="80" value="${v(m.away)}" ${m.eventId ? 'readonly' : ''}>`)}
       ${f('referee', 'Referee', `<input name="NAME" maxlength="80" value="${v(m.referee)}">`)}
       ${f('assistants', 'Assistant referees / 4th official', `<input name="NAME" maxlength="160" value="${v(m.assistants)}">`)}
-      ${f('formationHome', `Formation: ${esc(m.home)}`, `<input name="NAME" placeholder="4-4-2" pattern="[1-5](-[1-5]){1,4}" value="${v(m.formationHome)}">`)}
-      ${f('formationAway', `Formation: ${esc(m.away)}`, `<input name="NAME" placeholder="4-3-3" pattern="[1-5](-[1-5]){1,4}" value="${v(m.formationAway)}">`)}
       ${f('weather', 'Weather', `<input name="NAME" maxlength="60" value="${v(m.weather)}" placeholder="Sunny, 31°C">`)}
       ${f('pitch', 'Pitch condition', `<input name="NAME" maxlength="60" value="${v(m.pitch)}" placeholder="Good, dry">`)}
       ${f('attendance', 'Attendance', `<input name="NAME" type="number" min="0" max="100000" value="${v(m.attendance)}">`)}
@@ -228,21 +226,71 @@ async function setupView(id: string) {
     </div><p><button class="sx-btn sx-btn--p" type="submit">Save details</button></p></fieldset></form>
 
     <form class="sx-card" id="lu"><h3>Line-ups</h3><fieldset ${locked ? 'disabled' : ''} style="border:0;padding:0;margin:0">
-      <p class="sx-small">Lobi Stars: choose Start or Bench for each player in the matchday squad (11 starters). Numbers come from the squad list and can be changed for this match.</p>
-      <div class="sx-scroll"><table class="sx-t"><thead><tr><th>${esc(teamName(m, ls))}</th><th>Role</th><th class="n">No.</th><th>Position</th></tr></thead><tbody>
-      ${roster.map((p: any) => { const l: any = inLu.get(p.slug); const role = l ? (l.starter ? 's' : 'b') : ''; return `<tr data-slug="${esc(p.slug)}"><td>${esc(p.name)}</td><td><select data-role aria-label="Role for ${esc(p.name)}"><option value="">Not in squad</option><option value="s" ${role === 's' ? 'selected' : ''}>Start</option><option value="b" ${role === 'b' ? 'selected' : ''}>Bench</option></select></td>
-        <td class="n"><input data-num type="number" min="0" max="99" style="width:80px" value="${esc(l?.number ?? p.number ?? '')}" aria-label="Shirt number"></td><td><input data-pos maxlength="8" style="width:90px" value="${esc(l?.position || p.position || '')}" aria-label="Position"></td></tr>`; }).join('')}
-      </tbody></table></div>
-      <p class="sx-small"><b id="nStart">0</b> starters, <b id="nBench">0</b> on the bench.</p>
-      <h3 style="margin-top:18px">${esc(teamName(m, os))}</h3>
+      <div id="mcNote"></div>
+      <div class="sx-row" style="justify-content:space-between"><h3 style="margin:0">${esc(teamName(m, ls))}</h3>
+        <p class="sx-count" aria-live="polite">Starting XI: <b id="nStart">0</b> of 11 · Substitutes: <b id="nBench">0</b></p></div>
+      <p class="sx-err" id="luWarn" hidden></p>
+      <div class="sx-form" style="margin:10px 0">${formationPick(ls === 'home' ? 'formationHome' : 'formationAway', 'Starting formation', ls === 'home' ? m.formationHome : m.formationAway)}${formationPick(ls === 'home' ? 'formationHomeFinish' : 'formationAwayFinish', 'Finishing formation', ls === 'home' ? m.formationHomeFinish : m.formationAwayFinish)}</div>
+      <div class="sx-row" role="group" aria-label="Show positions" style="margin-bottom:10px">${['All', 'GK', 'DF', 'MF', 'FW'].map((p, i) => `<button type="button" class="sx-btn ${i ? '' : 'sx-btn--p'}" data-posf="${p}">${p === 'All' ? 'All players' : p}</button>`).join('')}</div>
+      <p class="sx-small">The whole squad from the Squad page. Choose <b>Starting</b> (11) or <b>Substitute</b> for each player in the matchday squad; leave the rest on "—". Shirt numbers can be changed for this match.</p>
+      <div class="sx-pcards">${roster.map((p: any) => { const l: any = inLu.get(p.slug); const role = l ? (l.starter ? 's' : 'b') : ''; return `<div class="sx-pcard${role ? ` r-${role}` : ''}" data-slug="${esc(p.slug)}" data-pos="${posGroup(p.position)}" data-ini="${esc(initials(p.name))}">
+        ${p.photo ? `<img src="${esc(p.photo)}" alt="" loading="lazy" width="48" height="48">` : `<span class="sx-pini" aria-hidden="true">${esc(initials(p.name))}</span>`}
+        <span class="sx-pinfo"><b>#<input data-num type="number" min="0" max="99" value="${esc(l?.number ?? p.number ?? '')}" aria-label="Shirt number for ${esc(p.name)}"> ${esc(p.name)}</b><small>${esc(l?.position || p.position || '')}</small></span>
+        <select data-role aria-label="${esc(p.name)}: starting, substitute or not in the squad"><option value="">—</option><option value="s" ${role === 's' ? 'selected' : ''}>Starting</option><option value="b" ${role === 'b' ? 'selected' : ''}>Substitute</option></select>
+        <input type="hidden" data-ppos value="${esc(l?.position || p.position || '')}"></div>`; }).join('') || '<p class="sx-err">The squad list is empty: players come from the IT Center (Squad page).</p>'}</div>
+
+      <h3 style="margin-top:22px">${esc(teamName(m, os))}</h3>
+      <div class="sx-form" style="margin:10px 0">${formationPick(os === 'home' ? 'formationHome' : 'formationAway', 'Starting formation', os === 'home' ? m.formationHome : m.formationAway)}${formationPick(os === 'home' ? 'formationHomeFinish' : 'formationAwayFinish', 'Finishing formation', os === 'home' ? m.formationHomeFinish : m.formationAwayFinish)}</div>
       <p class="sx-small">Type the opponents' players (name and number). Optional, but needed to record who did what for them.</p>
       <div class="sx-scroll"><table class="sx-t"><thead><tr><th>Name</th><th class="n">No.</th><th>Position</th><th>Starter</th><th></th></tr></thead><tbody id="oppRows">
       ${(opp.length ? opp : Array.from({ length: 11 }, () => ({ starter: true }))).map(oppRow).join('')}
       </tbody></table></div>
-      <p class="sx-row"><button class="sx-btn" type="button" id="addOpp">+ Add a player</button><button class="sx-btn sx-btn--p" type="submit">Save line-ups</button></p>
+      <p class="sx-row"><button class="sx-btn" type="button" id="addOpp">+ Add a player</button><button class="sx-btn sx-btn--p" type="submit">Save line-ups and formations</button></p>
     </fieldset></form>`;
-  const count = () => { let s = 0, b = 0; view().querySelectorAll('[data-role]').forEach((x: any) => { if (x.value === 's') s++; if (x.value === 'b') b++; }); $('nStart').textContent = s; $('nBench').textContent = b; $('nStart').style.color = s === 11 ? '' : 'var(--red)'; };
-  count(); $('lu').addEventListener('change', count);
+  const count = () => {
+    let st = 0, bn = 0; const nums = new Map<string, number>();
+    view().querySelectorAll('.sx-pcard').forEach((c: any) => {
+      const r = c.querySelector('[data-role]').value; c.classList.toggle('r-s', r === 's'); c.classList.toggle('r-b', r === 'b');
+      if (r === 's') st++; if (r === 'b') bn++;
+      const n = c.querySelector('[data-num]').value; if (r && n !== '') nums.set(n, (nums.get(n) || 0) + 1);
+    });
+    $('nStart').textContent = st; $('nBench').textContent = bn; $('nStart').style.color = st === 11 ? 'var(--ok)' : 'var(--red)';
+    const dup = [...nums].filter(([, k]) => k > 1).map(([n]) => n);
+    const warn = [st > 11 ? `${st} starters: only 11 can start.` : '', bn > 14 ? `${bn} substitutes: the league allows at most 14 on the bench.` : '', dup.length ? `Shirt number${dup.length > 1 ? 's' : ''} ${dup.join(', ')} used twice.` : ''].filter(Boolean);
+    $('luWarn').hidden = !warn.length; $('luWarn').textContent = warn.join(' ');
+  };
+  // A photo that cannot load shows the player's initials instead of a broken image.
+  const noPhoto = (img: any) => { const sp = document.createElement('span'); sp.className = 'sx-pini'; sp.setAttribute('aria-hidden', 'true'); sp.textContent = img.closest('.sx-pcard').dataset.ini || ''; img.replaceWith(sp); };
+  view().querySelectorAll('.sx-pcard img').forEach((img: any) => { if (img.complete && !img.naturalWidth) noPhoto(img); else img.addEventListener('error', () => noPhoto(img), { once: true }); });
+  count(); $('lu').addEventListener('change', count); $('lu').addEventListener('input', (e: any) => { if (e.target.matches('[data-num]')) count(); });
+  $('lu').addEventListener('click', (e: any) => {
+    const b = e.target.closest('[data-posf]'); if (!b) return;
+    view().querySelectorAll('[data-posf]').forEach((x: any) => x.classList.toggle('sx-btn--p', x === b));
+    view().querySelectorAll('.sx-pcard').forEach((c: any) => { c.hidden = b.dataset.posf !== 'All' && c.dataset.pos !== b.dataset.posf; });
+  });
+  $('lu').addEventListener('change', (e: any) => { const t = e.target; if (t.matches('[data-fsel]')) { const i = view().querySelector(`[data-fcus="${t.dataset.fsel}"]`) as HTMLInputElement; i.hidden = t.value !== 'custom'; if (!i.hidden) i.focus(); } });
+  // Filled in from the Media Centre's line-up for this fixture (or the one on the match page), when nothing is saved here yet.
+  if (m.eventId && !locked) api(`match/media-lineup?id=${encodeURIComponent(id)}`).then((r: any) => {
+    const L = r.lineup; if (!L) return;
+    const apply = () => {
+      const bySlug = new Map(roster.map((p: any) => [p.slug, p])), byName = new Map(roster.map((p: any) => [String(p.name).toLowerCase(), p]));
+      view().querySelectorAll('.sx-pcard [data-role]').forEach((x: any) => { x.value = ''; });
+      for (const [list, role] of [[L.starting, 's'], [L.subs, 'b']] as [any[], string][]) for (const p of list) {
+        const sq: any = (p.slug && bySlug.get(p.slug)) || byName.get(String(p.name).toLowerCase()); if (!sq) continue;
+        const card = view().querySelector(`.sx-pcard[data-slug="${CSS.escape(sq.slug)}"]`); if (!card) continue;
+        (card.querySelector('[data-role]') as HTMLSelectElement).value = role;
+        if (p.number !== null && p.number !== undefined) (card.querySelector('[data-num]') as HTMLInputElement).value = String(p.number);
+      }
+      if (L.formation && /^[1-5](-[1-5]){1,4}$/.test(L.formation)) { const k = ls === 'home' ? 'formationHome' : 'formationAway'; const sel = view().querySelector(`[data-fsel="${k}"]`) as HTMLSelectElement; if (sel && !sel.value) { if ([...sel.options].some(o => o.value === L.formation)) sel.value = L.formation; else { sel.value = 'custom'; const i = view().querySelector(`[data-fcus="${k}"]`) as HTMLInputElement; i.hidden = false; i.value = L.formation; } } }
+      count();
+    };
+    const from = L.source === 'media' ? `the Media Centre line-up (${L.status === 'published' ? 'published' : 'draft'}${L.by ? `, ${L.by}` : ''})` : 'the line-up on the match page';
+    const saved = d.lineups.some((l: any) => l.side === ls);
+    $('mcNote').innerHTML = saved ? `<p class="sx-note">A line-up is also set in ${esc(from)}. <button type="button" class="sx-btn" id="mcCopy">Use that line-up</button></p>`
+      : `<p class="sx-note">Filled in from ${esc(from)}. Check it, then press <b>Save line-ups and formations</b>.</p>`;
+    if (saved) $('mcCopy').addEventListener('click', () => { apply(); $('mcNote').innerHTML = '<p class="sx-note">Copied. Check it, then save.</p>'; });
+    else apply();
+  }).catch(() => { /* no Media Centre line-up */ });
   $('addOpp').addEventListener('click', () => $('oppRows').insertAdjacentHTML('beforeend', oppRow({ starter: false })));
   $('oppRows').addEventListener('click', (e: any) => { if (e.target.closest('[data-del]')) e.target.closest('tr').remove(); });
   $('setup').addEventListener('submit', async (e: any) => {
@@ -255,11 +303,16 @@ async function setupView(id: string) {
     e.preventDefault();
     const keep = new Map(d.lineups.map((l: any) => [l.slug || `${l.side}:${l.name}`, l]));
     const lobi: any[] = [];
-    view().querySelectorAll('tr[data-slug]').forEach((tr: any) => {
-      const role = tr.querySelector('[data-role]').value; if (!role) return;
-      const old: any = keep.get(tr.dataset.slug) || {};
-      lobi.push({ slug: tr.dataset.slug, number: tr.querySelector('[data-num]').value, position: tr.querySelector('[data-pos]').value, starter: role === 's', rating: old.rating, motm: old.motm, minutesOverride: old.minutesOverride });
+    view().querySelectorAll('.sx-pcard').forEach((c: any) => {
+      const role = c.querySelector('[data-role]').value; if (!role) return;
+      const old: any = keep.get(c.dataset.slug) || {};
+      lobi.push({ slug: c.dataset.slug, number: c.querySelector('[data-num]').value, position: c.querySelector('[data-ppos]').value, starter: role === 's', rating: old.rating, motm: old.motm, minutesOverride: old.minutesOverride });
     });
+    if (lobi.filter(p => p.starter).length > 11) { toast('Only 11 players can start.', false); return; }
+    const forms: any = {};
+    let badF = '';
+    view().querySelectorAll('[data-fsel]').forEach((x: any) => { const k = x.dataset.fsel; const val = x.value === 'custom' ? (view().querySelector(`[data-fcus="${k}"]`) as HTMLInputElement).value.trim() : x.value; if (val && !/^[1-5](-[1-5]){1,4}$/.test(val)) badF = val; forms[k] = val; });
+    if (badF) { toast(`Write the formation like 4-4-2 (not "${badF}").`, false); return; }
     lobi.sort((a, b) => Number(b.starter) - Number(a.starter));
     const others: any[] = [];
     $('oppRows').querySelectorAll('tr').forEach((tr: any) => {
@@ -267,8 +320,17 @@ async function setupView(id: string) {
       const old: any = keep.get(`${os}:${name}`) || {};
       others.push({ name, number: tr.querySelector('[data-onum]').value, position: tr.querySelector('[data-opos]').value, starter: tr.querySelector('[data-ostart]').checked, rating: old.rating, motm: old.motm, minutesOverride: old.minutesOverride });
     });
-    try { await api('match/lineups', { id, [ls]: lobi, [os]: others }); toast('Line-ups saved.'); setupView(id); } catch (x: any) { toast(x.message, false); }
+    try { await api('match/lineups', { id, [ls]: lobi, [os]: others }); await api('match/setup', { id, ...forms }); toast('Line-ups and formations saved.'); setupView(id); } catch (x: any) { toast(x.message, false); }
   });
+}
+/** GK, DF, MF or FW, whichever way the squad list writes the position (DEF, MID, FWD, ST…). */
+const posGroup = (p: string) => { const x = String(p || '').toUpperCase(); return /^G/.test(x) ? 'GK' : /^(D|CB|LB|RB|WB)/.test(x) ? 'DF' : /^(M|CM|DM|AM|LM|RM)/.test(x) ? 'MF' : /^(F|ST|CF|W|LW|RW)/.test(x) ? 'FW' : ''; };
+const initials = (n: string) => String(n || '').trim().split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join('').slice(0, 2);
+const FORMATIONS = ['4-3-3', '4-4-2', '4-2-3-1', '3-5-2', '5-3-2', '4-1-4-1', '3-4-3', '4-5-1'];
+function formationPick(key: string, label: string, cur: string) {
+  const custom = !!cur && !FORMATIONS.includes(cur);
+  return `<label>${label}<select data-fsel="${key}"><option value="">—</option>${FORMATIONS.map(f => `<option ${f === cur ? 'selected' : ''}>${f}</option>`).join('')}<option value="custom" ${custom ? 'selected' : ''}>Custom…</option></select>
+    <input data-fcus="${key}" placeholder="e.g. 4-1-3-2" value="${esc(custom ? cur : '')}" ${custom ? '' : 'hidden'} aria-label="${label}: custom"></label>`;
 }
 function oppRow(l: any) {
   return `<tr><td><input data-oname maxlength="80" value="${esc(l.name || '')}" aria-label="Player name"></td><td class="n"><input data-onum type="number" min="0" max="99" style="width:80px" value="${esc(l.number ?? '')}" aria-label="Shirt number"></td>

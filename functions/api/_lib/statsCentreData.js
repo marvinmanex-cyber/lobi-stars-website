@@ -664,3 +664,29 @@ export async function playerMatchLog(db, slugs, season) {
     .map(m => ({ date: m.date, opponent: m.opponent, home: m.home, score: m.score, minutes: m.minutes, goals: m.goals, assists: m.assists, yellow: m.yellow, red: m.red, started: m.started, url: links.has(m.id) ? `/stats/matches/${links.get(m.id)}/` : null }))
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
+
+/**
+ * The line-up the Media Centre's Matchday Desk prepared for the same fixture (newest first: a published one, then a
+ * draft), or the line-up already on the match page, so the Statistics Center can fill its picker without retyping.
+ * Read only: nothing is written to the Media Centre. Returns null when there is none.
+ */
+export async function mediaLineup(db, matchId) {
+  const m = await getMatchRow(db, matchId);
+  if (!m || !m.event_id) return null;
+  const pick = (list, by) => (Array.isArray(list) ? list : []).map(p => ({ slug: p?.slug || null, name: p?.name || '', number: p?.number ?? null, position: p?.position || '' })).filter(p => p.slug || p.name);
+  try {
+    const r = await db.prepare(`SELECT status, data_json, live_json, updated_at, updated_by_name FROM mc_items WHERE kind = 'lineup' AND ref = ? AND status NOT IN ('rejected')
+      ORDER BY CASE status WHEN 'published' THEN 0 WHEN 'scheduled' THEN 1 WHEN 'submitted' THEN 2 ELSE 3 END, updated_at DESC LIMIT 1`).bind(m.event_id).first();
+    if (r) {
+      const v = parse(r.status === 'published' && r.live_json ? r.live_json : r.data_json, {});
+      const out = { source: 'media', status: r.status, by: r.updated_by_name || '', at: r.updated_at, formation: v.formation || '', starting: pick(v.starting), subs: pick(v.subs) };
+      if (out.starting.length || out.subs.length) return out;
+    }
+  } catch { /* no Media Centre tables yet */ }
+  try {
+    const c = await db.prepare(`SELECT squad_json, updated_at FROM match_centre WHERE event_id = ?`).bind(m.event_id).first();
+    const sq = parse(c?.squad_json, null);
+    if (sq && (sq.starting?.length || sq.bench?.length)) return { source: 'match', status: 'published', by: '', at: c.updated_at, formation: '', starting: pick(sq.starting), subs: pick(sq.bench) };
+  } catch { /* none */ }
+  return null;
+}

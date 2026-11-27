@@ -12,7 +12,7 @@
 import { signIn, getStatsSession, signOut, changePassword, csrfProblem, clearStatsCookie, json, IDLE_MS, setSxSetting, activityList, oneLine, sxLog, statsActor } from '../_lib/statsCentre.js';
 import {
   loadRoster, siteSettings, startMonthOf, listFixtures, listMatches, seasons, createMatch, getMatch, saveSetup, saveLineups, applyEvents, setClock, setStatus,
-  publish, reopen, removeMatch, dashboard, publishedMatches, playerTotals, teamTotals, eventsCsv, matchesCsv, settingsView,
+  publish, reopen, removeMatch, mediaLineup, dashboard, publishedMatches, playerTotals, teamTotals, eventsCsv, matchesCsv, settingsView,
   EVENT_TYPES, LIVE_BUTTONS, PERIODS, OUTCOMES, BODY_PARTS, DETAIL_TYPES, STATUSES,
 } from '../_lib/statsCentreData.js';
 import { seasonOf } from '../_lib/stats.js';
@@ -64,6 +64,7 @@ export async function onRequest({ request, env, params }) {
       case 'GET matches': return json({ matches: await listMatches(db, { season: q.get('season') || '', status: q.get('status') || '', competition: q.get('competition') || '' }) });
       case 'POST matches': { const r = await createMatch(db, s.user, b, opts); return r.error ? json(r, r.id ? 409 : 400) : json(r); }
       case 'GET match': { const m = await getMatch(db, q.get('id')); return m ? json(m) : json({ error: 'Match not found.' }, 404); }
+      case 'GET match/media-lineup': return json({ lineup: await mediaLineup(db, q.get('id')) });
       case 'POST match/setup': return out(await saveSetup(db, s.user, b.id, b, opts));
       case 'POST match/lineups': return out(await saveLineups(db, s.user, b.id, b, await loadRoster(env, request.url), opts));
       case 'POST match/events': {

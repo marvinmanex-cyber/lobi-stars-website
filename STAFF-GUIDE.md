@@ -5364,8 +5364,10 @@ itself with their own Super Admin email, password and code, and can do everythin
 
 **On match day (statistician):**
 1. **+ New match** › pick the fixture (or type a friendly).
-2. **Setup** › check the details, choose Start / Bench for the Lobi Stars squad (11 starters), type the
-   opponents' names and numbers if you have them. Save.
+2. **Setup** › check the details. In **Line-ups**, every squad player has a card: choose **Starting** (11) or
+   **Substitute** (the count shows "Starting XI: n of 11"); pick the starting and finishing formations on the same
+   card. If the media team already prepared the line-up in the Media Centre, it is filled in for you: check it.
+   Type the opponents' names and numbers if you have them. **Save line-ups and formations**.
 3. **Live entry** › press **Kick-off**. For each action tap the big button, then the team, the player, the
    details and Save (the minute comes from the clock; change it if needed). **Undo last** removes the last tap.
    Half-time, 2nd half and Full time are on the clock bar. No signal? Keep tapping: the taps are kept on the
