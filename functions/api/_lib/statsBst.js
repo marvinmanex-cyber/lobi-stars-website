@@ -199,7 +199,9 @@ export async function getAnalysis(db, id, user = null) {
   const analysis = view(a);
   const grid = bstGrid(full.match, full.events, cells, analysis.stoppage);
   const others = user ? (await db.prepare(`SELECT name, last_seen FROM sx_bst_presence WHERE analysis_id = ? AND user_id <> ? AND last_seen > ?`).bind(a.id, user.id, new Date(Date.now() - 45e3).toISOString()).all()).results : [];
-  return { analysis, match: full.match, lineups: full.lineups, events: full.events, ...grid, checks: finalChecks(full.match, full.lineups, full.events), others };
+  const out = { analysis, match: full.match, lineups: full.lineups, events: full.events, ...grid, checks: finalChecks(full.match, full.lineups, full.events), others };
+  out.quality = bstQuality(out);
+  return out;
 }
 
 /** Checks before Final: errors stop it. */
@@ -330,4 +332,74 @@ export function bstSheets(d, { includeOpponent = false } = {}) {
     { name: 'Totals', columns: ['Team', 'Metric', ...d.cols.map(c => c.period), 'Match'], rows: totalRows },
     { name: 'Match & line-up', columns: ['Item', 'Value'], rows: info },
   ];
+}
+
+// ── Data quality panel (Add-on 2): problems and notices before Final, each pointing at the block or event ──
+export function bstQuality(d) {
+  const out = [], lobiSide = d.match.lobiHome ? 'home' : 'away';
+  const add = (level, text, link = null) => out.push({ level, text, link });
+  if (!d.lineups.some(l => l.side === lobiSide)) add('error', 'No Lobi Stars line-up yet (Match Setup).', { setup: true });
+  if (!d.lineups.some(l => l.side !== lobiSide)) add('notice', 'No opponent line-up (optional).', { setup: true });
+  for (const e of d.checks.errors) add('error', e);
+  const seen = new Map();
+  for (const e of d.events) {
+    if ((e.type === 'yellow_card' || e.type === 'red_card') && !e.slug && !e.name) add('warning', `${e.type === 'red_card' ? 'Red' : 'Yellow'} card at ${e.minute}' has no player.`, { event: e.id, period: e.period, block: blockOf(e) });
+    if (e.slug || e.name) {
+      const k = `${e.type}|${e.side}|${e.minute}|${e.slug || e.name}`;
+      if (seen.has(k)) add('warning', `Possible duplicate: two "${e.type.replace(/_/g, ' ')}" for ${e.name} at ${e.minute}'.`, { event: e.id, period: e.period, block: blockOf(e) });
+      seen.set(k, e.id);
+    }
+  }
+  for (const c of d.cols) for (const b of c.blocks) {
+    if (!String(b).includes('+')) continue;
+    const any = ['lobi', 'opponent'].some(s => METRICS.some(m => d.grid[s][m.key][c.period][b]));
+    if (!any) add('notice', `Added-time block ${b}' (${c.period}) has no data. Remove it if it was not played.`, { period: c.period, block: b });
+  }
+  for (const s of ['lobi', 'opponent']) for (const k of ['xg', 'xa']) for (const c of d.cols) for (const b of c.blocks) {
+    const v = d.grid[s][k][c.period][b];
+    if (v < 0 || v > 9.99) add('error', `${k === 'xg' ? 'xG' : 'xA'} ${v} at ${b}' is outside 0.00–9.99.`, { period: c.period, block: b });
+  }
+  const untagged = d.events.filter(e => TAGGABLE.has(e.type) && !e.slug && !e.name).length;
+  if (untagged) add('notice', `${untagged} event${untagged === 1 ? '' : 's'} without a player. Use "Tag players" to add them (optional).`, { tag: true });
+  return out;
+}
+export const TAGGABLE = new Set(['goal', 'shot', 'corner', 'free_kick', 'foul_committed', 'yellow_card', 'red_card', 'offside', 'tackle', 'gk_save', 'interception', 'clearance', 'block']);
+
+// ── Coach share links (Add-on 2): read only, expiring (1–30 days, default 14), revocable; staff notes only if ticked ──
+const sha256 = async s => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(s))))].map(b => b.toString(16).padStart(2, '0')).join('');
+export async function createShare(db, user, id, { days = 14, includeNotes = false } = {}, { request = null } = {}) {
+  const a = await row(db, id);
+  if (!a) return { error: 'Analysis not found.' };
+  const n = Math.max(1, Math.min(30, Math.round(Number(days) || 14)));
+  const token = [...crypto.getRandomValues(new Uint8Array(24))].map(b => b.toString(16).padStart(2, '0')).join('');
+  const sid = newId('shr'), at = nowIso(), exp = new Date(Date.now() + n * 864e5).toISOString();
+  await db.prepare(`INSERT INTO sx_share_links (id, analysis_id, token_hash, expires_at, include_notes, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+    .bind(sid, a.id, await sha256(token), exp, includeNotes ? 1 : 0, byName(user), at).run();
+  await sxLog(db, statsActor(user), 'share_create', { itemType: 'bst', itemId: a.id, details: `Coach link for ${n} days${includeNotes ? ', with staff notes' : ''}`, request });
+  return { ok: true, id: sid, token, expiresAt: exp };
+}
+export async function listShares(db, id) {
+  await ensureBstSchema(db);
+  return (await db.prepare(`SELECT id, expires_at, include_notes, created_by, created_at, revoked_at, revoked_by, last_opened_at, opens FROM sx_share_links WHERE analysis_id = ? ORDER BY created_at DESC`).bind(String(id)).all()).results
+    .map(r => ({ id: r.id, expiresAt: r.expires_at, includeNotes: !!r.include_notes, createdBy: r.created_by, createdAt: r.created_at, revokedAt: r.revoked_at, revokedBy: r.revoked_by, lastOpened: r.last_opened_at, opens: r.opens,
+      active: !r.revoked_at && Date.parse(r.expires_at) > Date.now() }));
+}
+export async function revokeShare(db, user, shareId, { request = null } = {}) {
+  const r = await db.prepare(`UPDATE sx_share_links SET revoked_at = ?, revoked_by = ? WHERE id = ? AND revoked_at IS NULL`).bind(nowIso(), byName(user), String(shareId)).run();
+  if (!r.meta?.changes) return { error: 'Link not found or already switched off.' };
+  await sxLog(db, statsActor(user), 'share_revoke', { itemType: 'share', itemId: shareId, request });
+  return { ok: true };
+}
+/** What a valid coach link shows (null when unknown, expired or switched off). */
+export async function sharedAnalysis(db, token) {
+  if (!/^[0-9a-f]{48}$/.test(String(token || ''))) return null;
+  await ensureBstSchema(db);
+  const s = await db.prepare(`SELECT * FROM sx_share_links WHERE token_hash = ?`).bind(await sha256(token)).first();
+  if (!s || s.revoked_at || Date.parse(s.expires_at) <= Date.now()) return null;
+  const d = await getAnalysis(db, s.analysis_id);
+  if (!d) return null;
+  await db.prepare(`UPDATE sx_share_links SET opens = opens + 1, last_opened_at = ? WHERE id = ?`).bind(nowIso(), s.id).run();
+  if (!s.include_notes) { d.analysis.half1Note = ''; d.analysis.half2Note = ''; for (const e of d.events) e.notes = ''; }
+  for (const l of d.lineups) { delete l.rating; }
+  return { ...d, expiresAt: s.expires_at };
 }

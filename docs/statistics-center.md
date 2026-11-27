@@ -151,8 +151,22 @@ Match & line-up; tick to include the opponent), CSV (the grid) and a **blank for
 Tables: `sx_bst_analyses` (one per match), `sx_bst_cells`, `sx_bst_presence`; `sx_matches.formation_home_finish` /
 `formation_away_finish`. Tests: `tests/stats-bst.unit.test.mjs`.
 
+## Add-on 2 (built 27 Nov 2026)
+
+- **Opponent registry** `sx_opponent_players` (club key, name, shirt number, usual position, last seen): filled from
+  Match Setup, offered next time, "copy from our last match against them"; `sx_lineups.opponent_player_id` links rows.
+  Warnings (not blocks) for a player or shirt number twice. The opponent line-up stays optional.
+- **BST**: Lobi Stars | Opponent | Both for the team list and grid (Both: two rows per metric and the difference).
+- **Tag players** (`#/tag/<match>`): events without a player, one tap each, progress bar; edits the event (no new event).
+- **Data quality panel** (`bstQuality`), **undo/redo** (last 20), **clock buttons**, **summary page**
+  (`/bst-analysis/<id>/summary/`), **dark mode / big buttons**.
+- **Coach share links** `sx_share_links` (token stored as a SHA-256 hash; 1–30 days; revocable; notes only if ticked):
+  `/staff/statistics-center/share/<token>/` (read only, no scripts, noindex).
+- Email to the Super Admins when an analysis is Final; **recycle bin** (restore); **season JSON export**.
+- Tests: `tests/stats-addon2.unit.test.mjs` (seed: an opponent with 14 saved players).
+
 ## Coming next (queued by the owner)
 
-1. Opponent line-up registry and BST improvements.
+1. Free-tool improvements: weather auto-fill, report draft, stat graphic, installable app, live shortcuts, public feed, second check, WhatsApp share, Sheets sync, screen wake.
 3. Phase 2: pitch maps, xG model, video clips, set pieces, player comparison, season analytics, scouting reports,
    training tags, scheduled reports.

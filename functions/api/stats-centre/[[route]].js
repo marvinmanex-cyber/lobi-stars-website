@@ -12,11 +12,13 @@
 import { signIn, getStatsSession, signOut, changePassword, csrfProblem, clearStatsCookie, json, IDLE_MS, setSxSetting, activityList, oneLine, sxLog, statsActor } from '../_lib/statsCentre.js';
 import {
   loadRoster, siteSettings, startMonthOf, listFixtures, listMatches, seasons, createMatch, getMatch, saveSetup, saveLineups, applyEvents, setClock, setStatus,
-  publish, reopen, removeMatch, mediaLineup, dashboard, publishedMatches, playerTotals, teamTotals, eventsCsv, matchesCsv, settingsView,
+  publish, reopen, removeMatch, mediaLineup, opponentPlayers, lastOpponentLineup, recycleBin, restoreItem, removeAnalysis, seasonExport, dashboard, publishedMatches, playerTotals, teamTotals, eventsCsv, matchesCsv, settingsView,
   EVENT_TYPES, LIVE_BUTTONS, PERIODS, OUTCOMES, BODY_PARTS, DETAIL_TYPES, STATUSES,
 } from '../_lib/statsCentreData.js';
 import { seasonOf } from '../_lib/stats.js';
-import { listAnalyses, createAnalysis, getAnalysis, setCell, setText, setStoppage, finalise, reopenAnalysis, heartbeat, bstSheets, METRICS, BST_FORMATIONS } from '../_lib/statsBst.js';
+import { listAnalyses, createAnalysis, getAnalysis, setCell, setText, setStoppage, finalise, reopenAnalysis, heartbeat, bstSheets, METRICS, BST_FORMATIONS, createShare, listShares, revokeShare, TAGGABLE } from '../_lib/statsBst.js';
+import { sendEmail } from '../_lib/email.js';
+import { superAdminEmails } from '../_lib/superAdmins.js';
 import { buildXlsx, buildCsv } from '../_lib/xlsx.js';
 
 const PASSWORD_ONLY = new Set(['GET session', 'POST password', 'POST logout']);
@@ -64,6 +66,19 @@ export async function onRequest({ request, env, params }) {
       case 'GET matches': return json({ matches: await listMatches(db, { season: q.get('season') || '', status: q.get('status') || '', competition: q.get('competition') || '' }) });
       case 'POST matches': { const r = await createMatch(db, s.user, b, opts); return r.error ? json(r, r.id ? 409 : 400) : json(r); }
       case 'GET match': { const m = await getMatch(db, q.get('id')); return m ? json(m) : json({ error: 'Match not found.' }, 404); }
+      case 'GET opponent/players': return json({ players: await opponentPlayers(db, oneLine(q.get('team') || '', 80)) });
+      case 'GET opponent/last-lineup': return json({ lineup: await lastOpponentLineup(db, q.get('id')) });
+      case 'GET recycle': return json({ items: await recycleBin(db) });
+      case 'POST recycle/restore': return out(await restoreItem(db, s.user, b, opts));
+      case 'POST bst/remove': return out(await removeAnalysis(db, s.user, b.id, opts));
+      case 'GET bst/shares': return json({ shares: await listShares(db, q.get('id')) });
+      case 'POST bst/share': { const r = await createShare(db, s.user, b.id, b, opts); return r.error ? json(r, 400) : json({ ...r, url: `${new URL(request.url).origin}/staff/statistics-center/share/${r.token}/` }); }
+      case 'POST bst/share-revoke': return out(await revokeShare(db, s.user, b.shareId, opts));
+      case 'GET taggable': return json({ types: [...TAGGABLE] });
+      case 'GET export/season.json': {
+        await sxLog(db, statsActor(s.user), 'export', { details: `Season export (JSON) ${season}`, request });
+        return new Response(JSON.stringify(await seasonExport(db, season), null, 1), { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="lobi-stars-statistics-${season.replace(/[^\w-]/g, '-')}.json"`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
+      }
       case 'GET match/media-lineup': return json({ lineup: await mediaLineup(db, q.get('id')) });
       case 'POST match/setup': return out(await saveSetup(db, s.user, b.id, b, opts));
       case 'POST match/lineups': return out(await saveLineups(db, s.user, b.id, b, await loadRoster(env, request.url), opts));
@@ -101,7 +116,22 @@ export async function onRequest({ request, env, params }) {
       case 'POST bst/cell': return out(await setCell(db, s.user, b.id, b, opts));
       case 'POST bst/text': { const r = await setText(db, s.user, b.id, b, opts); return r.conflict ? json(r, 409) : out(r); }
       case 'POST bst/stoppage': return out(await setStoppage(db, s.user, b.id, b, opts));
-      case 'POST bst/final': { const r = await finalise(db, s.user, b.id, opts); return r.error ? json(r, r.checks ? 422 : 400) : json(r); }
+      case 'POST bst/final': {
+        const r = await finalise(db, s.user, b.id, opts);
+        if (r.error) return json(r, r.checks ? 422 : 400);
+        // Tell the Super Admins (email, when the site can send it; the admin Statistics Center page lists it too).
+        try {
+          const d = await getAnalysis(db, b.id);
+          const to = superAdminEmails(env);
+          if (d && to.length && env.RESEND_API_KEY) {
+            const link = `${new URL(request.url).origin}/staff/statistics-center/bst-analysis/${b.id}/`;
+            const title = `${d.match.home} ${d.match.homeScore}–${d.match.awayScore} ${d.match.away}`;
+            const e = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+            await sendEmail(env, { to, subject: `Match analysis Final: ${title}`, html: `<p>${e(s.user.fullName)} marked the match analysis <b>${e(title)}</b> as Final.</p><p><a href="${link}">Open it in the Statistics Center</a> (sign in with your Super Admin email).</p>` });
+          }
+        } catch (err) { console.error('[stats-centre] final email', err); }
+        return json(r);
+      }
       case 'POST bst/reopen': { const r = await reopenAnalysis(db, s.user, b.id, opts); return r.error ? json(r, 403) : json(r); }
       case 'POST bst/presence': return json(await heartbeat(db, s.user, b.id));
       case 'GET export/bst.xlsx': case 'GET export/bst.csv': {

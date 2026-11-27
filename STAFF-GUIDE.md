@@ -5390,3 +5390,11 @@ Defense, Dangerous Attack, Crossing, xG and xA are the analyst's own numbers. Wr
 itself). **Mark as Final** when done (a Super Admin can reopen it). **PDF** opens the printable report (choose
 Landscape and Save as PDF); **Excel** and **CSV** download the grid; "Blank form (print)" on the library page prints an
 empty form for paper use.
+
+**Opponents (Add-on 2):** in Match Setup the opponent's saved players are offered as you type, and "Copy line-up from
+our last match against them" fills the list (check it, then save). **Tag players** (Review page or the BST form) lists
+events without a player: tap the player for each one. On the BST form choose Lobi Stars, the opponent or **Both**;
+**Undo / Redo** fix a wrong tap (Ctrl+Z / Ctrl+Y on a computer); the **clock** buttons are on the form too;
+**Summary** shows the match at a glance; **Dark** and **Big buttons** help at evening matches and on tablets.
+**Share with the coach** makes a private read-only link (choose how many days; switch it off any time). Removed
+items are in **Settings › Recycle bin**.

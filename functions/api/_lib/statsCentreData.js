@@ -170,35 +170,41 @@ export async function saveLineups(db, user, id, b, roster, { request = null } = 
   if (m.status === 'published') return { error: 'This match is published. Reopen it for corrections first.' };
   const bySlug = new Map(roster.map(p => [p.slug, p]));
   const lobiSide = m.is_lobi_home ? 'home' : 'away';
-  const rows = [];
+  const rows = [], warnings = [];
+  const oppSide = lobiSide === 'home' ? 'away' : 'home';
   for (const side of ['home', 'away']) {
-    const seen = new Set();
+    const seen = new Set(), nums = new Map(), names = new Map();
     for (const [i, p] of (Array.isArray(b?.[side]) ? b[side] : []).slice(0, 30).entries()) {
       let slug = null, name = oneLine(p?.name, 80), number = int(p?.number, 0, 99);
       if (side === lobiSide) {
         const r = bySlug.get(String(p?.slug || ''));
         if (!r) return { error: `${name || 'A player'} is not in the Lobi Stars squad list.` };
         slug = r.slug; name = r.name; if (number === null) number = r.number ?? null;
-        if (seen.has(slug)) continue; seen.add(slug);
+        if (seen.has(slug)) { warnings.push(`${name} was listed twice (kept once).`); continue; } seen.add(slug);
       } else {
         if (!name) continue;
-        const key = `${name.toLowerCase()}#${number}`; if (seen.has(key)) continue; seen.add(key);
+        const key = `${name.toLowerCase()}#${number}`; if (seen.has(key)) { warnings.push(`${name} was listed twice (kept once).`); continue; } seen.add(key);
+        if (names.has(name.toLowerCase())) warnings.push(`${name} appears twice with different numbers.`); names.set(name.toLowerCase(), 1);
       }
+      if (number !== null) { if (nums.has(number)) warnings.push(`${side === lobiSide ? 'Lobi Stars' : 'Opponent'}: shirt number ${number} is used by ${nums.get(number)} and ${name}.`); else nums.set(number, name); }
       rows.push({ id: newId('sxl'), side, slug, name, number, position: oneLine(p?.position, 8) || null, starter: p?.starter ? 1 : 0,
         minutes: p?.minutesOverride === '' || p?.minutesOverride === null || p?.minutesOverride === undefined ? null : int(p.minutesOverride, 0, 130),
         rating: p?.rating === '' || p?.rating === null || p?.rating === undefined ? null : Math.max(1, Math.min(10, Math.round(Number(p.rating) * 10) / 10)) || null,
         motm: p?.motm ? 1 : 0, sort: i });
     }
   }
+  // Opponent players: saved once per club (registry) and linked, so they are offered next time we play them.
+  const oppTeam = oppSide === 'home' ? m.home_team : m.away_team;
+  for (const r of rows.filter(x => x.side === oppSide)) r.oppId = await upsertOpponentPlayer(db, user, oppTeam, r, id);
   const before = (await db.prepare(`SELECT side, player_slug, player_name, shirt_number, is_starter FROM sx_lineups WHERE match_id = ?`).bind(id).all()).results;
   await db.batch([
     db.prepare(`DELETE FROM sx_lineups WHERE match_id = ?`).bind(id),
-    ...rows.map(r => db.prepare(`INSERT INTO sx_lineups (id, match_id, side, player_slug, player_name, shirt_number, position, is_starter, minutes_override, coach_rating, is_motm, sort)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(r.id, id, r.side, r.slug, r.name, r.number, r.position, r.starter, r.minutes, r.rating, r.motm, r.sort)),
+    ...rows.map(r => db.prepare(`INSERT INTO sx_lineups (id, match_id, side, player_slug, player_name, shirt_number, position, is_starter, minutes_override, coach_rating, is_motm, sort, opponent_player_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(r.id, id, r.side, r.slug, r.name, r.number, r.position, r.starter, r.minutes, r.rating, r.motm, r.sort, r.oppId || null)),
     db.prepare(`UPDATE sx_matches SET updated_by = ?, updated_at = ? WHERE id = ?`).bind(byName(user), nowIso(), id),
   ]);
   await sxLog(db, statsActor(user), 'edit_lineups', { itemType: 'match', itemId: id, itemTitle: titleOf(m), before, after: rows.map(r => ({ side: r.side, slug: r.slug, name: r.name, number: r.number, starter: r.starter })), request });
-  return { ok: true };
+  return { ok: true, warnings: [...new Set(warnings)] };
 }
 
 // ── Events ──
@@ -689,4 +695,94 @@ export async function mediaLineup(db, matchId) {
     if (sq && (sq.starting?.length || sq.bench?.length)) return { source: 'match', status: 'published', by: '', at: c.updated_at, formation: '', starting: pick(sq.starting), subs: pick(sq.bench) };
   } catch { /* none */ }
   return null;
+}
+
+// ── Opponent squad registry (Add-on 2) ──
+export const teamKey = name => ` ${String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ')} `.replace(/ (fc|f c|football club) /g, ' ').replace(/\s+/g, ' ').trim();
+/** Saves (or refreshes) an opponent player in the club's registry; returns its id. One row per club + name + number. */
+async function upsertOpponentPlayer(db, user, teamName, r, matchId) {
+  const tk = teamKey(teamName), nk = String(r.name).toLowerCase().trim(), at = nowIso();
+  const had = await db.prepare(`SELECT id FROM sx_opponent_players WHERE team_key = ? AND name_key = ? AND IFNULL(shirt_number, -1) = IFNULL(?, -1) AND is_deleted = 0`).bind(tk, nk, r.number).first();
+  if (had) {
+    await db.prepare(`UPDATE sx_opponent_players SET last_seen_match_id = ?, usual_position = COALESCE(?, usual_position), is_active = 1, updated_by = ?, updated_at = ? WHERE id = ?`).bind(matchId, r.position || null, byName(user), at, had.id).run();
+    return had.id;
+  }
+  const id = newId('sxo');
+  await db.prepare(`INSERT INTO sx_opponent_players (id, team_key, team_name, name, name_key, shirt_number, usual_position, last_seen_match_id, created_by, created_at, updated_by, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(id, tk, teamName, r.name, nk, r.number, r.position || null, matchId, byName(user), at, byName(user), at).run();
+  return id;
+}
+/** The saved players of a club (most recently seen first). */
+export async function opponentPlayers(db, teamName) {
+  await ensureStatsCentreSchema(db);
+  const { results } = await db.prepare(`SELECT p.id, p.name, p.shirt_number, p.usual_position, p.last_seen_match_id, m.match_date FROM sx_opponent_players p LEFT JOIN sx_matches m ON m.id = p.last_seen_match_id
+    WHERE p.team_key = ? AND p.is_deleted = 0 AND p.is_active = 1 ORDER BY m.match_date DESC, p.shirt_number LIMIT 80`).bind(teamKey(teamName)).all();
+  return results.map(r => ({ id: r.id, name: r.name, number: r.shirt_number, position: r.usual_position || '', lastSeen: r.match_date || null }));
+}
+/** The opponent line-up from our last match against the same club (to copy and edit). */
+export async function lastOpponentLineup(db, matchId) {
+  const m = await getMatchRow(db, matchId);
+  if (!m) return null;
+  const opp = m.is_lobi_home ? m.away_team : m.home_team, tk = teamKey(opp);
+  const { results } = await db.prepare(`SELECT id, home_team, away_team, is_lobi_home, match_date FROM sx_matches WHERE is_deleted = 0 AND id <> ? ORDER BY match_date DESC LIMIT 200`).bind(m.id).all();
+  for (const x of results) {
+    if (teamKey(x.is_lobi_home ? x.away_team : x.home_team) !== tk) continue;
+    const side = x.is_lobi_home ? 'away' : 'home';
+    const lu = (await db.prepare(`SELECT player_name, shirt_number, position, is_starter FROM sx_lineups WHERE match_id = ? AND side = ? ORDER BY is_starter DESC, sort`).bind(x.id, side).all()).results;
+    if (lu.length) return { from: { id: x.id, date: x.match_date }, players: lu.map(l => ({ name: l.player_name, number: l.shirt_number, position: l.position || '', starter: !!l.is_starter })) };
+  }
+  return null;
+}
+
+// ── Recycle bin (Add-on 2): removed matches, events and analyses, kept and restorable ──
+export async function recycleBin(db) {
+  await ensureStatsCentreSchema(db);
+  const matches = (await db.prepare(`SELECT id, home_team, away_team, match_date, updated_by, updated_at FROM sx_matches WHERE is_deleted = 1 ORDER BY updated_at DESC LIMIT 100`).all()).results
+    .map(r => ({ type: 'match', id: r.id, name: `${r.home_team} v ${r.away_team} (${String(r.match_date).slice(0, 10)})`, by: r.updated_by, at: r.updated_at }));
+  const events = (await db.prepare(`SELECT e.id, e.event_type, e.minute, e.player_name, e.updated_by, e.updated_at, m.home_team, m.away_team FROM sx_events e JOIN sx_matches m ON m.id = e.match_id WHERE e.is_deleted = 1 AND m.is_deleted = 0 ORDER BY e.updated_at DESC LIMIT 200`).all()).results
+    .map(r => ({ type: 'event', id: r.id, name: `${EVENT_TYPES[r.event_type] || r.event_type} ${r.minute}'${r.player_name ? ` · ${r.player_name}` : ''} (${r.home_team} v ${r.away_team})`, by: r.updated_by, at: r.updated_at }));
+  let analyses = [];
+  try {
+    analyses = (await db.prepare(`SELECT a.id, a.updated_by, a.updated_at, m.home_team, m.away_team FROM sx_bst_analyses a JOIN sx_matches m ON m.id = a.match_id WHERE a.is_deleted = 1 ORDER BY a.updated_at DESC LIMIT 100`).all()).results
+      .map(r => ({ type: 'analysis', id: r.id, name: `Analysis: ${r.home_team} v ${r.away_team}`, by: r.updated_by, at: r.updated_at }));
+  } catch { /* no analyses yet */ }
+  const left = at => Math.max(0, 30 - Math.floor((Date.now() - Date.parse(at || 0)) / 864e5));
+  return [...matches, ...analyses, ...events].map(x => ({ ...x, daysLeft: left(x.at) }));
+}
+export async function restoreItem(db, user, { type, id }, { request = null } = {}) {
+  await ensureStatsCentreSchema(db);
+  const table = { match: 'sx_matches', event: 'sx_events', analysis: 'sx_bst_analyses' }[type];
+  if (!table) return { error: 'Unknown item.' };
+  if (type === 'analysis') {
+    const a = await db.prepare(`SELECT match_id FROM sx_bst_analyses WHERE id = ?`).bind(String(id)).first();
+    if (a && await db.prepare(`SELECT id FROM sx_bst_analyses WHERE match_id = ? AND is_deleted = 0`).bind(a.match_id).first()) return { error: 'That match already has another analysis.' };
+  }
+  const r = await db.prepare(`UPDATE ${table} SET is_deleted = 0, updated_by = ?, updated_at = ? WHERE id = ? AND is_deleted = 1`).bind(byName(user), nowIso(), String(id)).run();
+  if (!r.meta?.changes) return { error: 'Not found in the recycle bin.' };
+  if (type === 'event') { const e = await db.prepare(`SELECT match_id FROM sx_events WHERE id = ?`).bind(String(id)).first(); if (e) await recalc(db, e.match_id, user); }
+  await sxLog(db, statsActor(user), 'restore', { itemType: type, itemId: id, details: 'Restored from the recycle bin', request });
+  return { ok: true };
+}
+export async function removeAnalysis(db, user, id, { request = null } = {}) {
+  const a = await db.prepare(`SELECT id, status FROM sx_bst_analyses WHERE id = ? AND is_deleted = 0`).bind(String(id)).first();
+  if (!a) return { error: 'Analysis not found.' };
+  if (a.status === 'final' && !user.admin) return { error: 'A Final analysis can only be removed by a Super Admin.' };
+  await db.prepare(`UPDATE sx_bst_analyses SET is_deleted = 1, updated_by = ?, updated_at = ? WHERE id = ?`).bind(byName(user), nowIso(), a.id).run();
+  await sxLog(db, statsActor(user), 'remove_analysis', { itemType: 'bst', itemId: a.id, details: 'Moved to the recycle bin', request });
+  return { ok: true };
+}
+
+/** Everything recorded for a season, for safekeeping (staff only): matches, line-ups, events and analyses. */
+export async function seasonExport(db, season) {
+  await ensureStatsCentreSchema(db);
+  const matches = (await db.prepare(`SELECT * FROM sx_matches WHERE season = ? AND is_deleted = 0 ORDER BY match_date`).bind(season).all()).results.map(r => { const { published_json, clock_json, ...rest } = r; return rest; });
+  const ids = matches.map(m => m.id);
+  const pick = async (sql) => { const out = []; for (let i = 0; i < ids.length; i += 50) { const c = ids.slice(i, i + 50); out.push(...(await db.prepare(sql.replace('(?)', `(${c.map(() => '?').join(',')})`)).bind(...c).all()).results); } return out; };
+  const data = { season, exportedAt: nowIso(), matches, lineups: await pick(`SELECT * FROM sx_lineups WHERE match_id IN (?)`), events: await pick(`SELECT * FROM sx_events WHERE match_id IN (?) AND is_deleted = 0`) };
+  try {
+    data.analyses = await pick(`SELECT * FROM sx_bst_analyses WHERE match_id IN (?) AND is_deleted = 0`);
+    const aIds = data.analyses.map(a => a.id); data.analysisCells = [];
+    for (let i = 0; i < aIds.length; i += 50) { const c = aIds.slice(i, i + 50); data.analysisCells.push(...(await db.prepare(`SELECT * FROM sx_bst_cells WHERE analysis_id IN (${c.map(() => '?').join(',')})`).bind(...c).all()).results); }
+  } catch { data.analyses = []; data.analysisCells = []; }
+  return data;
 }

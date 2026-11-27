@@ -97,6 +97,20 @@ export async function ensureStatsCentreSchema(db) {
     db.prepare(`CREATE INDEX IF NOT EXISTS sx_events_match ON sx_events (match_id, is_deleted)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS sx_events_player ON sx_events (player_slug, event_type)`),
   ]);
+  // Add-on 2 (27 Nov 2026): the opponents' players, saved once per club so nobody retypes them (one row per club +
+  // name + shirt number, kept unique by the code), and the coach's read-only share links.
+  await db.batch([
+    db.prepare(`CREATE TABLE IF NOT EXISTS sx_opponent_players (
+      id TEXT PRIMARY KEY, team_key TEXT NOT NULL, team_name TEXT NOT NULL, name TEXT NOT NULL, name_key TEXT NOT NULL, shirt_number INTEGER, usual_position TEXT,
+      last_seen_match_id TEXT, is_active INTEGER NOT NULL DEFAULT 1, created_by TEXT, created_at TEXT NOT NULL, updated_by TEXT, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS sx_opp_team ON sx_opponent_players (team_key, is_deleted)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS sx_share_links (
+      id TEXT PRIMARY KEY, analysis_id TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE, expires_at TEXT NOT NULL, include_notes INTEGER NOT NULL DEFAULT 0,
+      created_by TEXT, created_at TEXT NOT NULL, revoked_at TEXT, revoked_by TEXT, last_opened_at TEXT, opens INTEGER NOT NULL DEFAULT 0)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS sx_share_a ON sx_share_links (analysis_id)`),
+  ]);
+  const luCols = new Set((await db.prepare(`PRAGMA table_info(sx_lineups)`).all()).results.map(r => r.name));
+  if (!luCols.has('opponent_player_id')) await db.prepare(`ALTER TABLE sx_lineups ADD COLUMN opponent_player_id TEXT`).run();
   // Added later (columns of existing tables): the finishing formations (BST Analysis Form, 27 Nov 2026).
   const cols = new Set((await db.prepare(`PRAGMA table_info(sx_matches)`).all()).results.map(r => r.name));
   for (const c of ['formation_home_finish', 'formation_away_finish']) if (!cols.has(c)) await db.prepare(`ALTER TABLE sx_matches ADD COLUMN ${c} TEXT`).run();

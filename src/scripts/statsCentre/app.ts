@@ -3,7 +3,7 @@
 // and sent when the connection returns; the top bar shows how many are still "unsynced". Events are sent with an
 // id made here, so sending the same event twice never records it twice.
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { bstRoute, type Ctx } from './bst';
+import { bstRoute, applyUi, type Ctx } from './bst';
 const $ = (id: string) => document.getElementById(id) as any;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 const day = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' }) : '');
@@ -54,6 +54,7 @@ $('pwForm').addEventListener('submit', async (e: Event) => {
 $('logout').addEventListener('click', async () => { try { await api('logout', {}); } catch { /* signed out anyway */ } showLogin(); });
 
 async function boot() {
+  applyUi(); // dark mode / big buttons, if chosen on this device
   try { S = await api('session'); }
   catch (x: any) { if (x.status !== 401 && x.status !== 403) { show('vLogin'); $('loginErr').textContent = x.message; $('loginErr').hidden = false; } return; }
   if (S.user.mustChange) { show('vPassword'); return; }
@@ -77,6 +78,8 @@ function parentPage() {
   }
   const page = (location.hash || '#/').split('/')[1] || '';
   if (!page) return null;
+  if (page === 'tag') return `/staff/statistics-center/#/review/${(location.hash.split('/')[2] || '')}`;
+  if (page === 'recycle') return '/staff/statistics-center/#/settings';
   return ['match', 'live', 'review', 'new'].includes(page) ? '/staff/statistics-center/#/matches' : '/staff/statistics-center/#/';
 }
 function updateBack() {
@@ -102,10 +105,10 @@ function route() {
   }
   const [, page = '', id = ''] = (location.hash || '#/').split('/');
   for (const a of document.querySelectorAll('[data-nav]')) (a as HTMLElement).toggleAttribute('aria-current', false);
-  const nav = { '': 'home', matches: 'matches', match: 'matches', live: 'matches', review: 'matches', new: 'matches', players: 'players', team: 'team', exports: 'exports', settings: 'settings', definitions: 'definitions' }[page] || 'home';
+  const nav = { '': 'home', matches: 'matches', match: 'matches', live: 'matches', review: 'matches', new: 'matches', tag: 'matches', recycle: 'settings', players: 'players', team: 'team', exports: 'exports', settings: 'settings', definitions: 'definitions' }[page] || 'home';
   document.querySelector(`[data-nav="${nav}"]`)?.setAttribute('aria-current', 'page');
   const run: Record<string, () => Promise<void> | void> = { '': dashboardView, matches: matchesView, new: newMatchView, match: () => setupView(id), live: () => liveView(id), review: () => reviewView(id),
-    players: playersView, team: teamView, exports: exportsView, settings: settingsView, definitions: definitionsView };
+    players: playersView, team: teamView, exports: exportsView, settings: settingsView, definitions: definitionsView, tag: () => tagView(id), recycle: recycleView };
   stopTick(); resetView();
   view().innerHTML = '<p class="sx-small">Loading…</p>';
   Promise.resolve((run[page] || dashboardView)()).catch((x: any) => { view().innerHTML = `<div class="sx-card"><p class="sx-err">${esc(x.message)}</p></div>`; });
@@ -241,7 +244,8 @@ async function setupView(id: string) {
 
       <h3 style="margin-top:22px">${esc(teamName(m, os))}</h3>
       <div class="sx-form" style="margin:10px 0">${formationPick(os === 'home' ? 'formationHome' : 'formationAway', 'Starting formation', os === 'home' ? m.formationHome : m.formationAway)}${formationPick(os === 'home' ? 'formationHomeFinish' : 'formationAwayFinish', 'Finishing formation', os === 'home' ? m.formationHomeFinish : m.formationAwayFinish)}</div>
-      <p class="sx-small">Type the opponents' players (name and number). Optional, but needed to record who did what for them.</p>
+      <p class="sx-small">Type the opponents' players (name and number), or copy them. Optional, but needed to record who did what for them. Players are saved for next time we play ${esc(teamName(m, os))}.</p>
+      <p class="sx-row" id="oppTools"></p><datalist id="oppSaved"></datalist>
       <div class="sx-scroll"><table class="sx-t"><thead><tr><th>Name</th><th class="n">No.</th><th>Position</th><th>Starter</th><th></th></tr></thead><tbody id="oppRows">
       ${(opp.length ? opp : Array.from({ length: 11 }, () => ({ starter: true }))).map(oppRow).join('')}
       </tbody></table></div>
@@ -292,6 +296,27 @@ async function setupView(id: string) {
     else apply();
   }).catch(() => { /* no Media Centre line-up */ });
   $('addOpp').addEventListener('click', () => $('oppRows').insertAdjacentHTML('beforeend', oppRow({ starter: false })));
+  // The opponent's saved players (from earlier matches) and their last line-up against us.
+  const saved = new Map<string, any>();
+  api(`opponent/players?team=${encodeURIComponent(teamName(m, os))}`).then((r: any) => {
+    for (const p of r.players) saved.set(String(p.name).toLowerCase(), p);
+    $('oppSaved').innerHTML = r.players.map((p: any) => `<option value="${esc(p.name)}">${p.number ?? ''} ${esc(p.position || '')}</option>`).join('');
+    if (r.players.length) $('oppTools').insertAdjacentHTML('beforeend', `<span class="sx-small">${r.players.length} saved ${esc(teamName(m, os))} players are offered as you type.</span>`);
+  }).catch(() => {});
+  api(`opponent/last-lineup?id=${encodeURIComponent(id)}`).then((r: any) => {
+    if (!r.lineup || locked) return;
+    $('oppTools').insertAdjacentHTML('afterbegin', `<button type="button" class="sx-btn" id="oppCopy">Copy line-up from our last match against them (${esc(day(r.lineup.from.date))})</button>`);
+    $('oppCopy').addEventListener('click', () => {
+      const has = [...$('oppRows').querySelectorAll('[data-oname]')].some((x: any) => x.value.trim());
+      if (has && !confirm('Replace the opponent players typed here?')) return;
+      $('oppRows').innerHTML = r.lineup.players.map(oppRow).join(''); toast('Copied. Check the players and substitutes, then save.');
+    });
+  }).catch(() => {});
+  $('oppRows').addEventListener('change', (e: any) => {
+    const t = e.target; if (!t.matches('[data-oname]')) return;
+    const p = saved.get(t.value.trim().toLowerCase()); if (!p) return;
+    const tr = t.closest('tr'); if (!tr.querySelector('[data-onum]').value && p.number !== null) tr.querySelector('[data-onum]').value = p.number; if (!tr.querySelector('[data-opos]').value) tr.querySelector('[data-opos]').value = p.position || '';
+  });
   $('oppRows').addEventListener('click', (e: any) => { if (e.target.closest('[data-del]')) e.target.closest('tr').remove(); });
   $('setup').addEventListener('submit', async (e: any) => {
     e.preventDefault();
@@ -320,7 +345,7 @@ async function setupView(id: string) {
       const old: any = keep.get(`${os}:${name}`) || {};
       others.push({ name, number: tr.querySelector('[data-onum]').value, position: tr.querySelector('[data-opos]').value, starter: tr.querySelector('[data-ostart]').checked, rating: old.rating, motm: old.motm, minutesOverride: old.minutesOverride });
     });
-    try { await api('match/lineups', { id, [ls]: lobi, [os]: others }); await api('match/setup', { id, ...forms }); toast('Line-ups and formations saved.'); setupView(id); } catch (x: any) { toast(x.message, false); }
+    try { const r = await api('match/lineups', { id, [ls]: lobi, [os]: others }); await api('match/setup', { id, ...forms }); toast(r.warnings?.length ? `Saved. Please check: ${r.warnings.join(' ')}` : 'Line-ups and formations saved.', !r.warnings?.length); setupView(id); } catch (x: any) { toast(x.message, false); }
   });
 }
 /** GK, DF, MF or FW, whichever way the squad list writes the position (DEF, MID, FWD, ST…). */
@@ -333,7 +358,7 @@ function formationPick(key: string, label: string, cur: string) {
     <input data-fcus="${key}" placeholder="e.g. 4-1-3-2" value="${esc(custom ? cur : '')}" ${custom ? '' : 'hidden'} aria-label="${label}: custom"></label>`;
 }
 function oppRow(l: any) {
-  return `<tr><td><input data-oname maxlength="80" value="${esc(l.name || '')}" aria-label="Player name"></td><td class="n"><input data-onum type="number" min="0" max="99" style="width:80px" value="${esc(l.number ?? '')}" aria-label="Shirt number"></td>
+  return `<tr><td><input data-oname maxlength="80" list="oppSaved" value="${esc(l.name || '')}" aria-label="Player name"></td><td class="n"><input data-onum type="number" min="0" max="99" style="width:80px" value="${esc(l.number ?? '')}" aria-label="Shirt number"></td>
     <td><input data-opos maxlength="8" style="width:90px" value="${esc(l.position || '')}" aria-label="Position"></td><td><input data-ostart type="checkbox" ${l.starter ? 'checked' : ''} aria-label="Starter"></td><td><button class="sx-btn" type="button" data-del aria-label="Remove this row">×</button></td></tr>`;
 }
 
@@ -629,6 +654,7 @@ async function reviewView(id: string) {
         ${locked ? `<p class="sx-small" style="margin:0">Published ${esc(when(m.publishedAt))} · verified by ${esc(m.verifiedBy || '')}.</p>${S.user.canPublish ? '<button class="sx-btn" id="reopen">Reopen for corrections</button>' : ''}`
           : S.user.canPublish ? `<button class="sx-btn sx-btn--ok" id="publish" ${d.check.ok ? '' : 'disabled'}>Verify and Publish</button>` : '<p class="sx-small" style="margin:0">A senior statistician or a Super Admin publishes this match.</p>'}
         ${!locked && m.status !== 'review' ? '<button class="sx-btn" id="toReview">Mark ready for review</button>' : ''}
+        <a class="sx-btn" href="#/tag/${esc(id)}">Tag players</a>
         <button class="sx-btn" id="print">Print match report</button>
         <a class="sx-btn" href="/api/stats-centre/export/events.csv?matchId=${esc(id)}">Events CSV</a>
       </div>
@@ -736,11 +762,50 @@ async function teamView() {
   view().querySelector('[data-season]')?.addEventListener('change', (e: any) => { store.set('sx_ts', e.target.value); teamView(); });
 }
 
+// ── Tag players: give events recorded without a player (quick live entry, BST grid taps) their player ──
+async function tagView(id: string) {
+  const R = resetView();
+  await flush(id);
+  const d = await loadMatch(id);
+  const m = d.match, locked = m.status === 'published';
+  const { types } = await api('taggable');
+  const tag = new Set(types);
+  const all = d.events.filter((e: any) => tag.has(e.type));
+  const todo = all.filter((e: any) => !e.slug && !e.name);
+  const done = all.length - todo.length;
+  const pct = all.length ? Math.round((done / all.length) * 100) : 100;
+  const players = (side: string) => { const lu = d.lineups.filter((l: any) => l.side === side); return lu.length ? lu : side === lobiSide(m) ? S.roster : []; };
+  view().innerHTML = matchHead(m, 'review') + `
+    <section class="sx-card"><h3>Tag players</h3><p class="sx-small">Events recorded without a player (fast live entry, BST grid taps). One tap on a player adds them; nothing is recorded twice.</p>
+      <div class="sx-prog" role="progressbar" aria-valuemin="0" aria-valuemax="${all.length}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
+      <p><b>${done} of ${all.length} events tagged</b></p>${locked ? '<p class="sx-err">This match is published: reopen it on the Review page to tag players.</p>' : ''}</section>
+    ${todo.map((e: any) => `<section class="sx-card" data-ev="${esc(e.id)}"><p><b>${e.minute}${e.stoppage ? `+${e.stoppage}` : ''}' · ${esc(label(e.type))}</b> · ${esc(teamName(m, e.type === 'goal' && e.detail === 'own_goal' ? (e.side === 'home' ? 'away' : 'home') : e.side))}${e.outcome ? ` · ${esc(words(e.outcome))}` : ''}</p>
+      <div class="sx-picks">${players(e.type === 'goal' && e.detail === 'own_goal' ? (e.side === 'home' ? 'away' : 'home') : e.side).map((p: any) => `<button type="button" class="sx-pick" data-p="${esc(JSON.stringify([p.slug || null, p.name]))}" ${locked ? 'disabled' : ''}><b>${esc(p.number ?? '–')}</b>${esc(p.name)}</button>`).join('') || '<p class="sx-small">No line-up for this team: add it on the Setup page, or leave this event without a player.</p>'}</div></section>`).join('') || '<section class="sx-card"><p class="sx-small">Every event has its player.</p></section>'}`;
+  view().addEventListener('click', async (ev: any) => {
+    const b = ev.target.closest('[data-p]'); if (!b) return;
+    const card = b.closest('[data-ev]'), e = d.events.find((x: any) => x.id === card.dataset.ev); if (!e) return;
+    const [slug, name] = JSON.parse(b.dataset.p);
+    try { await api('match/events', { id, ops: [{ op: 'save', event: { ...e, slug, name } }] }); card.remove(); toast(`${name} added.`); tagView(id); } catch (x: any) { toast(x.message, false); }
+  }, R);
+}
+
+async function recycleView() {
+  const R = resetView();
+  const { items } = await api('recycle');
+  view().innerHTML = `<h2>Recycle bin</h2><div class="sx-card sx-scroll"><p class="sx-small">Removed items are kept and can be restored. Match history is never deleted from here.</p><table class="sx-t"><thead><tr><th>What</th><th>Removed by</th><th>When</th><th></th></tr></thead><tbody>
+    ${items.map((x: any) => `<tr><td><span class="sx-pill">${esc(x.type)}</span> ${esc(x.name)}</td><td>${esc(x.by || '')}</td><td>${esc(when(x.at))}</td><td><button class="sx-btn" data-restore="${esc(x.type)}|${esc(x.id)}">Restore</button></td></tr>`).join('') || '<tr><td colspan="4" class="sx-small">The recycle bin is empty.</td></tr>'}</tbody></table></div>`;
+  view().addEventListener('click', async (e: any) => {
+    const b = e.target.closest('[data-restore]'); if (!b) return;
+    const [type, id] = b.dataset.restore.split('|');
+    try { await api('recycle/restore', { type, id }); toast('Restored.'); recycleView(); } catch (x: any) { toast(x.message, false); }
+  }, R);
+}
+
 // ── Exports, settings, definitions ──
 function exportsView() {
   const sel = store.get('sx_es', S.season);
   view().innerHTML = `<h2>Exports</h2><section class="sx-card"><div class="sx-row">${seasonSelect(sel)}</div>
-    <p class="sx-row" style="margin-top:12px"><a class="sx-btn sx-btn--p" href="/api/stats-centre/export/events.csv?season=${encodeURIComponent(sel)}">Every event (CSV)</a><a class="sx-btn sx-btn--p" href="/api/stats-centre/export/matches.csv?season=${encodeURIComponent(sel)}">Matches (CSV)</a></p>
+    <p class="sx-row" style="margin-top:12px"><a class="sx-btn sx-btn--p" href="/api/stats-centre/export/events.csv?season=${encodeURIComponent(sel)}">Every event (CSV)</a><a class="sx-btn sx-btn--p" href="/api/stats-centre/export/matches.csv?season=${encodeURIComponent(sel)}">Matches (CSV)</a><a class="sx-btn" href="/api/stats-centre/export/season.json?season=${encodeURIComponent(sel)}">Everything for the season (JSON, for safekeeping)</a></p>
     <p class="sx-small">CSV files open in Excel or Google Sheets. One match's events and a printable match report are on that match's Review page. Every download is recorded in the activity log.</p></section>`;
   view().querySelector('[data-season]')?.addEventListener('change', (e: any) => { store.set('sx_es', e.target.value); exportsView(); });
 }
@@ -750,6 +815,7 @@ function settingsView() {
     <form class="sx-card" id="sf"><h3>Competitions</h3><p class="sx-small">One per line. Offered when creating and editing matches.${can ? '' : ' Only a senior statistician or a Super Admin can change them.'}</p>
       <textarea name="competitions" ${can ? '' : 'disabled'}>${esc(S.settings.competitions.join('\n'))}</textarea>${can ? '<p><button class="sx-btn sx-btn--p" type="submit">Save</button></p>' : ''}</form>
     <section class="sx-card"><h3>Seasons</h3><p class="sx-small">A match's season comes from its date and the club's season start (set in the website's site settings). Current season: <b>${esc(S.season)}</b>. Seasons with matches: ${S.seasons.map(esc).join(', ')}.</p></section>
+    <section class="sx-card"><h3>Recycle bin</h3><p class="sx-small">Removed matches, events and analyses are kept here and can be restored.</p><p><a class="sx-btn" href="#/recycle">Open the recycle bin</a></p></section>
     <section class="sx-card"><h3>Your account</h3><p>${esc(S.user.fullName)} ${S.user.admin ? '(Super Admin: everything)' : `(${esc(S.user.loginId)})${S.user.canPublish ? ' · may publish' : ''}`}</p><p class="sx-small">Signed out after ${S.idleMinutes / 60} hours without activity. Accounts are managed by the Super Admins in the website admin (Statistics Center).</p></section>`;
   $('sf').addEventListener('submit', async (e: any) => {
     e.preventDefault();

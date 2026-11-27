@@ -252,6 +252,29 @@
   .bst-grid .tot { background: var(--navy-l); font-weight: 700; }
   .bst-mom { margin: 12px 0 0; } .bst-mom figcaption { margin-top: 4px; }
 
+  /* Add-on 2: Both teams, clock, history, progress, comparison bars */
+  .bst-clock { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 0; padding: 8px 10px; background: var(--navy-d); color: #fff; border-radius: 12px; }
+  .bst-clock .sx-btn { min-height: 38px; padding: 4px 12px; background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.4); color: #fff; }
+  .bst-list.both li { grid-template-columns: 1fr auto auto 64px; }
+  .bst-bothhead { display: grid; grid-template-columns: 1fr auto auto 64px; gap: 8px; margin: 8px 0 4px; padding: 0 8px; font-size: 13px; text-align: center; }
+  .bst-hist { margin: 8px 0 0; padding-left: 20px; font-size: 14px; } .bst-hist li { padding: 2px 0; }
+  .bst-grid tr.opp th, .bst-grid tr.opp td { color: var(--navy); font-style: italic; } .bst-grid .diff { font-weight: 700; }
+  .sx-prog { height: 12px; border-radius: 6px; background: var(--line); overflow: hidden; } .sx-prog i { display: block; height: 100%; background: var(--ok); }
+  .sxm-bars2 { display: grid; gap: 10px; }
+  .sxm-bar2 { display: grid; grid-template-columns: 44px 1fr 44px; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; } .sxm-bar2 b { text-align: center; }
+  .sxm-bar2 span { grid-column: 1 / -1; text-align: center; font-size: 13px; color: var(--muted); margin-bottom: -6px; }
+  .sxm-track2 { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); gap: 2px; } .sxm-track2 i { display: block; height: 100%; background: var(--red); } .sxm-track2 i + i { background: var(--navy); }
+  /* No double-tap zoom on buttons (tablets), big buttons and dark mode (chosen on the BST page; remembered on the device) */
+  button, .sx-btn, .bst-pm, .sx-tap, .sx-pick { touch-action: manipulation; }
+  html.sx-big .bst-pm { min-width: 72px; min-height: 64px; font-size: 28px; } html.sx-big .bst-v { min-width: 44px; font-size: 30px; } html.sx-big .bst-list li { padding: 10px; }
+  html.sx-dark { --ink: #E8ECF4; --muted: #A9B3C4; --line: #2C3A55; --bg: #0B1426; --card: #14213B; --navy-l: #1C2C4D; }
+  html.sx-dark body { background: var(--bg); color: var(--ink); }
+  html.sx-dark input, html.sx-dark select, html.sx-dark textarea { background: #0F1A30; color: var(--ink); border-color: #3A4A6B; }
+  html.sx-dark .sx-btn:not(.sx-btn--p):not(.sx-btn--r):not(.sx-btn--ok) { background: var(--card); color: var(--ink); border-color: var(--line); }
+  html.sx-dark .bst-pm { background: #0F1A30; color: #fff; border-color: #6E8BC4; } html.sx-dark .bst-grid .bst-sticky { background: var(--card); }
+  html.sx-dark .bst-list li.ro, html.sx-dark .bst-grid tr.ro td, html.sx-dark .bst-grid tr.ro th { background: #101B31; } html.sx-dark .bst-grid .sel { background: #3B3412 !important; }
+  html.sx-dark a { color: #FF8A9A; }
+
   /* The printed report (A4 landscape) and the blank form */
   @page bstp { size: A4 landscape; margin: 10mm; }
   .bstp { position: relative; }

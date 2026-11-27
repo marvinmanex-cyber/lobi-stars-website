@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Statistics Center Add-on 2: opponent line-ups and BST improvements
+
+- **Opponent players saved once per club:** players typed in Match Setup are kept for that club and offered as you type next time; **"Copy line-up from our last match against them"**; warnings when a player or a shirt number appears twice. The opponent line-up stays optional (a notice, never a block).
+- **BST form:** team list and grid for **Lobi Stars, the opponent, or both** (two rows per metric with the difference); goals for/against still worked out from the goal events.
+- **Tag players** (from Review or the BST form): events recorded without a player (quick live entry, grid taps) get their player with one tap, with a progress bar ("34 of 52 events tagged"); no new events are created, and player stats follow.
+- **Data quality panel** before Final: missing line-ups, minutes outside the half, score vs goals, possible duplicates, cards without a player, empty added-time blocks, xG/xA out of range; each with a button to the block, Review, Tag players or Match Setup.
+- **Undo / redo** of the last 20 grid changes (buttons, Ctrl+Z, Ctrl+Y) with a visible list; **clock buttons** on the BST form (kick-off, pause, half-time, 2nd half, full time, extra time; stored on the server, so a refresh never loses the time).
+- **Summary page** per analysis: goal attempts per half, shot accuracy, attack share, momentum chart, strongest and weakest 10 minutes, set pieces, and Lobi Stars v the opponent bars.
+- **Tablet comfort:** big buttons and dark mode (remembered on the device), no double-tap zoom on buttons.
+- **Coach share link:** a private read-only page of an analysis for the head coach (1–30 days, default 14), switched off at any time; staff notes only when ticked; never on Google. A WhatsApp button sends it.
+- **Super Admins are emailed** when an analysis is marked Final (when the site's email is set up).
+- **Recycle bin** (Settings): removed matches, events and analyses are kept and can be restored; analyses can be removed from the library. **Everything for the season (JSON)** on the Exports page.
+- Backups: the Statistics Center's sign-in sessions and "who has it open" records are left out of the nightly backup; everything else is in it automatically.
+
+---
+
 ## 2026-11-27: Statistics Center: line-up picker like the Media Centre's, and public player figures
 
 - **Match Setup line-up** (owner's request): the whole squad from the Squad page as cards (photo, shirt number, name, position) with **Starting / Substitute / —** for each player, like the Media Centre's Matchday Desk; a live count "Starting XI: n of 11 · Substitutes: n", warnings for more than 11 starters, more than 14 substitutes or a shirt number used twice; position filters (GK, DF, MF, FW); the **starting and finishing formations** on the same card (also for the opponent).

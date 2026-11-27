@@ -22,7 +22,7 @@ export async function onRequest({ request, env }) {
   // The app page, and the BST Analysis Form addresses it opens on: /bst-analysis/, /bst-analysis/<id>/,
   // /bst-analysis/<id>/print/ and /bst-analysis/blank/ (the app reads the address).
   const path = url.pathname.replace(/\/+$/, '');
-  if (!/^\/staff\/statistics-center(\/bst-analysis(\/(blank|[A-Za-z0-9_-]{6,40}(\/print)?))?)?$/.test(path)) return new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain', 'X-Robots-Tag': 'noindex, nofollow' } });
+  if (!/^\/staff\/statistics-center(\/bst-analysis(\/(blank|[A-Za-z0-9_-]{6,40}(\/(print|summary))?))?)?$/.test(path)) return new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain', 'X-Robots-Tag': 'noindex, nofollow' } });
   if (!url.pathname.endsWith('/')) return Response.redirect(`${url.origin}${path}/${url.search}`, 301);
   const res = await env.ASSETS.fetch(new URL('/staff/statistics-center/', url));
   const out = new Response(res.body, res);
