@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Statistics Center: Back button on every page
+
+- A **← Back** button under the menu on every Statistics Center page except the dashboard (owner's request). It returns to the page you came from, or to the parent page when a link was opened directly (match screens → Matches; an analysis → all analyses).
+
+---
+
 ## 2026-11-27: Statistics Center › BST Analysis Form
 
 - **What:** the club's paper match-analysis form, on screen, inside the Statistics Center: **/staff/statistics-center/bst-analysis/** (new "BST Analysis Form" menu item and dashboard button). Staff only; never on the public website.

@@ -218,7 +218,7 @@ async function form(c: Ctx, id: string) {
     const lobiF = lobiSide === 'home' ? ['formationHome', 'formationHomeFinish'] : ['formationAway', 'formationAwayFinish'];
     const oppF = lobiSide === 'home' ? ['formationAway', 'formationAwayFinish'] : ['formationHome', 'formationHomeFinish'];
     c.view().innerHTML = `
-      <div class="sx-row" style="justify-content:space-between;margin-bottom:8px"><div><a href="${BASE}" class="sx-small">← All analyses</a><h2 style="margin:4px 0 0">Match analysis: ${esc(m.home)} ${m.homeScore}–${m.awayScore} ${esc(m.away)}</h2>
+      <div class="sx-row" style="justify-content:space-between;margin-bottom:8px"><div><h2 style="margin:0">Match analysis: ${esc(m.home)} ${m.homeScore}–${m.awayScore} ${esc(m.away)}</h2>
         <p class="sx-small" style="margin:0">${d.analysis.status === 'final' ? `<span class="sx-pill published">Final</span> by ${esc(d.analysis.finalisedBy || '')} ${esc(c.when(d.analysis.finalisedAt))}` : '<span class="sx-pill review">Draft</span>'} · Prepared by: <b>${esc(d.analysis.preparedBy || c.S.user.fullName)}</b> · <span id="bstSave" aria-live="polite"></span></p></div>
         <div class="sx-row"><a class="sx-btn" href="${BASE}${esc(id)}/print/" target="_blank" rel="noopener">PDF</a><a class="sx-btn" href="/api/stats-centre/export/bst.xlsx?id=${esc(id)}&opponent=${st.opp ? 1 : 0}">Excel</a><a class="sx-btn" href="/api/stats-centre/export/bst.csv?id=${esc(id)}">CSV</a></div></div>
       <p class="sx-err" id="bstOthers" ${d.others?.length ? '' : 'hidden'}>${d.others?.length ? `${esc(d.others.map((o: any) => o.name).join(', '))} also has this analysis open. Your numbers are added together safely; agree who writes the overview.` : ''}</p>

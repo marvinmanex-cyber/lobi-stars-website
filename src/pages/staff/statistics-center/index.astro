@@ -77,6 +77,7 @@
         <a href="/staff/statistics-center/#/settings" data-nav="settings">Settings</a>
         <a href="/staff/statistics-center/#/definitions" data-nav="definitions">Definitions</a>
       </nav>
+      <div class="sx-backbar sx-noprint" id="backBar" hidden><button class="sx-btn sx-back" id="backBtn" type="button">← Back</button></div>
       <main id="view" class="sx-main" tabindex="-1"></main>
     </div>
 
@@ -150,6 +151,10 @@
   .sx-nav a { color: rgba(255,255,255,.8); text-decoration: none; padding: 12px 12px; font: 700 14px 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; border-bottom: 3px solid transparent; }
   .sx-nav a[aria-current=page] { color: #fff; border-color: var(--gold); }
   .sx-main { max-width: 1180px; margin: 0 auto; padding: 16px; outline: none; }
+  /* The Back button on every page except the dashboard. */
+  .sx-backbar { max-width: 1180px; margin: 0 auto; padding: 12px 16px 0; }
+  .sx-backbar + .sx-main { padding-top: 10px; }
+  .sx-back { min-height: 44px; padding: 8px 16px; }
 
   .sx-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 0 0 16px; }
   .sx-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }

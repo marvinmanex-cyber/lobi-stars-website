@@ -65,8 +65,32 @@ async function boot() {
 
 // ── Router ──
 window.addEventListener('hashchange', () => route());
+// The Back button (every page except the dashboard): back to the page you came from inside the Statistics Center,
+// or, if this page was opened straight from a link, to its parent page.
+let pagesSeen = 0;
+function parentPage() {
+  const path = location.pathname;
+  if (path.startsWith('/staff/statistics-center/bst-analysis')) {
+    const rest = path.replace('/staff/statistics-center/bst-analysis/', '').split('/').filter(Boolean);
+    if (rest[1] === 'print') return `/staff/statistics-center/bst-analysis/${rest[0]}/`;
+    return rest.length ? '/staff/statistics-center/bst-analysis/' : '/staff/statistics-center/#/';
+  }
+  const page = (location.hash || '#/').split('/')[1] || '';
+  if (!page) return null;
+  return ['match', 'live', 'review', 'new'].includes(page) ? '/staff/statistics-center/#/matches' : '/staff/statistics-center/#/';
+}
+function updateBack() {
+  const parent = parentPage();
+  $('backBar').hidden = !parent;
+}
+$('backBtn').addEventListener('click', () => {
+  if (pagesSeen > 1 && history.length > 1) history.back();
+  else location.href = parentPage() || '/staff/statistics-center/#/';
+});
 function route() {
   if (!S) return;
+  pagesSeen++;
+  updateBack();
   // BST Analysis Form pages have their own addresses (/staff/statistics-center/bst-analysis/...).
   if (location.pathname.startsWith('/staff/statistics-center/bst-analysis')) {
     for (const a of document.querySelectorAll('[data-nav]')) (a as HTMLElement).toggleAttribute('aria-current', false);
