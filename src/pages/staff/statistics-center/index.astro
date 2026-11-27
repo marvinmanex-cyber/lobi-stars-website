@@ -14,6 +14,8 @@
   <meta name="theme-color" content="#1C3F7A" />
   <title>Statistics Center | Lobi Stars FC</title>
   <link rel="icon" href="/images/lobi-stars-badge.png" />
+  <link rel="manifest" href="/staff/statistics-center/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
@@ -206,6 +208,7 @@
   .sx-taps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
   @media (min-width: 600px) { .sx-taps { grid-template-columns: repeat(5, 1fr); } }
   .sx-tap { min-height: 72px; border-radius: 14px; border: 0; font: 700 18px 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #fff; background: var(--navy); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .sx-key { display: none; } @media (hover: hover) and (pointer: fine) { .sx-key { display: block; opacity: .7; font-size: 11px; } }
   .sx-tap small { font: 600 12px 'Barlow', sans-serif; text-transform: none; opacity: .85; }
   .sx-tap[data-t=goal] { background: var(--ok); } .sx-tap[data-t=yellow_card] { background: #CA8A04; } .sx-tap[data-t=red_card] { background: var(--red); } .sx-tap[data-t=substitution] { background: #0F766E; } .sx-tap[data-t=injury] { background: #7C3AED; }
   .sx-feed { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }

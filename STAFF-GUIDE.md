@@ -5398,3 +5398,11 @@ events without a player: tap the player for each one. On the BST form choose Lob
 **Summary** shows the match at a glance; **Dark** and **Big buttons** help at evening matches and on tablets.
 **Share with the coach** makes a private read-only link (choose how many days; switch it off any time). Removed
 items are in **Settings › Recycle bin**.
+
+**Handy extras:** Match Setup › Weather › **Fill in** (from the free Open-Meteo service). Review › **Write a draft from
+the events** (edit it, then Save) and **Stat graphic (PNG)** for social media; published matches have **Share on
+WhatsApp**. On a laptop, live entry has keys (G goal, S shot, C corner, F foul, Y yellow, R red, O offside,
+U substitution, I injury, V save, Z undo). Add the Statistics Center to your phone's home screen (browser menu ›
+"Add to Home screen" / "Install app"); the screen stays on during live entry. Exports › **Google Sheets** gives a
+formula that keeps a sheet up to date. Settings › **Second check** (optional): a second person confirms a match
+before it is published.

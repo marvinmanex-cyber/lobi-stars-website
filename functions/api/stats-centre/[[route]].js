@@ -18,6 +18,7 @@ import {
 import { seasonOf } from '../_lib/stats.js';
 import { listAnalyses, createAnalysis, getAnalysis, setCell, setText, setStoppage, finalise, reopenAnalysis, heartbeat, bstSheets, METRICS, BST_FORMATIONS, createShare, listShares, revokeShare, TAGGABLE } from '../_lib/statsBst.js';
 import { sendEmail } from '../_lib/email.js';
+import { matchWeather, makeSheetsKey, stopSheetsKey, sheetsCsv, secondCheck, secondCheckProblem } from '../_lib/statsExtras.js';
 import { superAdminEmails } from '../_lib/superAdmins.js';
 import { buildXlsx, buildCsv } from '../_lib/xlsx.js';
 
@@ -33,6 +34,12 @@ export async function onRequest({ request, env, params }) {
       const r = await signIn(env, request, b);
       if (r.error) return json({ error: r.error, needCode: !!r.needCode }, r.status || 400);
       return json({ ok: true }, 200, { 'Set-Cookie': r.cookie });
+    }
+    if (route === 'sheet.csv' && method === 'GET') {
+      const q0 = new URL(request.url).searchParams;
+      const body = await sheetsCsv(db, q0.get('key'), oneLine(q0.get('season') || '', 12) || (await siteSettings(env, request.url)).currentSeason || '');
+      if (body === null) return json({ error: 'This link is not valid (a new one was made, or it was switched off).' }, 403);
+      return new Response(body, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
     }
     const s = await getStatsSession(request, env, { touch: !(method === 'GET' && route === 'session') });
     if (!s) return json({ error: 'Please sign in to the Statistics Center again.', signedOut: true }, 401, { 'Set-Cookie': clearStatsCookie() });
@@ -79,6 +86,15 @@ export async function onRequest({ request, env, params }) {
         await sxLog(db, statsActor(s.user), 'export', { details: `Season export (JSON) ${season}`, request });
         return new Response(JSON.stringify(await seasonExport(db, season), null, 1), { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="lobi-stars-statistics-${season.replace(/[^\w-]/g, '-')}.json"`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
       }
+      case 'GET match/weather': return out(await matchWeather(db, q.get('id')));
+      case 'POST match/second-check': return out(await secondCheck(db, s.user, b.id, opts));
+      case 'POST settings/sheets': {
+        if (!s.user.canPublish) return json({ error: 'Only a senior statistician or a Super Admin can make this link.' }, 403);
+        if (b.stop) return out(await stopSheetsKey(db, s.user, opts));
+        const r = await makeSheetsKey(db, s.user, opts);
+        const url = `${new URL(request.url).origin}/api/stats-centre/sheet.csv?key=${r.key}`;
+        return json({ ok: true, url, formula: `=IMPORTDATA("${url}")` });
+      }
       case 'GET match/media-lineup': return json({ lineup: await mediaLineup(db, q.get('id')) });
       case 'POST match/setup': return out(await saveSetup(db, s.user, b.id, b, opts));
       case 'POST match/lineups': return out(await saveLineups(db, s.user, b.id, b, await loadRoster(env, request.url), opts));
@@ -90,7 +106,7 @@ export async function onRequest({ request, env, params }) {
       }
       case 'POST match/clock': return out(await setClock(db, s.user, b.id, b, opts));
       case 'POST match/status': return out(await setStatus(db, s.user, b.id, b.status, opts));
-      case 'POST match/publish': { const r = await publish(db, s.user, b.id, opts); return r.error ? json(r, r.check ? 422 : 400) : json(r); }
+      case 'POST match/publish': { const sc = await secondCheckProblem(db, s.user, b.id); if (sc) return json({ error: sc }, 400); const r = await publish(db, s.user, b.id, opts); return r.error ? json(r, r.check ? 422 : 400) : json(r); }
       case 'POST match/reopen': return out(await reopen(db, s.user, b.id, opts));
       case 'POST match/remove': return out(await removeMatch(db, s.user, b.id, opts));
 
@@ -146,6 +162,7 @@ export async function onRequest({ request, env, params }) {
       case 'GET settings': return json(await settingsView(db));
       case 'POST settings': {
         if (!s.user.canPublish) return json({ error: 'Only a senior statistician or a Super Admin can change the settings.' }, 403);
+        if (b.secondCheck !== undefined) { await setSxSetting(db, 'second_check', b.secondCheck ? '1' : '0', s.user.fullName); await sxLog(db, statsActor(s.user), 'settings', { after: { secondCheck: !!b.secondCheck }, request }); return json({ ok: true, ...(await settingsView(db)) }); }
         const comps = [...new Set((Array.isArray(b.competitions) ? b.competitions : []).map(c => oneLine(c, 60)).filter(Boolean))].slice(0, 30);
         if (!comps.length) return json({ error: 'Keep at least one competition.' }, 400);
         await setSxSetting(db, 'competitions', JSON.stringify(comps), s.user.fullName);

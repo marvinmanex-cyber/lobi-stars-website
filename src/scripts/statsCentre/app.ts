@@ -55,6 +55,7 @@ $('logout').addEventListener('click', async () => { try { await api('logout', {}
 
 async function boot() {
   applyUi(); // dark mode / big buttons, if chosen on this device
+  try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('/staff/statistics-center/sw.js', { scope: '/staff/statistics-center/' }).catch(() => {}); } catch { /* not supported */ }
   try { S = await api('session'); }
   catch (x: any) { if (x.status !== 401 && x.status !== 403) { show('vLogin'); $('loginErr').textContent = x.message; $('loginErr').hidden = false; } return; }
   if (S.user.mustChange) { show('vPassword'); return; }
@@ -222,7 +223,7 @@ async function setupView(id: string) {
       ${f('away', 'Away team', `<input name="NAME" maxlength="80" value="${v(m.away)}" ${m.eventId ? 'readonly' : ''}>`)}
       ${f('referee', 'Referee', `<input name="NAME" maxlength="80" value="${v(m.referee)}">`)}
       ${f('assistants', 'Assistant referees / 4th official', `<input name="NAME" maxlength="160" value="${v(m.assistants)}">`)}
-      ${f('weather', 'Weather', `<input name="NAME" maxlength="60" value="${v(m.weather)}" placeholder="Sunny, 31°C">`)}
+      ${f('weather', 'Weather', `<span class="sx-row" style="flex-wrap:nowrap"><input name="NAME" maxlength="60" value="${v(m.weather)}" placeholder="Sunny, 31°C"><button type="button" class="sx-btn" id="wxFill" title="Weather at kick-off from Open-Meteo (free)">Fill in</button></span>`)}
       ${f('pitch', 'Pitch condition', `<input name="NAME" maxlength="60" value="${v(m.pitch)}" placeholder="Good, dry">`)}
       ${f('attendance', 'Attendance', `<input name="NAME" type="number" min="0" max="100000" value="${v(m.attendance)}">`)}
       ${f('length', 'Match length', `<select name="NAME"><option value="90" ${m.length !== 120 ? 'selected' : ''}>90 minutes</option><option value="120" ${m.length === 120 ? 'selected' : ''}>120 minutes (extra time)</option></select>`)}
@@ -318,6 +319,9 @@ async function setupView(id: string) {
     const tr = t.closest('tr'); if (!tr.querySelector('[data-onum]').value && p.number !== null) tr.querySelector('[data-onum]').value = p.number; if (!tr.querySelector('[data-opos]').value) tr.querySelector('[data-opos]').value = p.position || '';
   });
   $('oppRows').addEventListener('click', (e: any) => { if (e.target.closest('[data-del]')) e.target.closest('tr').remove(); });
+  $('wxFill')?.addEventListener('click', async () => {
+    try { const r = await api(`match/weather?id=${encodeURIComponent(id)}`); ($('setup') as any).weather.value = r.text.slice(0, 60); toast(`${r.text} (${r.place}, ${r.source}). Press Save details to keep it.`); } catch (x: any) { toast(x.message, false); }
+  });
   $('setup').addEventListener('submit', async (e: any) => {
     e.preventDefault();
     const body: any = { id, ...Object.fromEntries(new FormData(e.target) as any) };
@@ -453,6 +457,14 @@ async function liveView(id: string) {
   if (server.match.status === 'published') { location.hash = `#/review/${id}`; return; }
   drawLive();
   tick = window.setInterval(() => { const c = $('clockLabel'); if (c) { const m = clockMinute(); c.textContent = m.label; } }, 1000);
+  keepAwake();
+  const KEYS: Record<string, string> = { g: 'goal', s: 'shot', c: 'corner', f: 'foul_committed', y: 'yellow_card', r: 'red_card', o: 'offside', u: 'substitution', i: 'injury', v: 'gk_save' };
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (!location.hash.startsWith('#/live/') || ($('sheet') as HTMLDialogElement).open || e.ctrlKey || e.metaKey || e.altKey || /input|textarea|select/i.test((e.target as HTMLElement).tagName)) return;
+    const t = KEYS[e.key.toLowerCase()];
+    if (t && S.liveButtons.includes(t)) { e.preventDefault(); startFlow(t); }
+    else if (e.key.toLowerCase() === 'z') { e.preventDefault(); $('undo')?.click(); }
+  }, { signal: viewAbort.signal });
 }
 function drawLive() {
   const m = L.server.match, evs = liveEvents(), c = liveClock(), cm = clockMinute();
@@ -471,7 +483,7 @@ function drawLive() {
       <div class="sx-clock"><span id="clockLabel">${esc(cm.label)}</span><span class="p">${esc(PERIOD_NAMES[c.period] || 'Not started')}${c.pausedAt ? ' · paused' : ''}</span></div>
       <div class="sx-clock-btns">${clockBtns}</div>
     </div>
-    <div class="sx-taps">${S.liveButtons.map((t: string) => `<button class="sx-tap" data-t="${t}">${esc(label(t))}</button>`).join('')}</div>
+    <div class="sx-taps">${S.liveButtons.map((t: string) => `<button class="sx-tap" data-t="${t}">${esc(label(t))}${LIVE_KEY[t] ? `<small class="sx-key">${LIVE_KEY[t]}</small>` : ''}</button>`).join('')}</div>
     <div class="sx-row" style="justify-content:space-between;margin:16px 0 8px"><h3 style="margin:0">Events</h3><div class="sx-row">
       <button class="sx-btn" id="undo" ${evs.length ? '' : 'disabled'}>Undo last</button><a class="sx-btn" href="#/review/${esc(L.id)}">Review</a><a class="sx-btn" href="#/match/${esc(L.id)}">Setup</a></div></div>
     <ul class="sx-feed">${evs.slice().reverse().slice(0, 40).map(feedItem).join('') || '<li class="sx-small">No events yet. Press Kick-off, then tap what happens.</li>'}</ul>`;
@@ -654,7 +666,10 @@ async function reviewView(id: string) {
         ${locked ? `<p class="sx-small" style="margin:0">Published ${esc(when(m.publishedAt))} · verified by ${esc(m.verifiedBy || '')}.</p>${S.user.canPublish ? '<button class="sx-btn" id="reopen">Reopen for corrections</button>' : ''}`
           : S.user.canPublish ? `<button class="sx-btn sx-btn--ok" id="publish" ${d.check.ok ? '' : 'disabled'}>Verify and Publish</button>` : '<p class="sx-small" style="margin:0">A senior statistician or a Super Admin publishes this match.</p>'}
         ${!locked && m.status !== 'review' ? '<button class="sx-btn" id="toReview">Mark ready for review</button>' : ''}
+        ${S.settings.secondCheck && !locked ? `<button class="sx-btn" id="secondCheck">I have checked this match</button>` : ''}${m.secondCheckBy ? `<span class="sx-small">Checked by ${esc(m.secondCheckBy)}</span>` : ''}
         <a class="sx-btn" href="#/tag/${esc(id)}">Tag players</a>
+        <button class="sx-btn" id="statPng">Stat graphic (PNG)</button>
+        ${locked ? `<a class="sx-btn" href="https://wa.me/?text=${encodeURIComponent(shareText(d))}" target="_blank" rel="noopener">Share on WhatsApp</a>` : ''}
         <button class="sx-btn" id="print">Print match report</button>
         <a class="sx-btn" href="/api/stats-centre/export/events.csv?matchId=${esc(id)}">Events CSV</a>
       </div>
@@ -670,6 +685,7 @@ async function reviewView(id: string) {
         <label>Attendance<input name="attendance" type="number" min="0" max="100000" value="${esc(m.attendance ?? '')}"></label>
         <label>Highlights link (YouTube, Facebook…)<input name="highlights" type="url" maxlength="400" value="${esc(m.highlights)}" placeholder="https://"></label>
         <label>Match report<textarea name="report" maxlength="40000">${esc(m.report)}</textarea></label>
+        <button class="sx-btn" type="button" id="draftReport">Write a draft from the events</button>
         <button class="sx-btn sx-btn--p" type="submit">Save</button></fieldset></form>
     </div>
 
@@ -696,6 +712,9 @@ async function reviewView(id: string) {
   const reload = () => reviewView(id);
   const send = async (op: any) => { try { await api('match/events', { id, ops: [op] }); toast('Saved.'); reload(); } catch (x: any) { toast(x.message, false); } };
   $('print').addEventListener('click', () => window.print());
+  $('secondCheck')?.addEventListener('click', async () => { if (!confirm('Confirm that you have checked every event, the line-ups and the score?')) return; try { await api('match/second-check', { id }); toast('Recorded. Someone else can now publish.'); reload(); } catch (x: any) { toast(x.message, false); } });
+  $('draftReport')?.addEventListener('click', () => { const t = ($('post') as any).report; if (t.value.trim() && !confirm('Replace the report text with a draft from the events?')) return; t.value = draftReport(d); toast('Draft written: read it, edit it, then Save.'); });
+  $('statPng').addEventListener('click', () => statGraphic(d));
   $('publish')?.addEventListener('click', async () => {
     if (!confirm('Verify and publish? The stats go on the website (Stats page, player pages, match page).')) return;
     try { await api('match/publish', { id }); toast('Published. The website is updated.'); reload(); } catch (x: any) { toast(x.message, false); if (x.data?.check) reload(); }
@@ -762,6 +781,64 @@ async function teamView() {
   view().querySelector('[data-season]')?.addEventListener('change', (e: any) => { store.set('sx_ts', e.target.value); teamView(); });
 }
 
+// ── Free-tool helpers ──
+const LIVE_KEY: Record<string, string> = { goal: 'G', shot: 'S', corner: 'C', foul_committed: 'F', yellow_card: 'Y', red_card: 'R', offside: 'O', substitution: 'U', injury: 'I', gk_save: 'V' };
+let wake: any = null;
+/** Keeps the phone screen on during live entry (Screen Wake Lock, built into the browser). */
+async function keepAwake() {
+  try { if ('wakeLock' in navigator && !wake) { wake = await (navigator as any).wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch { /* not allowed or not supported */ }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && location.hash.startsWith('#/live/')) keepAwake(); else if (wake && !location.hash.startsWith('#/live/')) { wake.release?.(); wake = null; } });
+const minuteText = (e: any) => `${e.minute}${e.stoppage ? `+${e.stoppage}` : ''}'`;
+function shareText(d: any) {
+  const m = d.match, goals = d.events.filter((e: any) => e.type === 'goal');
+  const by = (side: string) => goals.filter((e: any) => e.side === side).map((e: any) => `${e.name || 'own goal'} ${minuteText(e)}${e.detail === 'own_goal' ? ' (og)' : e.detail === 'penalty' ? ' (pen)' : ''}`).join(', ');
+  const T = d.derived.team;
+  return `${m.home} ${m.homeScore}–${m.awayScore} ${m.away} (${m.competition})${by('home') ? `\n${m.home}: ${by('home')}` : ''}${by('away') ? `\n${m.away}: ${by('away')}` : ''}\nShots ${T.home.shots}–${T.away.shots} · On target ${T.home.shotsOnTarget}–${T.away.shotsOnTarget} · Corners ${T.home.corners}–${T.away.corners}\nFull stats: lobistarsfc.com/stats/`;
+}
+/** A first draft of the match report from the events (no AI, no cost): the staff edit it before saving. */
+function draftReport(d: any) {
+  const m = d.match, T = d.derived.team, lobi = m.lobiHome ? 'home' : 'away', opp = lobi === 'home' ? 'away' : 'home';
+  const name = (s: string) => (s === 'home' ? m.home : m.away);
+  const lf = m.lobiHome ? m.homeScore : m.awayScore, la = m.lobiHome ? m.awayScore : m.homeScore;
+  const res = lf > la ? `won ${lf}–${la} against` : lf < la ? `lost ${la}–${lf} to` : `drew ${lf}–${la} with`;
+  const where = m.lobiHome ? `at ${m.venue || 'home'}` : `away at ${m.venue || name(opp)}`;
+  const goals = d.events.filter((e: any) => e.type === 'goal');
+  const line = (e: any) => `${e.detail === 'own_goal' ? `an own goal by ${e.name || 'a defender'}` : e.name || 'a goal'} (${minuteText(e)}${e.detail === 'penalty' ? ', penalty' : ''}${e.relatedName && e.detail !== 'own_goal' ? `, assisted by ${e.relatedName}` : ''})`;
+  const parts = [`Lobi Stars ${res} ${name(opp)} ${where} in the ${m.competition}${m.matchday ? ` (matchday ${m.matchday})` : ''}.`];
+  const ours = goals.filter((e: any) => e.side === lobi), theirs = goals.filter((e: any) => e.side === opp);
+  if (ours.length) parts.push(`Lobi Stars scored through ${ours.map(line).join(', ')}.`);
+  if (theirs.length) parts.push(`${name(opp)} scored through ${theirs.map(line).join(', ')}.`);
+  if (m.htHome !== null && m.htHome !== undefined) parts.push(`It was ${m.htHome}–${m.htAway} at half-time.`);
+  parts.push(`Lobi Stars had ${T[lobi].shots} shots (${T[lobi].shotsOnTarget} on target) and ${T[lobi].corners} corners; ${name(opp)} had ${T[opp].shots} shots (${T[opp].shotsOnTarget} on target).${m.possessionHome !== null && m.possessionHome !== undefined ? ` Possession: ${m.lobiHome ? m.possessionHome : 100 - m.possessionHome}% for Lobi Stars.` : ''}`);
+  const cards = d.events.filter((e: any) => e.type === 'red_card');
+  if (cards.length) parts.push(`Sent off: ${cards.map((e: any) => `${e.name || 'a player'} (${name(e.side)}, ${minuteText(e)})`).join(', ')}.`);
+  const subs = d.events.filter((e: any) => e.type === 'substitution' && e.side === lobi && e.relatedName);
+  if (subs.length) parts.push(`Lobi Stars substitutions: ${subs.map((e: any) => `${e.relatedName} for ${e.name} (${minuteText(e)})`).join(', ')}.`);
+  if (m.attendance) parts.push(`Attendance: ${Number(m.attendance).toLocaleString('en-GB')}.`);
+  return parts.join('\n\n');
+}
+/** A square stat graphic (PNG) for social media, drawn in the browser (no design tool needed). */
+async function statGraphic(d: any) {
+  const m = d.match, T = d.derived.team, W = 1080;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = W;
+  const x = cv.getContext('2d')!;
+  const g = x.createLinearGradient(0, 0, 0, W); g.addColorStop(0, '#1C3F7A'); g.addColorStop(1, '#0E2147'); x.fillStyle = g; x.fillRect(0, 0, W, W);
+  x.fillStyle = '#C8102E'; x.fillRect(0, W - 24, W, 24);
+  try { const img = new Image(); img.src = '/images/lobi-stars-badge.png'; await img.decode(); x.drawImage(img, W / 2 - 70, 50, 140, 140); } catch { /* no badge */ }
+  const font = (w: number, s: number) => `${w} ${s}px "Barlow Condensed", "Arial Narrow", sans-serif`;
+  x.textAlign = 'center'; x.fillStyle = '#F2B705'; x.font = font(700, 34); x.fillText(`${String(m.competition).toUpperCase()} · ${new Date(m.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' }).toUpperCase()}`, W / 2, 240);
+  x.fillStyle = '#fff'; x.font = font(700, 46); x.fillText(String(m.home).toUpperCase(), W / 4, 340); x.fillText(String(m.away).toUpperCase(), (3 * W) / 4, 340);
+  x.font = font(700, 170); x.fillText(`${m.homeScore}–${m.awayScore}`, W / 2, 500);
+  const goals = d.events.filter((e: any) => e.type === 'goal');
+  x.font = font(600, 30); x.fillStyle = '#DDE6F5';
+  for (const [side, cx] of [['home', W / 4], ['away', (3 * W) / 4]] as [string, number][]) goals.filter((e: any) => e.side === side).slice(0, 5).forEach((e: any, i: number) => x.fillText(`⚽ ${e.name || 'OG'} ${minuteText(e)}`, cx, 560 + i * 38));
+  const rows: [string, number, number][] = [['SHOTS', T.home.shots, T.away.shots], ['ON TARGET', T.home.shotsOnTarget, T.away.shotsOnTarget], ['CORNERS', T.home.corners, T.away.corners], ['FOULS', T.home.fouls, T.away.fouls]];
+  rows.forEach(([l, h, a], i) => { const y = 790 + i * 62; x.fillStyle = '#fff'; x.font = font(700, 40); x.textAlign = 'right'; x.fillText(String(h), W / 2 - 170, y); x.textAlign = 'left'; x.fillText(String(a), W / 2 + 170, y); x.textAlign = 'center'; x.fillStyle = '#AFC3E6'; x.font = font(700, 30); x.fillText(l, W / 2, y); });
+  x.fillStyle = '#fff'; x.font = font(700, 28); x.fillText('LOBISTARSFC.COM · LOBI STARS STATISTICS CENTER', W / 2, W - 50);
+  const a = document.createElement('a'); a.download = `lobi-stars-${String(m.date).slice(0, 10)}-stats.png`; a.href = cv.toDataURL('image/png'); a.click();
+}
+
 // ── Tag players: give events recorded without a player (quick live entry, BST grid taps) their player ──
 async function tagView(id: string) {
   const R = resetView();
@@ -806,7 +883,16 @@ function exportsView() {
   const sel = store.get('sx_es', S.season);
   view().innerHTML = `<h2>Exports</h2><section class="sx-card"><div class="sx-row">${seasonSelect(sel)}</div>
     <p class="sx-row" style="margin-top:12px"><a class="sx-btn sx-btn--p" href="/api/stats-centre/export/events.csv?season=${encodeURIComponent(sel)}">Every event (CSV)</a><a class="sx-btn sx-btn--p" href="/api/stats-centre/export/matches.csv?season=${encodeURIComponent(sel)}">Matches (CSV)</a><a class="sx-btn" href="/api/stats-centre/export/season.json?season=${encodeURIComponent(sel)}">Everything for the season (JSON, for safekeeping)</a></p>
-    <p class="sx-small">CSV files open in Excel or Google Sheets. One match's events and a printable match report are on that match's Review page. Every download is recorded in the activity log.</p></section>`;
+    <p class="sx-small">CSV files open in Excel or Google Sheets. One match's events and a printable match report are on that match's Review page. Every download is recorded in the activity log.</p></section>
+    <section class="sx-card"><h3>Google Sheets (updates by itself)</h3><p class="sx-small">A private link that Google Sheets can read with <code>=IMPORTDATA(…)</code>: every event of the season, refreshed by Google about once an hour. Anyone with the link can read the events, so keep it inside the club; making a new link switches the old one off.</p>
+      <p class="sx-small">${S.settings.sheetsMade ? `A link is active (made ${esc(when(S.settings.sheetsMade))}).` : 'No link yet.'}</p>
+      ${S.user.canPublish ? `<p class="sx-row"><button class="sx-btn sx-btn--p" id="sheetsMake">${S.settings.sheetsMade ? 'Make a new link' : 'Make the link'}</button>${S.settings.sheetsMade ? '<button class="sx-btn" id="sheetsStop">Switch it off</button>' : ''}</p><div id="sheetsOut"></div>` : '<p class="sx-small">A senior statistician or a Super Admin can make it.</p>'}</section>
+    <section class="sx-card"><h3>Public stats feed (open data)</h3><p class="sx-small">Published matches and season leaders as data for media partners and apps (no ratings, notes or analysis): <a href="/api/stats/feed.json" target="_blank" rel="noopener">lobistarsfc.com/api/stats/feed.json</a></p></section>`;
+  $('sheetsMake')?.addEventListener('click', async () => {
+    if (S.settings.sheetsMade && !confirm('Make a new link? The old one stops working.')) return;
+    try { const r = await api('settings/sheets', {}); S.settings.sheetsMade = new Date().toISOString(); $('sheetsOut').innerHTML = `<p class="sx-note"><input readonly value="${esc(r.formula)}" style="flex:1 1 320px" aria-label="Formula for Google Sheets"><button class="sx-btn" id="sheetsCopy">Copy</button></p><p class="sx-small">Paste this formula into cell A1 of a Google Sheet. It is shown only once.</p>`; $('sheetsCopy').addEventListener('click', () => navigator.clipboard?.writeText(r.formula).then(() => toast('Copied.'))); } catch (x: any) { toast(x.message, false); }
+  });
+  $('sheetsStop')?.addEventListener('click', async () => { if (!confirm('Switch the Google Sheets link off?')) return; try { await api('settings/sheets', { stop: true }); S.settings.sheetsMade = null; exportsView(); toast('Switched off.'); } catch (x: any) { toast(x.message, false); } });
   view().querySelector('[data-season]')?.addEventListener('change', (e: any) => { store.set('sx_es', e.target.value); exportsView(); });
 }
 function settingsView() {
@@ -815,8 +901,11 @@ function settingsView() {
     <form class="sx-card" id="sf"><h3>Competitions</h3><p class="sx-small">One per line. Offered when creating and editing matches.${can ? '' : ' Only a senior statistician or a Super Admin can change them.'}</p>
       <textarea name="competitions" ${can ? '' : 'disabled'}>${esc(S.settings.competitions.join('\n'))}</textarea>${can ? '<p><button class="sx-btn sx-btn--p" type="submit">Save</button></p>' : ''}</form>
     <section class="sx-card"><h3>Seasons</h3><p class="sx-small">A match's season comes from its date and the club's season start (set in the website's site settings). Current season: <b>${esc(S.season)}</b>. Seasons with matches: ${S.seasons.map(esc).join(', ')}.</p></section>
+    <section class="sx-card"><h3>Second check before publishing</h3><p class="sx-small">When on, a match can be published only after someone other than the publisher has pressed "I have checked this match" on its Review page (the four-eyes rule).</p>
+      <label class="sx-small" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="scToggle" ${S.settings.secondCheck ? 'checked' : ''} ${can ? '' : 'disabled'}> Require a second check</label></section>
     <section class="sx-card"><h3>Recycle bin</h3><p class="sx-small">Removed matches, events and analyses are kept here and can be restored.</p><p><a class="sx-btn" href="#/recycle">Open the recycle bin</a></p></section>
     <section class="sx-card"><h3>Your account</h3><p>${esc(S.user.fullName)} ${S.user.admin ? '(Super Admin: everything)' : `(${esc(S.user.loginId)})${S.user.canPublish ? ' · may publish' : ''}`}</p><p class="sx-small">Signed out after ${S.idleMinutes / 60} hours without activity. Accounts are managed by the Super Admins in the website admin (Statistics Center).</p></section>`;
+  $('scToggle')?.addEventListener('change', async (e: any) => { try { const r = await api('settings', { secondCheck: e.target.checked }); S.settings = { ...S.settings, ...r }; toast(e.target.checked ? 'A second check is now required before publishing.' : 'Second check switched off.'); } catch (x: any) { e.target.checked = !e.target.checked; toast(x.message, false); } });
   $('sf').addEventListener('submit', async (e: any) => {
     e.preventDefault();
     try { const r = await api('settings', { competitions: e.target.competitions.value.split('\n') }); S.settings = { ...S.settings, competitions: r.competitions }; toast('Saved.'); } catch (x: any) { toast(x.message, false); }

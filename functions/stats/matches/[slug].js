@@ -37,7 +37,7 @@ async function page({ request, env, params }) {
     <div class="sxm-num">${m.homeScore}–${m.awayScore}</div>
     <div class="sxm-team">${crestHtml(m.away, 64)}<span>${esc(m.away)}</span></div></section>
     <p class="sxm-meta">${esc(m.competition)}${m.matchday ? ` · Matchday ${esc(m.matchday)}` : ''} · ${esc(fmtDate(m.date, true))}${m.venue ? ` · ${esc(m.venue)}` : ''}${m.htHome !== null && m.htHome !== undefined ? ` · Half-time ${m.htHome}–${m.htAway}` : ''}${m.attendance ? ` · Attendance ${Number(m.attendance).toLocaleString('en-GB')}` : ''}${m.referee ? ` · Referee ${esc(m.referee)}` : ''}</p>
-    <p class="sxm-links">${data.matchUrl ? `<a class="btn-o" href="${esc(data.matchUrl)}">Match page</a>` : ''}${m.highlights ? `<a class="btn-p" href="${esc(m.highlights)}" target="_blank" rel="noopener">Watch highlights</a>` : ''}<a class="btn-o" href="/stats/">Season stats</a></p>`;
+    <p class="sxm-links">${data.matchUrl ? `<a class="btn-o" href="${esc(data.matchUrl)}">Match page</a>` : ''}${m.highlights ? `<a class="btn-p" href="${esc(m.highlights)}" target="_blank" rel="noopener">Watch highlights</a>` : ''}<a class="btn-o" href="/stats/">Season stats</a><a class="btn-o" href="https://wa.me/?text=${encodeURIComponent(`${m.home} ${m.homeScore}–${m.awayScore} ${m.away}: match stats ${canonical}`)}" target="_blank" rel="noopener">Share on WhatsApp</a></p>`;
 
   // Team stats
   const T = derived.team;

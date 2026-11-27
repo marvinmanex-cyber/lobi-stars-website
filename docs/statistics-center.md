@@ -165,8 +165,24 @@ Tables: `sx_bst_analyses` (one per match), `sx_bst_cells`, `sx_bst_presence`; `s
 - Email to the Super Admins when an analysis is Final; **recycle bin** (restore); **season JSON export**.
 - Tests: `tests/stats-addon2.unit.test.mjs` (seed: an opponent with 14 saved players).
 
+## Free-tool improvements (built 27 Nov 2026)
+
+| Improvement | Where | Free tool |
+|---|---|---|
+| Weather at kick-off | Match Setup › Weather › Fill in | Open-Meteo forecast, archive and geocoding (no key) |
+| Match report draft | Review › Write a draft from the events | own template (`draftReport`) |
+| Stat graphic PNG | Review › Stat graphic | browser canvas |
+| Installable app, opens offline | manifest + service worker (`/staff/statistics-center/sw.js`, scope limited to the Statistics Center; never stores API answers) | Web App Manifest, Service Worker |
+| Live keyboard shortcuts | live screen | built in |
+| Public stats feed | `/api/stats/feed.json` (published only; CORS open; 5-minute cache) | own API |
+| Second check (four-eyes) | Settings; Review › I have checked this match | built in (`sx_matches.second_check_by/at`) |
+| WhatsApp share | Review (published), public match page | wa.me links |
+| Google Sheets sync | Exports › Google Sheets (`/api/stats-centre/sheet.csv?key=`; key stored hashed) | Google Sheets IMPORTDATA |
+| Screen stays on | live screen | Screen Wake Lock API |
+
+Code: `functions/api/_lib/statsExtras.js`; tests: `tests/stats-extras.unit.test.mjs`.
+
 ## Coming next (queued by the owner)
 
-1. Free-tool improvements: weather auto-fill, report draft, stat graphic, installable app, live shortcuts, public feed, second check, WhatsApp share, Sheets sync, screen wake.
 3. Phase 2: pitch maps, xG model, video clips, set pieces, player comparison, season analytics, scouting reports,
    training tags, scheduled reports.

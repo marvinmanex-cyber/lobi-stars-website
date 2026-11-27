@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Statistics Center: 10 best-practice improvements with free tools
+
+All free: no paid service, no new account.
+1. **Weather filled in** (Match Setup › Weather › Fill in): conditions at kick-off from Open-Meteo (free, no key), for the venue's Nigerian town (Makurdi when unknown); forecast for the next 15 days, recorded weather for past matches. Only the town and date are sent.
+2. **Match report draft** (Review › Write a draft from the events): result, scorers and assists, half-time score, shots, corners, possession, red cards, substitutions, attendance; staff edit it before saving. No AI, no cost.
+3. **Stat graphic** (Review › Stat graphic (PNG)): a square Lobi Stars image with the score, scorers and key stats for social media, made in the browser.
+4. **Install as an app** on phones and tablets (home-screen icon, full screen); the page also opens without a connection.
+5. **Keyboard shortcuts** on the live screen for laptops: G goal, S shot, C corner, F foul, Y yellow, R red, O offside, U substitution, I injury, V save, Z undo.
+6. **Public stats feed (open data)** for media partners and apps: lobistarsfc.com/api/stats/feed.json (published matches and season leaders only).
+7. **Second check before publishing** (Settings, off by default): someone other than the publisher must press "I have checked this match".
+8. **Share on WhatsApp** for published matches (Review page and the public match stats page).
+9. **Google Sheets that update by themselves** (Exports): a private IMPORTDATA formula with a secret key; a new link switches the old one off.
+10. **The screen stays on** during live entry (screen wake lock).
+
+---
+
 ## 2026-11-27: Statistics Center Add-on 2: opponent line-ups and BST improvements
 
 - **Opponent players saved once per club:** players typed in Match Setup are kept for that club and offered as you type next time; **"Copy line-up from our last match against them"**; warnings when a player or a shirt number appears twice. The opponent line-up stays optional (a notice, never a block).

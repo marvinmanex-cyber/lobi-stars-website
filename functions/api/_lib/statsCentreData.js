@@ -66,6 +66,7 @@ const matchView = m => m && ({
   pitch: m.pitch_condition, attendance: m.attendance, formationHome: m.formation_home, formationAway: m.formation_away, formationHomeFinish: m.formation_home_finish || '', formationAwayFinish: m.formation_away_finish || '', possessionHome: m.possession_home,
   homeScore: m.home_score, awayScore: m.away_score, htHome: m.ht_home_score, htAway: m.ht_away_score, status: m.status, clock: parse(m.clock_json, null),
   length: m.length_minutes, report: m.report_text || '', highlights: m.highlights_url || '', motm: m.motm_slug || '',
+  secondCheckBy: m.second_check_by || '', secondCheckAt: m.second_check_at || '',
   createdBy: m.created_by, updatedBy: m.updated_by, verifiedBy: m.verified_by, verifiedAt: m.verified_at, publishedAt: m.published_at, updatedAt: m.updated_at,
 });
 const parse = (s, f) => { try { return s ? JSON.parse(s) : f; } catch { return f; } };
@@ -637,7 +638,7 @@ export async function matchesCsv(db, { season = '' } = {}) {
 export async function settingsView(db) {
   const s = await sxSettings(db);
   const list = (k, d) => { try { const v = JSON.parse(s[k] || 'null'); return Array.isArray(v) && v.length ? v : d; } catch { return d; } };
-  return { competitions: list('competitions', DEFAULT_COMPETITIONS), labels: { ...EVENT_TYPES, ...(() => { try { return JSON.parse(s.labels || '{}'); } catch { return {}; } })() } };
+  return { secondCheck: s.second_check === '1', sheetsMade: s.sheets_key_hash ? s.sheets_key_made || '' : null, competitions: list('competitions', DEFAULT_COMPETITIONS), labels: { ...EVENT_TYPES, ...(() => { try { return JSON.parse(s.labels || '{}'); } catch { return {}; } })() } };
 }
 
 // ── Public (published only) ──
