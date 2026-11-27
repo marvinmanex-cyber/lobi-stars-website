@@ -1,0 +1,105 @@
+---
+// Statistics Center › Statisticians & activity (only the three Super Admins).
+// Statisticians sign in at /staff/statistics-center/ with a Login ID (name + 2-4 digits, e.g. Jiki01) and their own
+// password. A Super Admin creates each account with a temporary password; the person must choose their own at the
+// first sign-in. "May publish" lets a senior statistician press Verify and Publish. Super Admins sign in to the
+// Statistics Center with their own Super Admin email and can see and change everything there.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Statistics Center | Lobi Stars Admin" description="Statistics Center accounts and activity." noindex>
+  <div class="wrap sxa">
+    <AdminNav current="stats-users" />
+    <header><div class="stag">Statistics Center · Super Admins</div><h1 class="stitle">Statistics <span class="r">Center</span></h1></header>
+    <p class="sxa-lede">The Statistics Center is the separate page where the club's statisticians record every match, event by event: <a href="/staff/statistics-center/" target="_blank" rel="noopener">lobistarsfc.com/staff/statistics-center</a>. Published matches feed the Stats page, the player pages and the match pages by themselves. You can sign in there with your own Super Admin email and password to see and change anything.</p>
+    <p class="sxa-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="sxa-card">
+      <h2>Statisticians</h2>
+      <div class="sxa-scroll"><table class="sxa-table"><thead><tr><th>Name</th><th>Login ID</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead><tbody id="users"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table></div>
+      <h3>Add a statistician</h3>
+      <form id="addForm" class="sxa-row" autocomplete="off">
+        <label>Full name<input name="fullName" required maxlength="80" placeholder="e.g. Jiki Benjamin" /></label>
+        <label>Login ID <small>(name + 2–4 digits)</small><input name="loginId" required maxlength="34" pattern="[A-Za-z]{2,30}[0-9]{2,4}" placeholder="e.g. Jiki01" /></label>
+        <label>Temporary password <small>(at least 8 characters)</small><span class="sxa-pw"><input name="password" required minlength="8" maxlength="72" /><button type="button" class="btn-o" data-gen>Make one</button></span></label>
+        <label class="sxa-check"><input type="checkbox" name="canPublish" /> May publish</label>
+        <button class="btn-p" type="submit">Add statistician</button>
+      </form>
+      <p class="muted small">Give the person their Login ID and temporary password in person or by WhatsApp. They must choose their own password the first time they sign in. Accounts lock for 15 minutes after 5 wrong passwords and sign out after 4 hours without activity. <b>May publish</b> lets them press Verify and Publish; without it they record and review, and someone with it (or a Super Admin) publishes.</p>
+    </section>
+
+    <section class="sxa-card">
+      <h2>Activity log</h2>
+      <p class="muted small">Every sign-in and every change in the Statistics Center, with the old and new values. It cannot be changed or deleted. Latest 200.</p>
+      <div class="sxa-scroll"><table class="sxa-table"><thead><tr><th>When</th><th>Who</th><th>What</th><th>Details</th></tr></thead><tbody id="activity"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .sxa { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
+  .sxa-lede { color: var(--a-muted); line-height: 1.5; } .sxa-lede a { color: inherit; font-weight: 700; }
+  .sxa-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 3000; width: max-content; max-width: min(620px, calc(100vw - 32px)); box-shadow: 0 12px 30px rgba(0,0,0,.18); }
+  .sxa-msg.err { background: #FEE2E2; color: #991B1B; }
+  .sxa-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 16px 0; }
+  .sxa-card h2 { margin: 0 0 10px; font-size: 19px; } .sxa-card h3 { margin: 18px 0 8px; font-size: 16px; }
+  .sxa-scroll { overflow-x: auto; }
+  .sxa-table { width: 100%; border-collapse: collapse; font-size: 14px; } .sxa-table th, .sxa-table td { text-align: left; padding: 9px 8px; border-top: 1px solid var(--a-line); vertical-align: top; }
+  .sxa-table th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--a-muted); border-top: 0; }
+  .sxa-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  .sxa label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; } .sxa label small { font-weight: 400; color: var(--a-muted); }
+  .sxa .sxa-check { flex-direction: row; align-items: center; min-height: 40px; }
+  .sxa input:not([type=checkbox]) { min-height: 40px; font: inherit; font-size: 14px; padding: 6px 10px; border: 1px solid var(--a-line); border-radius: 8px; background: var(--a-card); color: var(--a-ink); }
+  .sxa-pw { display: flex; gap: 6px; } .sxa-pw input { flex: 1; min-width: 0; }
+  .sxa :global(.acts) { display: flex; flex-wrap: wrap; gap: 6px; } .sxa :global(.acts button) { font: inherit; font-size: 12px; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; }
+  .sxa :global(.pill) { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #DCFCE7; color: #166534; } .sxa :global(.pill.off) { background: #E5E7EB; color: #374151; } .sxa :global(.pill.warn) { background: #FEF3C7; color: #92400E; } .sxa :global(.pill.blue) { background: #DBEAFE; color: #1E3A8A; }
+  .small { font-size: 13px; }
+</style>
+
+<script>
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const when = (iso?: string) => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '—';
+  let msgT = 0;
+  function msg(t: string, ok = true) { const m = $('msg'); m.textContent = t; m.className = `sxa-msg${ok ? '' : ' err'}`; m.hidden = false; clearTimeout(msgT); msgT = window.setTimeout(() => { m.hidden = true; }, 8000); }
+  async function api(body?: unknown) {
+    const r = await fetch('/api/admin/stats-centre/users', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/stats-centre/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function tempPassword() {
+    const words = ['Eagle', 'Benue', 'Stars', 'Pitch', 'Goal', 'River', 'Lion', 'Kite', 'Drum', 'Mango'];
+    const a = crypto.getRandomValues(new Uint32Array(3));
+    return `${words[a[0] % 10]}-${words[a[1] % 10]}-${1000 + (a[2] % 9000)}`;
+  }
+  function draw(d: any) {
+    $('users').innerHTML = d.users.length ? d.users.map((u: any) => `<tr data-id="${esc(u.id)}" data-name="${esc(u.fullName)}">
+      <td><b>${esc(u.fullName)}</b><br /><small class="muted">Added ${esc(when(u.createdAt))}</small></td>
+      <td><code>${esc(u.loginId)}</code></td>
+      <td>${u.active ? '<span class="pill">Active</span>' : '<span class="pill off">Switched off</span>'} ${u.canPublish ? '<span class="pill blue">May publish</span>' : ''} ${u.locked ? '<span class="pill warn">Locked</span>' : ''} ${u.mustChange ? '<span class="pill warn">Temporary password</span>' : ''}</td>
+      <td>${esc(when(u.lastLogin))}</td>
+      <td><div class="acts"><button data-a="reset_password">Reset password</button><button data-a="full_name">Rename</button><button data-a="${u.canPublish ? 'publish_off' : 'publish_on'}">${u.canPublish ? 'Stop publishing' : 'Allow publishing'}</button>${u.locked ? '<button data-a="unlock">Unlock</button>' : ''}<button data-a="sign_out">Sign out</button><button data-a="${u.active ? 'disable' : 'enable'}">${u.active ? 'Switch off' : 'Switch on'}</button></div></td></tr>`).join('')
+      : '<tr><td colspan="5" class="muted">No statisticians yet. Add the first one below.</td></tr>';
+    $('activity').innerHTML = d.activity.length ? d.activity.map((a: any) => `<tr><td>${esc(when(a.at))}</td><td>${esc(a.actor_name || a.actor_kind)}</td><td>${esc(String(a.action).replace(/_/g, ' '))}${a.item_title ? `<br /><small class="muted">${esc(a.item_title)}</small>` : ''}</td><td><small>${esc(a.details || '')}</small></td></tr>`).join('')
+      : '<tr><td colspan="4" class="muted">Nothing yet.</td></tr>';
+  }
+  $('addForm').addEventListener('click', (e: Event) => { if ((e.target as HTMLElement).closest('[data-gen]')) $('addForm').password.value = tempPassword(); });
+  $('addForm').addEventListener('submit', async (e: Event) => {
+    e.preventDefault(); const f = e.target as any;
+    try { draw(await api({ action: 'create', fullName: f.fullName.value, loginId: f.loginId.value, password: f.password.value, canPublish: f.canPublish.checked })); msg(`Added. Login ID ${f.loginId.value}, temporary password ${f.password.value}`); f.reset(); }
+    catch (err: any) { msg(err.message, false); }
+  });
+  $('users').addEventListener('click', async (e: Event) => {
+    const b = (e.target as HTMLElement).closest('[data-a]') as HTMLElement | null; if (!b) return;
+    const tr = b.closest('tr') as HTMLElement, id = tr.dataset.id, name = tr.dataset.name, a = b.dataset.a!;
+    const body: any = { action: a, id };
+    if (a === 'reset_password') { const p = prompt(`New temporary password for ${name} (they must change it when they sign in):`, tempPassword()); if (!p) return; body.password = p; }
+    if (a === 'full_name') { const n = prompt('Full name:', name); if (!n) return; body.fullName = n; }
+    if (a === 'disable' && !confirm(`Switch off ${name}? They are signed out at once.`)) return;
+    try { draw(await api(body)); msg(a === 'reset_password' ? `Temporary password set: ${body.password}` : 'Done.'); } catch (err: any) { msg(err.message, false); }
+  });
+  api().then(draw).catch((err: any) => msg(err.message, false));
+</script>

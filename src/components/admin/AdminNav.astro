@@ -64,6 +64,10 @@ const CATEGORIES: Cat[] = [
     { id: 'media-activity', label: 'Activity log', href: '/admin/media-centre/activity/', perm: 'media.centre.manage', hint: 'Everything done in the Media Centre (cannot be changed or deleted); CSV download' },
     { id: 'media-open', label: 'Open the Media Centre', href: '/media-centre/', perm: 'media.centre.manage', ext: true, hint: 'The separate page the media staff sign in to' },
   ] },
+  { id: 'stats-centre', icon: '📊', label: 'Statistics Center', color: '#1C3F7A', items: [
+    { id: 'stats-users', label: 'Statisticians & activity', href: '/admin/stats-centre/', perm: 'stats.centre.manage', hint: 'Create statistician accounts, reset passwords, who may publish, and everything done in the Statistics Center' },
+    { id: 'stats-open', label: 'Open the Statistics Center', href: '/staff/statistics-center/', perm: 'stats.centre.manage', ext: true, hint: 'The separate page where match statistics are recorded (sign in with your Super Admin email)' },
+  ] },
   { id: 'rewards', icon: '⭐', label: 'Rewards', color: '#C9A227', items: [
     { id: 'rewards', label: 'Lobi Stars Rewards', href: '/admin/rewards/', perm: 'rewards.settings|rewards.catalogue|rewards.members.view|rewards.points.adjust|rewards.fulfilment', hint: 'Star Points: settings, members, adjust points, launch switch' },
     { id: 'rewards-catalogue', label: 'Rewards Catalogue', href: '/admin/rewards/catalogue/', perm: 'rewards.catalogue', hint: 'What fans can redeem: points, stock, limits' },

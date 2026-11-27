@@ -1,0 +1,216 @@
+---
+// The Lobi Stars Statistics Center (private; served by functions/staff/statistics-center/[[path]].js). A standalone
+// page like the IT Center and the Media Centre: none of the public site's menus, links, search or analytics, never
+// indexed. Its own sign-in (statisticians' accounts made by the Super Admins; Super Admins sign in with their own
+// email). The app itself is in src/scripts/statsCentre/app.ts.
+---
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="theme-color" content="#1C3F7A" />
+  <title>Statistics Center | Lobi Stars FC</title>
+  <link rel="icon" href="/images/lobi-stars-badge.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="sx">
+    <!-- Sign in -->
+    <section class="sx-signin" id="vLogin" hidden>
+      <div class="sx-brandside">
+        <span class="sx-badge sx-badge-lg"><img src="/images/lobi-stars-badge.webp" alt="Lobi Stars FC badge" width="96" height="96" /></span>
+        <p class="sx-club">Lobi Stars FC</p>
+        <p class="sx-pride">Pride of Benue</p>
+        <p class="sx-label">Statistics Center</p>
+        <h1 class="sx-h1">Match statistics, event by event</h1>
+        <span class="sx-goldbar" aria-hidden="true"></span>
+      </div>
+      <div class="sx-signin-side">
+      <div class="sx-auth-card">
+        <h2>Sign in</h2>
+        <form id="loginForm" autocomplete="on">
+          <label>Login ID or Super Admin email<input name="loginId" required autocomplete="username" autocapitalize="none" spellcheck="false" /></label>
+          <label>Password<input name="password" type="password" required autocomplete="current-password" /></label>
+          <label id="codeRow" hidden>6-digit code from your authenticator app<input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" /></label>
+          <button class="sx-btn sx-btn--p" type="submit">Sign in</button>
+          <p class="sx-err" id="loginErr" role="alert" hidden></p>
+        </form>
+        <p class="sx-small">Statisticians: your Login ID and first password come from a Super Admin. Super Admins: use your website email and password.</p>
+      </div>
+      </div>
+    </section>
+
+    <!-- First sign-in: choose your own password -->
+    <section class="sx-auth" id="vPassword" hidden>
+      <div class="sx-auth-card">
+        <h1>Choose your password</h1>
+        <p class="sx-small">You signed in with a temporary password. Choose your own now (at least 8 characters, not your Login ID).</p>
+        <form id="pwForm">
+          <label>Temporary password<input name="current" type="password" required autocomplete="current-password" /></label>
+          <label>New password<input name="password" type="password" required minlength="8" maxlength="72" autocomplete="new-password" /></label>
+          <label>New password again<input name="again" type="password" required minlength="8" maxlength="72" autocomplete="new-password" /></label>
+          <button class="sx-btn sx-btn--p" type="submit">Save my password</button>
+          <p class="sx-err" id="pwErr" role="alert" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- The app -->
+    <div id="vApp" hidden>
+      <header class="sx-top">
+        <a class="sx-brand" href="#/" aria-label="Statistics Center home"><span class="sx-badge"><img src="/images/lobi-stars-badge.webp" alt="" width="44" height="44" /></span><span class="sx-titles"><b>Lobi Stars FC · Statistics Center</b><small id="who"></small></span></a>
+        <span class="sx-sync" id="sync" hidden></span>
+        <button class="sx-btn sx-btn--ghost" id="logout" type="button">Sign out</button>
+      </header>
+      <nav class="sx-nav" aria-label="Statistics Center">
+        <a href="#/" data-nav="home">Dashboard</a>
+        <a href="#/matches" data-nav="matches">Matches</a>
+        <a href="#/players" data-nav="players">Players</a>
+        <a href="#/team" data-nav="team">Team</a>
+        <a href="#/exports" data-nav="exports">Exports</a>
+        <a href="#/settings" data-nav="settings">Settings</a>
+        <a href="#/definitions" data-nav="definitions">Definitions</a>
+      </nav>
+      <main id="view" class="sx-main" tabindex="-1"></main>
+    </div>
+
+    <!-- The step-by-step event sheet (live entry and review) -->
+    <dialog id="sheet" class="sx-sheet" aria-labelledby="sheetTitle">
+      <form method="dialog" class="sx-sheet-in" id="sheetForm">
+        <div class="sx-sheet-head"><h2 id="sheetTitle">Event</h2><button class="sx-x" value="cancel" aria-label="Close">×</button></div>
+        <div id="sheetBody"></div>
+      </form>
+    </dialog>
+    <p class="sx-toast" id="toast" role="status" aria-live="polite" hidden></p>
+  </div>
+
+  <script>
+    import '../../../scripts/statsCentre/app.ts';
+  </script>
+</body>
+</html>
+
+<style is:global>
+  /* The Lobi Stars staff-page theme (same colours, fonts, header and sign-in screen as the IT Center). */
+  :root { --navy: #1C3F7A; --navy-d: #142E5A; --navy-l: #E8EEF8; --red: #C8102E; --red-d: #A00D24; --gold: #F2B705; --ink: #16181D; --muted: #4A505C; --line: #E2E4E9; --bg: #F3F4F6; --card: #fff; --ok: #0F8A4B; --warn: #A15C00; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.5 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-text-size-adjust: 100%; }
+  [hidden] { display: none !important; }
+  a { color: var(--red); }
+  h1, h2, h3 { font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; letter-spacing: .01em; line-height: 1.15; margin: 0 0 10px; }
+  h2 { font-size: 26px; } h3 { font-size: 20px; }
+  .sx-badge { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #fff; border: 3px solid #fff; box-shadow: 0 0 0 2px var(--red); overflow: hidden; flex: none; }
+  .sx-badge img { width: 84%; height: 84%; object-fit: contain; }
+  .sx-badge-lg { width: 112px; height: 112px; border-width: 4px; }
+  .sx-signin { min-height: 100vh; display: grid; grid-template-columns: 1fr; }
+  .sx-brandside { background: linear-gradient(160deg, var(--navy) 0%, var(--navy-d) 100%); border-bottom: 6px solid var(--red); color: #fff; padding: 36px 24px; display: grid; justify-items: center; align-content: center; text-align: center; gap: 4px; }
+  .sx-club { margin: 14px 0 0; font: 700 22px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; }
+  .sx-pride { margin: 0; font: 600 14px/1 'Barlow', sans-serif; letter-spacing: .06em; color: #C9D8F2; }
+  .sx-label { display: inline-block; margin: 10px 0 4px; padding: 4px 12px; border-radius: 999px; background: var(--red); color: #fff; font: 700 15px 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .sx-h1 { margin-top: 18px; font-size: 32px; line-height: 1.05; max-width: 14ch; }
+  .sx-goldbar { display: block; width: 64px; height: 5px; border-radius: 3px; background: var(--red); margin-top: 14px; box-shadow: 0 0 0 2px #fff; }
+  .sx-signin-side { padding: 24px 16px 40px; display: grid; place-items: start center; }
+  @media (min-width: 900px) {
+    .sx-signin { grid-template-columns: minmax(360px, 44%) 1fr; }
+    .sx-brandside { padding: 48px; } .sx-h1 { font-size: 44px; }
+    .sx-signin-side { place-items: center; padding: 48px; }
+  }
+  .sx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 18px; border-radius: 12px; border: 2px solid var(--line); background: var(--card); color: var(--ink); font: 700 16px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .04em; cursor: pointer; text-decoration: none; }
+  .sx-btn--p:hover { background: var(--navy-d); } .sx-btn--r:hover { background: var(--red-d); }
+  .sx-btn:focus-visible, .sx-tap:focus-visible, .sx-pick:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .sx-btn--p { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .sx-btn--r { background: var(--red); border-color: var(--red); color: #fff; }
+  .sx-btn--ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .sx-btn--ghost { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.5); min-height: 44px; }
+  .sx-btn[disabled] { opacity: .5; cursor: not-allowed; }
+  .sx-small { font-size: 14px; color: var(--muted); }
+  .sx-err { color: #8E0E14; background: #FDECEC; padding: 10px 12px; border-radius: 10px; font-weight: 600; margin: 0; }
+  label { display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-weight: 600; }
+  input, select, textarea { font: inherit; font-size: 16px; min-height: 48px; padding: 10px 12px; border: 1.5px solid #C9CDD4; border-radius: 10px; background: #fff; color: var(--ink); width: 100%; }
+  input:focus, select:focus, textarea:focus { border-color: var(--ink); }
+  textarea { min-height: 120px; }
+  input[type=checkbox] { width: 22px; height: 22px; min-height: 0; }
+
+  .sx-auth { min-height: 100vh; display: grid; place-items: center; padding: 16px; background: linear-gradient(160deg, var(--navy) 0%, var(--navy-d) 100%); border-bottom: 6px solid var(--red); }
+  .sx-auth-card { width: 100%; max-width: 440px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+  .sx-auth-card form { display: grid; gap: 14px; margin-top: 12px; }
+
+  .sx-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 16px; background: var(--navy); border-bottom: 4px solid var(--red); color: #fff; }
+  .sx-brand { display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; margin-right: auto; min-width: 0; }
+  .sx-titles { display: grid; line-height: 1.15; min-width: 0; } .sx-titles b { font: 700 18px 'Barlow Condensed', sans-serif; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .sx-titles small { opacity: .92; font-size: 14px; }
+  .sx-sync { font-size: 13px; font-weight: 700; background: var(--gold); color: var(--ink); padding: 4px 10px; border-radius: 999px; }
+  .sx-sync.off { background: #FEE2E2; color: #991B1B; }
+  .sx-nav { display: flex; gap: 4px; overflow-x: auto; padding: 0 12px; background: var(--navy-d); scrollbar-width: none; }
+  .sx-nav a { color: rgba(255,255,255,.8); text-decoration: none; padding: 12px 12px; font: 700 14px 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; border-bottom: 3px solid transparent; }
+  .sx-nav a[aria-current=page] { color: #fff; border-color: var(--gold); }
+  .sx-main { max-width: 1180px; margin: 0 auto; padding: 16px; outline: none; }
+
+  .sx-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 0 0 16px; }
+  .sx-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  .sx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .sx-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .sx-kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  .sx-kpi b { display: block; font: 700 30px/1 'Barlow Condensed', sans-serif; color: var(--navy); } .sx-kpi span { font-size: 13px; color: var(--muted); }
+  .sx-scroll { overflow-x: auto; }
+  table.sx-t { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .sx-t th, .sx-t td { text-align: left; padding: 8px; border-top: 1px solid var(--line); vertical-align: middle; }
+  .sx-t th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-top: 0; white-space: nowrap; }
+  .sx-t td.n, .sx-t th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .sx-pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: #E5E7EB; color: #374151; text-transform: capitalize; }
+  .sx-pill.live { background: #FEE2E2; color: #991B1B; } .sx-pill.review { background: #FEF3C7; color: #92400E; } .sx-pill.published { background: #DCFCE7; color: #166534; }
+  .sx-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .sx-check { display: grid; gap: 6px; padding: 0; margin: 0; list-style: none; }
+  .sx-check li { padding: 8px 12px; border-radius: 8px; font-weight: 600; }
+  .sx-check .e { background: #FEE2E2; color: #991B1B; } .sx-check .w { background: #FEF3C7; color: #92400E; } .sx-check .ok { background: #DCFCE7; color: #166534; }
+  .sx-form-r { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sx-form-r > * { flex: 1 1 160px; }
+  .W { color: var(--ok); } .L { color: var(--red); } .D { color: var(--muted); }
+  .sx-form-guide { display: flex; gap: 4px; } .sx-form-guide i { font-style: normal; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; color: #fff; font-weight: 700; font-size: 13px; }
+  .sx-form-guide i.W { background: var(--ok); } .sx-form-guide i.D { background: #6B7280; } .sx-form-guide i.L { background: var(--red); }
+
+  /* Live entry: the score and clock stay at the top while you tap (staff page). */
+  .sx-live-head { position: sticky; top: 0; z-index: 20; background: var(--navy-d); color: #fff; border-radius: 0 0 14px 14px; padding: 10px 12px; margin: -16px -16px 12px; }
+  .sx-score { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; text-align: center; }
+  .sx-score .t { font: 700 16px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .03em; overflow-wrap: anywhere; }
+  .sx-score .s { font: 700 40px/1 'Barlow Condensed', sans-serif; letter-spacing: .04em; }
+  .sx-clock { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; font: 700 22px 'Barlow Condensed', sans-serif; }
+  .sx-clock .p { font-size: 13px; background: rgba(255,255,255,.15); padding: 2px 8px; border-radius: 999px; }
+  .sx-clock-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 8px; }
+  .sx-clock-btns .sx-btn { min-height: 38px; padding: 6px 10px; font-size: 14px; background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.3); color: #fff; }
+  .sx-taps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 600px) { .sx-taps { grid-template-columns: repeat(5, 1fr); } }
+  .sx-tap { min-height: 72px; border-radius: 14px; border: 0; font: 700 18px 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #fff; background: var(--navy); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .sx-tap small { font: 600 12px 'Barlow', sans-serif; text-transform: none; opacity: .85; }
+  .sx-tap[data-t=goal] { background: var(--ok); } .sx-tap[data-t=yellow_card] { background: #CA8A04; } .sx-tap[data-t=red_card] { background: var(--red); } .sx-tap[data-t=substitution] { background: #0F766E; } .sx-tap[data-t=injury] { background: #7C3AED; }
+  .sx-feed { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .sx-feed li { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .sx-feed .m { font: 700 18px 'Barlow Condensed', sans-serif; min-width: 44px; color: var(--navy); }
+  .sx-feed .d { flex: 1; min-width: 0; } .sx-feed .d small { display: block; color: var(--muted); }
+  .sx-feed .u { font-size: 12px; font-weight: 700; color: #991B1B; }
+  .sx-feed button { min-height: 36px; padding: 4px 10px; font-size: 13px; }
+
+  .sx-sheet { width: min(640px, calc(100vw - 16px)); max-height: calc(100vh - 16px); border: 0; border-radius: 16px; padding: 0; }
+  .sx-sheet::backdrop { background: rgba(15,23,42,.55); }
+  .sx-sheet-in { padding: 16px; display: grid; gap: 12px; }
+  .sx-sheet-head { display: flex; align-items: center; justify-content: space-between; }
+  .sx-sheet-head h2 { margin: 0; }
+  .sx-x { font-size: 28px; line-height: 1; width: 44px; height: 44px; border: 0; background: transparent; cursor: pointer; }
+  .sx-picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .sx-pick { min-height: 64px; border-radius: 12px; border: 2px solid var(--line); background: #fff; cursor: pointer; font: 600 13px 'Barlow', sans-serif; color: var(--ink); padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .sx-pick b { font: 700 24px/1 'Barlow Condensed', sans-serif; color: var(--navy); }
+  .sx-pick[aria-pressed=true] { border-color: var(--navy); background: #E8EEF9; }
+  .sx-pick.wide { grid-column: span 2; }
+  .sx-step { font: 700 13px 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  .sx-toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 4000; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 10px; font-weight: 600; max-width: calc(100vw - 32px); }
+  .sx-toast.err { background: #991B1B; }
+
+  @media print {
+    .sx-top, .sx-nav, .sx-noprint, .sx-toast { display: none !important; }
+    body { background: #fff; } .sx-card { border: 0; padding: 0; } .sx-main { max-width: none; padding: 0; }
+  }
+</style>

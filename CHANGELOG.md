@@ -8,6 +8,16 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-27: Lobi Stars Statistics Center (new staff page)
+
+- **What:** a new private page, **lobistarsfc.com/staff/statistics-center/**, in the same Lobi Stars style as the IT Center and the Media Centre, where the club's statisticians record every match **event by event** (goal, shot, corner, foul, cards, offside, substitution, injury, save and more). Every total (score, team stats, minutes, goals, assists, cards, clean sheets, season and career figures, form, head-to-head) is worked out from the events, so correcting one event corrects everything.
+- **Screens:** Dashboard (season figures, top scorer and assists, matches waiting), Matches, Match Setup (details and line-ups from the squad list; opponents typed), **Live entry** for phones (score and clock at the top, one big button per action, Undo last; keeps working without a connection and sends the taps when it returns), **Review & publish** (checklist, every event, minutes, coach ratings, Man of the Match, report, highlights), Players (season and career, match-by-match), Team (record, form, home/away, head-to-head), Exports (CSV, printable match report), Settings and Stat definitions.
+- **Who:** statisticians with personal accounts made by a Super Admin in **Admin › Statistics Center** (temporary password, changed at first sign-in; "May publish" for the senior one). **Super Admins sign in with their own Super Admin email** and can see and change everything. Every sign-in and change is in an activity log that cannot be changed or deleted.
+- **On the website when a match is published:** the /stats page and each player page (season numbers, plus a new **match-by-match** list) update by themselves, the match page gets the score, line-ups, timeline and team stats, and a new public page **/stats/matches/<match>/** shows the full match stats (team stats, timeline, line-ups with links to player pages, player table, report, highlights). Drafts and live entry are never public. For a published match the Statistics Center's numbers replace the ones typed in Match Centre (owner's decision); other matches are unchanged.
+- **Staff:** a Super Admin creates the statisticians' accounts (HANDOVER-TODO A42). How to use it: STAFF-GUIDE §44 and docs/statistics-center.md.
+
+---
+
 ## 2026-11-27: Faster news pages on phones (SEO Scanner speed warning)
 
 - **What:** the SEO Scanner warned that /news/ takes 4.7 s on phones to show its main content (Google wants under 2.5 s). The cause was the soft blurred copy of each story photo behind the picture: phones counted that big blurred layer as the page's main content, and it was drawn late.

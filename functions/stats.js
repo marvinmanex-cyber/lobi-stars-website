@@ -1,5 +1,6 @@
 import { renderPage, fill, esc } from './api/_lib/ssr.js';
-import { seasonStats } from './api/_lib/stats.js';
+import { seasonStats, seasonOf } from './api/_lib/stats.js';
+import { publicSlugs } from './api/_lib/statsCentreData.js';
 
 // "/stats" -- season stats rendered on the server from match data entered in
 // Admin -> Match Centre. ?season=2026/27 picks the season.
@@ -32,6 +33,11 @@ export async function onRequestGet({ request, env }) {
         + `</ol><div class="st-share"><a href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Share on WhatsApp</a><button type="button" data-share-text="${esc(text)}">Share</button></div></section>`;
     }).join('') + '</div>';
   }
+  // Match by match: matches published in the Statistics Center, each with its own stats page.
+  try {
+    const list = (await publicSlugs(env.DB, 40)).filter(r => !data.season || seasonOf(r.date, startMonth) === data.season);
+    if (list.length) html += `<h2 class="st-h2">Match stats ${esc(data.season)}</h2><ul class="sxm-list">` + list.map(r => `<li><a href="/stats/matches/${esc(r.slug)}/"><span><b>${esc(r.home)} ${r.homeScore}–${r.awayScore} ${esc(r.away)}</b></span><span class="st-dim">${esc(r.competition || '')} · ${esc(new Date(r.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' }))}</span></a></li>`).join('') + '</ul>';
+  } catch (err) { console.error('[stats] match list', err); }
   if (!html) html = `<p class="st-empty">No stats for ${esc(data.season)} yet. They appear here once match results and player stats are entered.</p>`;
 
   const options = data.seasons.map(s => `<option value="${esc(s)}"${s === data.season ? ' selected' : ''}>${esc(s)}</option>`).join('');

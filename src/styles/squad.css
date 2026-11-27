@@ -143,3 +143,9 @@
 .sq-tabs button[aria-selected="true"] { background: var(--red, #C8102E); border-color: var(--red, #C8102E); color: #fff; }
 .sc-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .sc-badges span { font: 700 11px/1 'Barlow', sans-serif; letter-spacing: .02em; padding: 4px 7px; border-radius: 999px; background: rgba(200,16,46,.14); color: var(--red, #C8102E); }
+/* Match by match (Statistics Center, 27 Nov 2026): one line per match, linked to its stats page. */
+.pf-log-h { margin: 22px 0 8px; font: 700 18px/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
+.pf-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.pf-log li { display: grid; grid-template-columns: 64px 1fr; gap: 2px 10px; padding: 8px 0; border-top: 1px solid var(--d4, #E5E7EB); font-size: 15px; }
+.pf-log-d { color: var(--lt); font-size: 13px; grid-row: span 2; padding-top: 2px; }
+.pf-log-m a { color: inherit; font-weight: 600; } .pf-log-s { color: var(--lt); font-size: 13px; }

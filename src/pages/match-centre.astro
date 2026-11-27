@@ -364,6 +364,8 @@ import '../styles/fixture-card.css';
         });
         p.append(box);
       }
+      // Recorded event by event in the Statistics Center: the full stats page (timeline, line-ups, player stats).
+      if (m.stats_url) { const a = el('a', 'btn-o', 'Full match stats'); a.href = m.stats_url; const w = el('p', 'mc-stats-more'); w.style.marginTop = '16px'; w.append(a); p.append(w); }
     }
     if (id === 'gallery') {
       if (!m.gallery.length) p.append(empty('Match photos will appear here after the game.'));

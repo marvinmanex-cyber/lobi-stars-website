@@ -5350,3 +5350,31 @@ Also in the CMS: **Gallery Photos**.
   website manager can restore an earlier version.
 
 For anything else, contact the club's website manager.
+
+## 44. Lobi Stars Statistics Center (/staff/statistics-center)
+
+The private page where match statistics are recorded **event by event**. Every total is worked out from the
+events, so fixing one event fixes every figure. Full details: docs/statistics-center.md.
+
+**Accounts (Super Admins):** Admin › Statistics Center › Statisticians & activity. Add the person's full name,
+a Login ID (name + 2–4 digits, e.g. Jiki01) and a temporary password; tick **May publish** for the senior
+statistician. They must choose their own password at the first sign-in. You can reset a password, switch an
+account off, sign someone out or stop publishing at any time. Super Admins sign in to the Statistics Center
+itself with their own Super Admin email, password and code, and can do everything.
+
+**On match day (statistician):**
+1. **+ New match** › pick the fixture (or type a friendly).
+2. **Setup** › check the details, choose Start / Bench for the Lobi Stars squad (11 starters), type the
+   opponents' names and numbers if you have them. Save.
+3. **Live entry** › press **Kick-off**. For each action tap the big button, then the team, the player, the
+   details and Save (the minute comes from the clock; change it if needed). **Undo last** removes the last tap.
+   Half-time, 2nd half and Full time are on the clock bar. No signal? Keep tapping: the taps are kept on the
+   phone and sent when the connection returns ("unsynced" at the top shows how many are waiting).
+4. **Review & publish** › go through the checklist (red items must be fixed), correct or add events, minutes,
+   ratings, Man of the Match, possession, attendance, the report and the highlights link. Then **Verify and Publish**
+   (senior statistician or Super Admin). The website updates by itself.
+5. Need a correction after publishing? **Reopen for corrections**, fix, publish again. The website keeps the
+   published version until then.
+
+**Exports:** Exports page (season events and matches as CSV); one match's events and a printable report on its
+Review page.

@@ -90,5 +90,17 @@ const isPlayer = p.kind === 'player';
     box.querySelectorAll<HTMLElement>('[data-stat]').forEach(el => { el.textContent = String(d.stats?.[el.dataset.stat!] ?? 0); });
     const note = document.querySelector<HTMLElement>('[data-stats-note]');
     if (note && !d.matches) note.textContent = 'No matches played yet this season.';
+    // Match by match (Statistics Center), each linked to the match's stats page.
+    const log = Array.isArray(d.log) ? d.log : [];
+    if (log.length && !document.querySelector('.pf-log')) {
+      const e = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+      const dt = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' });
+      const rows = log.slice(0, 40).map((m: any) => {
+        const bits = [`${m.minutes}'`, m.goals ? `${m.goals} goal${m.goals > 1 ? 's' : ''}` : '', m.assists ? `${m.assists} assist${m.assists > 1 ? 's' : ''}` : '', m.yellow ? 'yellow card' : '', m.red ? 'red card' : ''].filter(Boolean).join(' · ');
+        const what = `${m.home ? 'v' : 'at'} ${e(m.opponent)} <b>${e(m.score)}</b>`;
+        return `<li><span class="pf-log-d">${e(dt(m.date))}</span><span class="pf-log-m">${m.url ? `<a href="${e(m.url)}">${what}</a>` : what}</span><span class="pf-log-s">${e(bits)}${m.started ? '' : ' (sub)'}</span></li>`;
+      }).join('');
+      box.insertAdjacentHTML('afterend', `<h3 class="pf-log-h">Match by match</h3><ol class="pf-log">${rows}</ol>`);
+    }
   }).catch(() => {});
 </script>

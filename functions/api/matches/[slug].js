@@ -16,6 +16,11 @@ export async function onRequestGet({ env, params }) {
   // Ticket state and "from" price (same rules as the homepage and /tickets).
   const [match] = await decorateMatches(env, [toPublic(m.event, m.centre)], [m.event]);
   if (match.ticket) match.on_sale = match.ticket.state === 'on_sale';
+  // Published in the Statistics Center: link to the full match stats page.
+  try {
+    const sx = await env.DB.prepare(`SELECT 1 AS y FROM sx_matches WHERE event_id = ? AND published_json IS NOT NULL AND is_deleted = 0`).bind(event.id).first();
+    match.stats_url = sx ? `/stats/matches/${matchSlug(event)}/` : null;
+  } catch { match.stats_url = null; } // (no Statistics Center table yet)
   return Response.json(
     { match, serverTime: new Date().toISOString() },
     { headers: { 'Cache-Control': 'no-store' } }
