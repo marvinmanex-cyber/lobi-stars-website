@@ -8,6 +8,16 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-28: Statistics Center button and link check
+
+- Every button and link on every Statistics Center page was clicked by an automated test (38 pages, 500 links).
+- **Fixed:** on the Analysis Form, pressing **Both** (show both teams) broke the page. It now shows both teams, with the Lobi Stars momentum chart.
+- **Checked and working:**
+  - all 500 links, including the 32 player profile links;
+  - Add target, Open pack, Pick positions and save, and All players (they need their boxes filled in first; the browser asks for any missing box).
+
+---
+
 ## 2026-11-27: Statistics Center shows the real results
 
 - Match scores in the Statistics Center (matches list, dashboard, match headings) now show the **official result**, exactly as on the Results page (lobistarsfc.com/results). This is Match Centre's full-time score, else League › Fixtures, including awarded results. A note says "Official result".

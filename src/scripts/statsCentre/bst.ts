@@ -286,7 +286,7 @@ async function form(c: Ctx, id: string) {
           <div class="sx-kpi"><b>${T.goal_attempt.full}</b><span>Goal attempts · match</span></div><div class="sx-kpi"><b>${T.shot_on.full}</b><span>On target</span></div>
           <div class="sx-kpi"><b>${d.accuracy[side] === null ? '—' : `${d.accuracy[side]}%`}</b><span>Shot accuracy</span></div><div class="sx-kpi"><b>${T.goal_for.full}–${T.goal_against.full}</b><span>Goals for – against</span></div>
           <div class="sx-kpi"><b>${T.xg.full.toFixed ? T.xg.full.toFixed(2) : T.xg.full}</b><span>xG</span></div></div>
-        ${momentum(side)}
+        ${momentum(main)}
       </section>
 
       <section class="sx-card"><h3>Game overview</h3>
