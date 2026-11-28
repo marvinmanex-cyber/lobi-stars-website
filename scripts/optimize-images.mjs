@@ -7,6 +7,7 @@
 // (needs sharp; on Windows first run:
 //  npm install --no-save @img/sharp-win32-x64@<sharp version>)
 import sharp from 'sharp';
+sharp.cache(false); // Windows: never keep photos open, so they can be replaced
 import { readdir, stat, writeFile, rename, rm, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -236,8 +237,22 @@ async function webpVariants() {
         continue;
       }
       if (!/\.webp$/i.test(name)) continue;
-      const meta = await sharp(full).metadata().catch(() => null);
+      let meta = await sharp(full).metadata().catch(() => null);
       if (!meta?.width) continue;
+      // Uploaded WebP photos saved at a very high quality (e.g. 207 KB for 826 × 1008) make phones wait for the main
+      // picture (slow LCP). Re-encode the full-size copy at the site's quality when that saves at least 15%
+      // (28 Nov 2026). Only heavy files (over 0.12 bytes per pixel) are checked, so already-light photos are skipped.
+      const bytes = (await stat(full)).size;
+      if (key.startsWith('/images/news/') && bytes / (meta.width * meta.height) > 0.12) { // news photos only (kitchen pictures stay as they are)
+        const lighter = await sharp(await readFile(full)).webp({ quality: 74, effort: 6 }).toBuffer().catch(() => null);
+        if (lighter && lighter.length < bytes * 0.85) {
+          await writeFile(full + '.tmp', lighter); await rename(full + '.tmp', full);
+          console.log(`  ${key}: ${kb(bytes)} → ${kb(lighter.length)}`);
+          for (const w of VARIANT_WIDTHS) await rm(full.replace(/\.webp$/i, `-${w}w.webp`), { force: true }); // remade below from the lighter copy
+          meta = await sharp(full).metadata();
+          made++;
+        }
+      }
       sizes[key] = [meta.width, meta.height];
       for (const w of VARIANT_WIDTHS) {
         if (meta.width <= w * 1.25) continue;

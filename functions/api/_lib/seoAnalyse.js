@@ -257,7 +257,8 @@ export function computeIssues(input) {
       if (m.score < 50) out.push(make('speed_poor', path, `${path} scores ${m.score}/100 for speed on mobile (PageSpeed Insights).`, { data: s }));
       else if (m.score < 80) out.push(make('speed_fair', path, `${path} scores ${m.score}/100 for speed on mobile.`, { data: s }));
       const cwv = [m.lcp > 4 && `LCP ${m.lcp.toFixed(1)} s (aim under 2.5)`, m.cls > 0.25 && `CLS ${m.cls.toFixed(2)} (aim under 0.1)`, m.inp > 500 && `INP ${Math.round(m.inp)} ms (aim under 200)`].filter(Boolean);
-      if (cwv.length) out.push(make('cwv_poor', path, `Core Web Vitals on ${path} (mobile): ${cwv.join('; ')}.`, { data: s }));
+      const where = [m.cls > 0.25 && m.shift_el && `What moves: ${m.shift_el}`, m.lcp > 4 && m.lcp_el && `Loads last: ${m.lcp_el}`].filter(Boolean);
+      if (cwv.length) out.push(make('cwv_poor', path, `Core Web Vitals on ${path} (mobile): ${cwv.join('; ')}.${where.length ? ` ${where.join('. ')}.` : ''}`, { data: s }));
     }
   }
   // ── Off-site and local: the Google Business Profile checklist stays until it is ticked off ("Mark as ignored": done). ──

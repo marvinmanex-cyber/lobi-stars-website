@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-28: SEO: faster news photos, clearer speed warnings
+
+- **News photos are 25–40% lighter** (re-saved at the website's normal quality, with no visible difference), so phones show them sooner. New uploads are lightened automatically when the website is rebuilt. Kitchen pictures are not touched.
+- **Clearer speed warnings:** the SEO Scanner now records, from Google's weekly speed test, **which part of a page moves** while it loads (CLS) and **which item loads last** (LCP), and shows both in the warning. That says exactly what to fix.
+- **Checked:** Google Search Console and PageSpeed Insights are both connected and sending figures.
+
 ## 2026-11-28: Analysis Form: ten improvements
 
 - **Half-time sheet:** one page for the dressing room. It shows the first-half score, talking points worked out from the numbers (attacking share, attempts and accuracy, our and their most dangerous spells, discipline), key moments, first-half numbers for both teams, an attacks chart and the analyst's first-half note. Print or save as PDF, **Send on WhatsApp** (as text) or copy.

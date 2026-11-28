@@ -45,6 +45,9 @@ export async function ensureSeoSchema(db) {
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_seo_issues_path ON seo_issues (path)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_seo_ranks_kw ON seo_ranks (keyword, date)`),
   ]);
+  // Which part of the page moved (CLS) and which item loaded last (LCP), from Google's report (28 Nov 2026).
+  { const have = new Set((await db.prepare(`PRAGMA table_info(seo_speed)`).all()).results.map(r => r.name));
+    for (const c of ['shift_el', 'lcp_el']) if (!have.has(c)) await db.prepare(`ALTER TABLE seo_speed ADD COLUMN ${c} TEXT`).run(); }
   ready = true;
 }
 

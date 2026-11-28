@@ -122,6 +122,19 @@ export async function submitSitemap(env) {
 
 // ── PageSpeed Insights (mobile and desktop; Core Web Vitals) ──
 export const SPEED_PAGES = ['/', '/news/', 'news-article', '/fixtures/', '/table/', '/squad/', 'player-page', '/shop/', '/tickets/'];
+/** Short, readable names of the page parts in Google's report (e.g. "h1.nl-h1 · Lobi Stars News"). */
+function describeNodes(items, max) {
+  const out = [];
+  for (const it of items || []) {
+    const n = it.node || it;
+    if (!n || n.type !== 'node') continue;
+    const label = String(n.nodeLabel || '').replace(/\s+/g, ' ').slice(0, 60);
+    const sel = String(n.selector || '').split(' > ').slice(-2).join(' > ').slice(0, 80);
+    out.push([sel, label].filter(Boolean).join(' · ') + (typeof it.score === 'number' ? ` (${it.score.toFixed(2)})` : ''));
+    if (out.length >= max) break;
+  }
+  return out.join(' | ') || null;
+}
 export async function pageSpeed(env, path, strategy = 'mobile') {
   if (fake(env)) { const seed = [...path].length * (strategy === 'mobile' ? 3 : 5); return { score: strategy === 'mobile' ? 60 + (seed % 30) : 80 + (seed % 15), lcp: 1.8 + (seed % 20) / 10, inp: 120 + seed, cls: (seed % 12) / 100, fcp: 1.2 }; }
   const u = new URL('https://www.googleapis.com/pagespeedonline/v5/runPagespeed');
@@ -144,11 +157,14 @@ export async function pageSpeed(env, path, strategy = 'mobile') {
     inp: field.INTERACTION_TO_NEXT_PAINT?.percentile ?? null,
     cls: a['cumulative-layout-shift']?.numericValue ?? null,
     fcp: (a['first-contentful-paint']?.numericValue || 0) / 1000,
+    // What moved and what loaded last, so the warning can say exactly what to fix (28 Nov 2026).
+    shiftEl: describeNodes((a['layout-shifts'] || a['layout-shift-elements'])?.details?.items, 3),
+    lcpEl: describeNodes(a['largest-contentful-paint-element']?.details?.items?.flatMap(x => x.items || [x]), 1),
   };
 }
 export async function saveSpeed(db, path, strategy, m) {
-  await db.prepare(`INSERT INTO seo_speed (date, path, strategy, score, lcp, inp, cls, fcp) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (date, path, strategy) DO UPDATE SET score = excluded.score, lcp = excluded.lcp, inp = excluded.inp, cls = excluded.cls, fcp = excluded.fcp`)
-    .bind(lagosDay(), path, strategy, m.score, m.lcp, m.inp, m.cls, m.fcp).run();
+  await db.prepare(`INSERT INTO seo_speed (date, path, strategy, score, lcp, inp, cls, fcp, shift_el, lcp_el) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (date, path, strategy) DO UPDATE SET shift_el = excluded.shift_el, lcp_el = excluded.lcp_el, score = excluded.score, lcp = excluded.lcp, inp = excluded.inp, cls = excluded.cls, fcp = excluded.fcp`)
+    .bind(lagosDay(), path, strategy, m.score, m.lcp, m.inp, m.cls, m.fcp, m.shiftEl ?? null, m.lcpEl ?? null).run();
 }
 
 // ── Optional licensed rank tracker (off by default; Nigeria, English, mobile and desktop) ──
