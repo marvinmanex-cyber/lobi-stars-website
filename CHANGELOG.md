@@ -12,6 +12,8 @@ in HANDOVER-TODO.md.
 
 - Every button and link on every Statistics Center page was clicked by an automated test (38 pages, 500 links).
 - **Fixed:** on the Analysis Form, pressing **Both** (show both teams) broke the page. It now shows both teams, with the Lobi Stars momentum chart.
+- **Fixed:** the **Practice match** button on the Dashboard did nothing. It now works there, and it is also on the Matches page.
+- A second full pass also watched for hidden errors behind every button: none were found.
 - **Checked and working:**
   - all 500 links, including the 32 player profile links;
   - Add target, Open pack, Pick positions and save, and All players (they need their boxes filled in first; the browser asks for any missing box).

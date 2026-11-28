@@ -140,7 +140,7 @@ async function dashboardView() {
   const d = await api(`dashboard?season=${encodeURIComponent(season)}`);
   const a = d.team.all;
   view().innerHTML = `
-    <div class="sx-row sx-noprint" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Season ${esc(season)}</h2><div class="sx-row">${seasonSelect(season)}<a class="sx-btn" href="/staff/statistics-center/bst-analysis/">Analysis Form</a><span class="sx-row"><button class="sx-btn" type="button" id="practice">Practice match</button><a class="sx-btn sx-btn--r" href="#/new">+ New match</a></span></div></div>
+    <div class="sx-row sx-noprint" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Season ${esc(season)}</h2><div class="sx-row">${seasonSelect(season)}<a class="sx-btn" href="/staff/statistics-center/bst-analysis/">Analysis Form</a><span class="sx-row"><button class="sx-btn" type="button" data-practice>Practice match</button><a class="sx-btn sx-btn--r" href="#/new">+ New match</a></span></div></div>
     <div class="sx-kpis">
       ${[['Played', a.p], ['Won', a.w], ['Drawn', a.d], ['Lost', a.l], ['Goals for', a.gf], ['Goals against', a.ga], ['Clean sheets', a.cleanSheets], ['Yellow cards', d.team.discipline.yellow], ['Red cards', d.team.discipline.red]]
         .map(([l, v]) => `<div class="sx-kpi"><b>${v}</b><span>${l}</span></div>`).join('')}
@@ -161,7 +161,7 @@ async function matchesView() {
   const q = new URLSearchParams(f).toString();
   const d = await api(`matches?${q}`);
   view().innerHTML = `
-    <div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Matches</h2><a class="sx-btn sx-btn--r" href="#/new">+ New match</a></div>
+    <div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Matches</h2><span class="sx-row"><button class="sx-btn" type="button" data-practice>Practice match</button><a class="sx-btn sx-btn--r" href="#/new">+ New match</a></span></div>
     <form class="sx-card sx-row" id="mf">
       <label>Season<select name="season"><option value="">All</option>${S.seasons.map((s: string) => `<option ${s === f.season ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
       <label>Status<select name="status"><option value="">All</option>${S.statuses.map((s: string) => `<option ${s === f.status ? 'selected' : ''}>${s}</option>`).join('')}</select></label>
@@ -177,7 +177,6 @@ async function matchesView() {
     if (!confirm('Remove this match from the lists? It is kept in the database and can be restored by a Super Admin.')) return;
     try { await api('match/remove', { id: b.dataset.remove }); toast('Removed.'); matchesView(); } catch (x: any) { toast(x.message, false); }
   }, L1);
-  $('practice')?.addEventListener('click', () => startPractice(ctx));
 }
 
 async function newMatchView() {
@@ -1054,5 +1053,9 @@ const ctx: Ctx = {
 
 setupInstall();
 setupFit();
-document.addEventListener('click', e => { if ((e.target as HTMLElement).closest?.('[data-install]')) { e.preventDefault(); showInstall(); } });
+document.addEventListener('click', e => {
+  const t = e.target as HTMLElement;
+  if (t.closest?.('[data-install]')) { e.preventDefault(); showInstall(); }
+  if (t.closest?.('[data-practice]')) { e.preventDefault(); startPractice(ctx); }
+});
 boot();
