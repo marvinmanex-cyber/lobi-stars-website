@@ -318,7 +318,7 @@ Tables:
 
 ## Analysis Form improvements (28 Nov 2026)
 
--  holds the definitions, the groups, the keys,  (block start → video time from /) and  (served at ).
-- In , the per-device state  gains , , , ,  and . A 10-second timer moves to the clock's block unless follow is off or someone is typing.
-- Presence () now stores  and returns , so the form can warn about double counting.
-- Coach delivery uses  and , with . Coaches are allowed to POST .
+- `src/scripts/statsCentre/bstPro.ts` holds the definitions, the groups, the keys, `videoAt` (block start → video time from `videoOffset` / `videoOffset2`) and `halfTimeView` (served at `/bst-analysis/<id>/half-time/`).
+- In `bst.ts`, the per-device state `sx_bst_<id>` gains `follow`, `tally`, `open`, `def`, `noCheck` and `keys`. A 10-second timer moves to the clock's block unless follow is off or someone is typing.
+- Presence (`bst/presence`) now stores `sx_bst_presence.side` and returns `recording`, so the form can warn about double counting.
+- Coach delivery uses `GET bst/new-finals` and `POST bst/seen`, with `sx_settings seen_finals:<userId>`. Coaches are allowed to POST `bst/seen`.
