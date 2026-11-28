@@ -16,6 +16,7 @@ import {
   EVENT_TYPES, LIVE_BUTTONS, PERIODS, OUTCOMES, BODY_PARTS, DETAIL_TYPES, STATUSES,
 } from '../_lib/statsCentreData.js';
 import { seasonOf } from '../_lib/stats.js';
+import { newFinalsFor, markFinalsSeen } from '../_lib/statsBst.js';
 import { listAnalyses, createAnalysis, getAnalysis, setCell, setText, setStoppage, finalise, reopenAnalysis, heartbeat, bstSheets, METRICS, BST_FORMATIONS, createShare, listShares, revokeShare, TAGGABLE } from '../_lib/statsBst.js';
 import { sendEmail } from '../_lib/email.js';
 import { xgParams, saveXgParams, recalcXg, XG_DEFAULTS, ROUTINES, SP_OUTCOMES, saveRatings, addScoutingNote, removeScoutingNote, themes, saveTheme, addTag, removeTag, themeReport, ensurePhase2Schema } from '../_lib/statsPhase2.js';
@@ -30,7 +31,7 @@ import { ensureProSchema, definitions, newDefinitionsVersion, matchAdvanced, sea
   development, saveTarget, updateMilestones, milestones, matchReportHtml, oppositionPackHtml, PRO_LABELS } from '../_lib/statsPro.js';
 
 // Coach accounts view everything and change nothing (only these are allowed for them).
-const COACH_POSTS = new Set(['POST logout', 'POST password', 'POST lineup/heartbeat', 'POST bst/presence']);
+const COACH_POSTS = new Set(['POST logout', 'POST password', 'POST lineup/heartbeat', 'POST bst/presence', 'POST bst/seen']);
 const htmlPage = body => new Response(body, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex', 'X-Frame-Options': 'SAMEORIGIN' } });
 
 // Changes refused while the match's season is archived (read only; a Super Admin can still correct it).
@@ -221,7 +222,9 @@ export async function onRequest({ request, env, params }) {
         return json(r);
       }
       case 'POST bst/reopen': { const r = await reopenAnalysis(db, s.user, b.id, opts); return r.error ? json(r, 403) : json(r); }
-      case 'POST bst/presence': return json(await heartbeat(db, s.user, b.id));
+      case 'POST bst/presence': return json(await heartbeat(db, s.user, b.id, b.side));
+      case 'GET bst/new-finals': return json(s.user.readOnly ? await newFinalsFor(db, s.user) : { count: 0, ids: [] });
+      case 'POST bst/seen': return json(await markFinalsSeen(db, s.user));
       case 'GET export/bst.xlsx': case 'GET export/bst.csv': {
         const d = await getAnalysis(db, q.get('id'));
         if (!d) return json({ error: 'Analysis not found.' }, 404);

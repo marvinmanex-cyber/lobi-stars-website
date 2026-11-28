@@ -8,6 +8,7 @@ import { unzipSync, strFromU8 } from 'fflate';
 import { d1 } from './helpers/d1shim.mjs';
 import { DEMO_ROSTER, DEMO_EVENT, DEMO_LINEUPS, DEMO_EVENTS } from './fixtures/stats-centre-demo.mjs';
 import { createMatch, saveLineups, applyEvents, saveSetup, getMatch } from '../functions/api/_lib/statsCentreData.js';
+import { heartbeat, newFinalsFor, markFinalsSeen } from '../functions/api/_lib/statsBst.js';
 import { createAnalysis, getAnalysis, setCell, setText, setStoppage, finalise, reopenAnalysis, blocksFor, blockOf, listAnalyses, bstSheets } from '../functions/api/_lib/statsBst.js';
 import { buildXlsx } from '../functions/api/_lib/xlsx.js';
 
@@ -137,4 +138,22 @@ test('Excel: three sheets (grid, totals, match and line-up), Lobi Stars only unl
   const files = unzipSync(buildXlsx(sheets));
   assert.ok(files['xl/worksheets/sheet1.xml'] && strFromU8(files['xl/workbook.xml']).includes('Match &amp; line-up'));
   assert.ok(JSON.stringify(sheets).includes('Lobi Stars FC'), 'Lobi Stars branding');
+});
+
+test('sharing the work: presence says which team each person records; coaches get a badge for new Final analyses', async () => {
+  const { matchId, id } = await setup();
+  await heartbeat(db, STAT, id, 'lobi');
+  const r = await heartbeat(db, OTHER, id, 'opponent');
+  assert.deepEqual(r.recording, [{ name: 'Jiki Benjamin', side: 'lobi' }]);
+  assert.deepEqual((await heartbeat(db, STAT, id, 'nonsense')).recording, [{ name: 'Other Analyst', side: 'opponent' }]);
+  const COACH = { id: 'sxu_coach', fullName: 'Head Coach', readOnly: true };
+  await markFinalsSeen(db, COACH);
+  assert.equal((await newFinalsFor(db, COACH)).count, 0);
+  await new Promise(res => setTimeout(res, 5));
+  await saveSetup(db, STAT, matchId, { formationHome: '4-4-2', formationHomeFinish: '4-3-3' }, {});
+  assert.equal((await finalise(db, STAT, id, {})).ok, true);
+  const nf = await newFinalsFor(db, COACH);
+  assert.equal(nf.count, 1); assert.deepEqual(nf.ids, [id]);
+  await markFinalsSeen(db, COACH);
+  assert.equal((await newFinalsFor(db, COACH)).count, 0);
 });

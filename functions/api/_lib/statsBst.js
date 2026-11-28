@@ -326,13 +326,17 @@ export async function reopenAnalysis(db, user, id, { request = null } = {}) {
 }
 
 /** "Someone else has this open": a heartbeat every 20 seconds; seen in the last 45 seconds counts. */
-export async function heartbeat(db, user, id) {
+let presenceSide = false;
+export async function heartbeat(db, user, id, side = null) {
   await ensureBstSchema(db);
-  await db.prepare(`INSERT INTO sx_bst_presence (analysis_id, user_id, name, last_seen) VALUES (?, ?, ?, ?) ON CONFLICT (analysis_id, user_id) DO UPDATE SET last_seen = excluded.last_seen, name = excluded.name`)
-    .bind(String(id), user.id, user.fullName, nowIso()).run();
+  // Who is recording which team (so two people can split the work: one Lobi Stars, one the opponent).
+  if (!presenceSide) { try { await db.prepare(`ALTER TABLE sx_bst_presence ADD COLUMN side TEXT`).run(); } catch { /* already there */ } presenceSide = true; }
+  const sd = ['lobi', 'opponent', 'both'].includes(side) ? side : null;
+  await db.prepare(`INSERT INTO sx_bst_presence (analysis_id, user_id, name, last_seen, side) VALUES (?, ?, ?, ?, ?) ON CONFLICT (analysis_id, user_id) DO UPDATE SET last_seen = excluded.last_seen, name = excluded.name, side = excluded.side`)
+    .bind(String(id), user.id, user.fullName, nowIso(), sd).run();
   const a = await db.prepare(`SELECT version, updated_by, updated_at FROM sx_bst_analyses WHERE id = ?`).bind(String(id)).first();
-  const others = (await db.prepare(`SELECT name FROM sx_bst_presence WHERE analysis_id = ? AND user_id <> ? AND last_seen > ?`).bind(String(id), user.id, new Date(Date.now() - 45e3).toISOString()).all()).results.map(r => r.name);
-  return { ok: true, others, version: a?.version, updatedBy: a?.updated_by, updatedAt: a?.updated_at };
+  const rows = (await db.prepare(`SELECT name, side FROM sx_bst_presence WHERE analysis_id = ? AND user_id <> ? AND last_seen > ?`).bind(String(id), user.id, new Date(Date.now() - 45e3).toISOString()).all()).results;
+  return { ok: true, others: rows.map(r => r.name), recording: rows.map(r => ({ name: r.name, side: r.side || null })), version: a?.version, updatedBy: a?.updated_by, updatedAt: a?.updated_at };
 }
 
 // ── Exports (Excel and CSV; the PDF is the print page) ──
@@ -431,4 +435,17 @@ export async function sharedAnalysis(db, token) {
   if (!s.include_notes) { d.analysis.half1Note = ''; d.analysis.half2Note = ''; for (const e of d.events) e.notes = ''; }
   for (const l of d.lineups) { delete l.rating; }
   return { ...d, expiresAt: s.expires_at, includeVideo: !!s.include_video };
+}
+
+// ── Delivery to coach accounts: a badge for Final analyses finalised since the coach last looked ──
+export async function newFinalsFor(db, user) {
+  await ensureBstSchema(db);
+  const seen = (await db.prepare(`SELECT value FROM sx_settings WHERE key = ?`).bind(`seen_finals:${user.id}`).first())?.value || '1970-01-01T00:00:00.000Z';
+  const rows = (await db.prepare(`SELECT id FROM sx_bst_analyses WHERE status = 'final' AND is_deleted = 0 AND finalised_at > ?`).bind(seen).all()).results;
+  return { count: rows.length, ids: rows.map(r => r.id), seenAt: seen };
+}
+export async function markFinalsSeen(db, user) {
+  await ensureBstSchema(db);
+  await db.prepare(`INSERT INTO sx_settings (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`).bind(`seen_finals:${user.id}`, nowIso(), nowIso(), user.fullName).run();
+  return { ok: true };
 }

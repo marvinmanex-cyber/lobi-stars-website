@@ -5446,3 +5446,15 @@ notes**; keep such files inside the club.
 **Statistics Center as an app on your phone:** open lobistarsfc.com/staff/statistics-center/ on your phone. A card asks to install it. On Android press **Install the app**. On iPhone, open the page in Safari, tap **Share**, then **Add to Home Screen**. The **Lobi Stats** icon then opens it full screen. Missed the card? Tap **Install the app on your phone** under the sign-in form (or Settings › Install the app).
 
 **Official results:** the Statistics Center shows each match's official result, the same as the Results page. If it says "goals recorded 0–0", the goal events have not been entered yet. Add them (Live entry or Review) until they match; a match can only be published when its goals agree with the official result.
+
+**Analysis Form: new tools (28 Nov 2026).**
+
+- **Before kick-off:** check the list at the top of the form and fix anything marked ✖.
+- **During the match:** press **Kick-off** on the clock. The form then follows the match by itself, one 2-minute block at a time.
+- **On a phone:** press **📱 Tally mode** for big buttons.
+- **On a laptop:** press **⌨ Keys** to see the letter for each measure.
+- **Two people:** one records Lobi Stars and the other the opponent. The form warns you if you both pick the same team.
+- **Not sure what counts?** Tap the measure's name for its definition.
+- **At half-time:** press **Half-time sheet** and show it to the coach, or send it on WhatsApp.
+- **When the analysis is marked Final,** coach accounts see it marked **New**.
+- **Watch this block:** appears once the match video and its kick-off time are added in Match Setup.

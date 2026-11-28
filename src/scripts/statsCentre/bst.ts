@@ -5,6 +5,7 @@
 // analyst's own numbers (Offence/Attack, Defense, Dangerous Attack, Crossing, xG, xA) and the texts are saved here.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { fx, fxText, club } from './fx';
+import { DEFS, GROUPS, KEYS, KEY_OF, videoAt, halfTimeView } from './bstPro';
 export interface Ctx {
   api: (path: string, body?: unknown) => Promise<any>; S: any; esc: (s: unknown) => string; toast: (t: string, ok?: boolean) => void;
   view: () => HTMLElement; resetView: () => { signal: AbortSignal }; store: { get(k: string, d: any): any; set(k: string, v: any): void };
@@ -43,6 +44,7 @@ export function bstRoute(c: Ctx) {
   applyUi();
   if (parts[1] === 'print') return printView(c, parts[0]);
   if (parts[1] === 'summary') return summaryView(c, parts[0]);
+  if (parts[1] === 'half-time') return halfTimeView(c, parts[0]);
   return form(c, parts[0]);
 }
 
@@ -55,6 +57,9 @@ function toggleUi(k: string) { const p = uiPrefs(); p[k] = !p[k]; try { localSto
 async function library(c: Ctx) {
   const { esc } = c;
   const d = await c.api('bst');
+  // Coach accounts: Final analyses they have not opened yet are marked "New" (then marked as seen).
+  let fresh = new Set<string>();
+  if (c.S.user.readOnly) { try { fresh = new Set((await c.api('bst/new-finals')).ids || []); } catch { /* offline */ } }
   c.view().innerHTML = `
     <div class="sx-row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Analysis Form</h2><a class="sx-btn" href="${BASE}blank/" target="_blank" rel="noopener">Blank form (print)</a></div>
     <section class="sx-card"><h3>New analysis</h3>
@@ -63,7 +68,7 @@ async function library(c: Ctx) {
         : `<p class="sx-small">Every match already has an analysis. <a href="/staff/statistics-center/#/new">Create the match first</a> (New match), then come back.</p>`}
     </section>
     <div class="sx-card sx-scroll"><table class="sx-t"><thead><tr><th>Date</th><th>Match</th><th>Opponent</th><th>Status</th><th>Last saved</th><th>Prepared by</th><th></th></tr></thead><tbody>
-    ${d.analyses.map((a: any) => `<tr><td>${esc(c.day(a.date))}</td><td>${fx(a.home, a.away)}</td><td>${club(a.opponent)}</td><td><span class="sx-pill ${a.status === 'final' ? 'published' : 'review'}">${a.status === 'final' ? 'Final' : 'Draft'}</span></td>
+    ${d.analyses.map((a: any) => `<tr><td>${esc(c.day(a.date))}</td><td>${fx(a.home, a.away)}</td><td>${club(a.opponent)}</td><td><span class="sx-pill ${a.status === 'final' ? 'published' : 'review'}">${a.status === 'final' ? 'Final' : 'Draft'}</span>${fresh.has(a.id) ? ' <span class="sx-pill live">New</span>' : ''}</td>
       <td>${esc(c.when(a.updatedAt))}</td><td>${esc(a.preparedBy || '')}</td><td><div class="sx-row"><a class="sx-btn sx-btn--p" href="${BASE}${esc(a.id)}/">Open</a><a class="sx-btn" href="${BASE}${esc(a.id)}/print/" target="_blank" rel="noopener">PDF</a>
       <a class="sx-btn" href="/api/stats-centre/export/bst.xlsx?id=${esc(a.id)}">Excel</a>${a.status === 'final' && c.S.user.admin ? `<button class="sx-btn" data-reopen="${esc(a.id)}">Reopen</button>` : ''}${a.status !== 'final' || c.S.user.admin ? `<button class="sx-btn" data-remove="${esc(a.id)}">Remove</button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="7" class="sx-small">No analyses yet.</td></tr>'}
     </tbody></table></div>`;
@@ -71,6 +76,7 @@ async function library(c: Ctx) {
     e.preventDefault();
     try { const r = await c.api('bst', { matchId: e.target.matchId.value }); location.href = `${BASE}${r.id}/`; } catch (x: any) { if (x.data?.id) location.href = `${BASE}${x.data.id}/`; else c.toast(x.message, false); }
   });
+  if (fresh.size) { try { await c.api('bst/seen', {}); document.querySelector('[data-nav="bst"] .sx-navbadge')?.remove(); } catch { /* next time */ } }
   c.view().querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', async () => {
     if (!confirm('Move this analysis to the recycle bin? It can be restored from Settings › Recycle bin.')) return;
     try { await c.api('bst/remove', { id: (b as HTMLElement).dataset.remove }); library(c); } catch (x: any) { c.toast(x.message, false); }
@@ -88,7 +94,9 @@ async function form(c: Ctx, id: string) {
   clearInterval(hb);
   let d: any = await api(`bst/one?id=${encodeURIComponent(id)}`);
   const m = d.match, lobiSide = m.lobiHome ? 'home' : 'away';
-  const st = c.store.get(`sx_bst_${id}`, { side: 'lobi', lu: 'lobi', sel: null, metric: 0 });
+  const st = c.store.get(`sx_bst_${id}`, { side: 'lobi', lu: 'lobi', sel: null, metric: 0, follow: true, tally: false, open: {}, def: null, noCheck: false });
+  if (!st.open) st.open = {};
+  let recording: any[] = [];
   const qKey = `sx_bq_${id}`;
   let saving = false, lastSaved = d.analysis.updatedAt;
   const locked = () => d.analysis.status === 'final';
@@ -235,6 +243,8 @@ async function form(c: Ctx, id: string) {
 
   function draw() {
     const R = c.resetView();
+    const cur0 = clockBlock();
+    if (st.follow !== false && cur0 && !locked()) st.sel = cur0; // follow the match clock
     const side = st.side, both = side === 'both', main = both ? 'lobi' : side, g = d.grid[main], T = d.totals[main], sel = st.sel;
     const cur = clockBlock();
     const allBlocks = d.cols.flatMap((col: any) => col.blocks.map((b: string) => ({ period: col.period, block: b })));
@@ -248,14 +258,57 @@ async function form(c: Ctx, id: string) {
       if (mt.key === 'cards') return `<button class="bst-pm" data-m="cards" data-s="${sd}" data-d="-1" aria-label="Remove a card" ${locked() ? 'disabled' : ''}>−</button><span class="bst-v">${v}</span><button class="bst-pm" data-card="yellow" data-s="${sd}" aria-label="Add a yellow card" ${locked() ? 'disabled' : ''}>🟨+</button><button class="bst-pm" data-card="red" data-s="${sd}" aria-label="Add a red card" ${locked() ? 'disabled' : ''}>🟥+</button>`;
       return `<button class="bst-pm" data-m="${mt.key}" data-s="${sd}" data-d="-1" aria-label="${esc(mt.label)} minus one (${esc(teamName(sd))})" ${locked() ? 'disabled' : ''}>−</button><span class="bst-v">${v}</span><button class="bst-pm" data-m="${mt.key}" data-s="${sd}" data-d="1" aria-label="${esc(mt.label)} plus one (${esc(teamName(sd))})" ${locked() ? 'disabled' : ''}>+</button>`;
     };
+    // Big-button tally screen for phones: only the current block, one hand.
+    const countable = d.metrics.filter((mt: any) => mt.kind === 'cell' || mt.kind === 'event');
+    const tally = () => `<div class="bst-tally">
+      <div class="bst-tally-top"><button class="sx-btn" data-tally="0">✕ Full form</button><span><b>${esc(clockText())}</b></span><span class="sx-small" id="bstSave" aria-live="polite"></span></div>
+      <div class="sx-row" role="group" aria-label="Team"><button class="sx-btn ${side === 'lobi' ? 'sx-btn--p' : ''}" data-side="lobi">${esc(teamName('lobi'))}</button><button class="sx-btn ${side === 'opponent' ? 'sx-btn--p' : ''}" data-side="opponent">${esc(teamName('opponent'))}</button></div>
+      <div class="bst-block"><button class="sx-btn" data-step="-1" aria-label="Previous block">◀</button><div><b>${esc(PNAME[S.period])} · ${esc(blockRange(S.period, S.block))}</b>${cur && cur.period === S.period && cur.block === S.block ? ' <span class="sx-pill live">now</span>' : cur ? ' <button class="sx-btn" data-now>Go to now</button>' : ''}</div><button class="sx-btn" data-step="1" aria-label="Next block">▶</button></div>
+      ${splitWarn()}
+      <ul class="bst-tally-list">${countable.map((mt: any) => { const v = d.grid[main][mt.key][S.period][S.block]; return `<li><span class="bst-tl">${esc(mt.label)}<small>match ${T[mt.key].full}</small></span>${mt.key === 'cards' ? `<button class="bst-tb minus" data-m="cards" data-s="${main}" data-d="-1" aria-label="Remove a card" ${locked() ? 'disabled' : ''}>−</button><b class="bst-tv">${v}</b><button class="bst-tb" data-card="yellow" data-s="${main}" aria-label="Add a yellow card" ${locked() ? 'disabled' : ''}>🟨</button>` : `<button class="bst-tb minus" data-m="${mt.key}" data-s="${main}" data-d="-1" aria-label="${esc(mt.label)} minus one" ${locked() ? 'disabled' : ''}>−</button><b class="bst-tv">${v}</b><button class="bst-tb" data-m="${mt.key}" data-s="${main}" data-d="1" aria-label="${esc(mt.label)} plus one" ${locked() ? 'disabled' : ''}>+</button>`}</li>`; }).join('')}</ul>
+      <p class="sx-small">Each tap is saved at once (and kept on the phone if the signal drops). The block follows the match clock${st.follow === false ? ' (paused: tap Go to now)' : ''}.</p></div>`;
+    // Two people sharing the work: warn when both record the same team (numbers would count twice).
+    function splitWarn() {
+      if (!recording.length) return '';
+      const mine = side === 'both' ? ['lobi', 'opponent'] : [side];
+      const clash = recording.filter((r: any) => r.side && (r.side === 'both' ? ['lobi', 'opponent'] : [r.side]).some((x: string) => mine.includes(x)));
+      const who = recording.map((r: any) => `${esc(r.name)}: ${r.side ? esc(r.side === 'both' ? 'both teams' : teamName(r.side)) : 'not chosen'}`).join(' · ');
+      return `<p class="${clash.length ? 'sx-err' : 'sx-note'}" id="bstSplit">${clash.length ? `⚠ ${esc(clash.map((r: any) => r.name).join(', '))} is also recording ${esc(side === 'both' ? 'these teams' : teamName(side))}: every tap would count twice. Agree who records which team.` : `Sharing the work · ${who} · you: ${esc(side === 'both' ? 'both teams' : teamName(side))}`}</p>`;
+    }
+    // Pre-match checklist (before kick-off).
+    const checklist = () => {
+      if (m.clock?.period || locked() || st.noCheck) return '';
+      const lobiXI = d.lineups.filter((l: any) => l.side === lobiSide && l.starter).length, oppN = d.lineups.filter((l: any) => l.side !== lobiSide).length;
+      const lobiForm = m[lobiSide === 'home' ? 'formationHome' : 'formationAway'];
+      const items: [boolean | null, string, string][] = [
+        [lobiXI === 11, `Lobi Stars line-up: ${lobiXI} of 11 starters`, lobiXI === 11 ? '' : `<a href="/staff/statistics-center/#/match/${esc(m.id)}">Open Match Setup</a>`],
+        [oppN > 0 ? true : null, oppN ? `Opponent line-up: ${oppN} players` : 'Opponent line-up (optional): not added', oppN ? '' : `<a href="/staff/statistics-center/#/match/${esc(m.id)}">Add it</a>`],
+        [!!lobiForm, lobiForm ? `Starting formation: ${esc(lobiForm)}` : 'Starting formation: not chosen (section 1 below)', ''],
+        [!!m.kickoff, m.kickoff ? `Kick-off time: ${esc(m.kickoff)}` : 'Kick-off time: not set', ''],
+        [m.videoUrl ? true : null, m.videoUrl ? 'Match video link: set (each block gets a "Watch" link)' : 'Match video link (optional): add it in Match Setup after the match', ''],
+        [navigator.onLine, navigator.onLine ? 'Internet: connected' : 'Internet: offline (taps are kept on this device and sent later)', ''],
+        [recording.length ? true : null, recording.length ? `Sharing with: ${esc(recording.map((r: any) => r.name).join(', '))} (choose different teams)` : 'Working alone (a second person can open this form to record the opponent)', ''],
+      ];
+      return `<section class="sx-card bst-check"><div class="sx-row" style="justify-content:space-between"><h3 style="margin:0">Before kick-off</h3><button class="sx-btn" data-nocheck>Hide</button></div>
+        <ul class="sx-check">${items.map(([ok, t, a]) => `<li class="${ok === true ? 'ok' : ok === false ? 'e' : 'w'}">${ok === true ? '✔' : ok === false ? '✖' : 'ℹ'} ${t} ${a}</li>`).join('')}</ul>
+        <p class="sx-small">When the referee starts the match, press <b>Kick-off</b> on the clock below: the form then moves to each 2-minute block by itself.</p></section>`;
+    };
+    const vid = videoAt(m, S);
+    const totStrip = `<div class="bst-sticktot" aria-label="Match totals"><span><b>${esc(teamName('lobi'))}</b> ${d.totals.lobi.goal_for.full}–${d.totals.lobi.goal_against.full} <b>${esc(teamName('opponent'))}</b></span><span>Attempts ${d.totals.lobi.goal_attempt.full}–${d.totals.opponent.goal_attempt.full}</span><span>On target ${d.totals.lobi.shot_on.full}–${d.totals.opponent.shot_on.full}</span><span>Dangerous ${d.totals.lobi.dangerous_attack.full}–${d.totals.opponent.dangerous_attack.full}</span><span>xG ${Number(d.totals.lobi.xg.full || 0).toFixed(2)}–${Number(d.totals.opponent.xg.full || 0).toFixed(2)}</span></div>`;
+    const row = (mt: any, i: number) => `<li class="${mt.kind === 'calc' || mt.kind === 'derived' ? 'ro' : ''}${st.metric === i ? ' focus' : ''}" data-mi="${i}"><span class="bst-l"><button class="bst-defbtn" data-def="${mt.key}" aria-expanded="${st.def === mt.key}" title="What this means">${esc(mt.label)}</button>${KEY_OF[mt.key] ? `<kbd class="bst-kbd">${KEY_OF[mt.key]}</kbd>` : ''}</span><span class="bst-c">${valueCell(mt, main)}</span>${both ? `<span class="bst-c">${valueCell(mt, 'opponent')}</span>` : ''}<span class="bst-t" title="Match total">${both ? `${d.totals.lobi[mt.key].full}–${d.totals.opponent[mt.key].full}` : T[mt.key].full}</span>${st.def === mt.key ? `<p class="bst-def">${esc(DEFS[mt.key] || '')}</p>` : ''}</li>`;
+    const grouped = GROUPS.map(gp => { const items = gp.metrics.map(k => d.metrics.findIndex((x: any) => x.key === k)).filter(i => i >= 0); const isOpen = st.open[gp.key] !== false; return `<details class="bst-grp" data-grp="${gp.key}" ${isOpen ? 'open' : ''}><summary>${esc(gp.label)} <span class="sx-small">(${items.length})</span></summary><ul class="bst-list${both ? ' both' : ''}">${items.map(i => row(d.metrics[i], i)).join('')}</ul></details>`; }).join('')
+      + (() => { const rest = d.metrics.map((x: any, i: number) => [x, i]).filter(([x]: any) => !GROUPS.some(gp => gp.metrics.includes(x.key))); return rest.length ? `<ul class="bst-list${both ? ' both' : ''}">${rest.map(([x, i]: any) => row(x, i)).join('')}</ul>` : ''; })();
     const lobiF = lobiSide === 'home' ? ['formationHome', 'formationHomeFinish'] : ['formationAway', 'formationAwayFinish'];
     const oppF = lobiSide === 'home' ? ['formationAway', 'formationAwayFinish'] : ['formationHome', 'formationHomeFinish'];
-    c.view().innerHTML = `
+    c.view().innerHTML = st.tally ? tally() : `
+      ${checklist()}
       <div class="sx-row" style="justify-content:space-between;margin-bottom:8px"><div><h2 style="margin:0"><span class="sx-h2pre">Match analysis</span>${fx(m.home, m.away, `${m.homeScore}–${m.awayScore}`)}</h2>
         <p class="sx-small" style="margin:0">${d.analysis.status === 'final' ? `<span class="sx-pill published">Final</span> by ${esc(d.analysis.finalisedBy || '')} ${esc(c.when(d.analysis.finalisedAt))}` : '<span class="sx-pill review">Draft</span>'} · Prepared by: <b>${esc(d.analysis.preparedBy || c.S.user.fullName)}</b> · <span id="bstSave" aria-live="polite"></span></p></div>
-        <div class="sx-row"><button class="sx-btn" data-ui="dark" aria-pressed="${!!uiPrefs().dark}">🌙 Dark</button><button class="sx-btn" data-ui="big" aria-pressed="${!!uiPrefs().big}">Big buttons</button><a class="sx-btn" href="${BASE}${esc(id)}/summary/">Summary</a><a class="sx-btn" href="/staff/statistics-center/#/tag/${esc(m.id)}">Tag players</a><a class="sx-btn" href="${BASE}${esc(id)}/print/${hasOpp() ? '?opponent=1' : ''}" target="_blank" rel="noopener">PDF</a><a class="sx-btn" href="/api/stats-centre/export/bst.xlsx?id=${esc(id)}&opponent=${st.opp || hasOpp() ? 1 : 0}">Excel</a><a class="sx-btn" href="/api/stats-centre/export/bst.csv?id=${esc(id)}">CSV</a></div></div>
+        <div class="sx-row"><button class="sx-btn sx-btn--p" data-tally="1">📱 Tally mode</button><a class="sx-btn" href="${BASE}${esc(id)}/half-time/">Half-time sheet</a><button class="sx-btn" data-keys aria-expanded="${!!st.keys}">⌨ Keys</button><button class="sx-btn" data-ui="dark" aria-pressed="${!!uiPrefs().dark}">🌙 Dark</button><button class="sx-btn" data-ui="big" aria-pressed="${!!uiPrefs().big}">Big buttons</button><a class="sx-btn" href="${BASE}${esc(id)}/summary/">Summary</a><a class="sx-btn" href="/staff/statistics-center/#/tag/${esc(m.id)}">Tag players</a><a class="sx-btn" href="${BASE}${esc(id)}/print/${hasOpp() ? '?opponent=1' : ''}" target="_blank" rel="noopener">PDF</a><a class="sx-btn" href="/api/stats-centre/export/bst.xlsx?id=${esc(id)}&opponent=${st.opp || hasOpp() ? 1 : 0}">Excel</a><a class="sx-btn" href="/api/stats-centre/export/bst.csv?id=${esc(id)}">CSV</a></div></div>
       <p class="sx-err" id="bstOthers" ${d.others?.length ? '' : 'hidden'}>${d.others?.length ? `${esc(d.others.map((o: any) => o.name).join(', '))} also has this analysis open. Your numbers are added together safely; agree who writes the overview.` : ''}</p>
 
+      ${st.keys ? `<section class="sx-card"><h3>Keyboard keys (laptop)</h3><p class="sx-small">The letter adds one to the current block; <b>Shift</b> + the letter removes one. <b>1</b> Lobi Stars · <b>2</b> opponent · <b>3</b> both · <b>N</b> go to now · <b>T</b> tally mode · ← → blocks · Ctrl+Z undo.</p><p>${Object.entries(KEYS).map(([k, v]) => `<kbd class="bst-kbd">${k.toUpperCase()}</kbd> ${esc(d.metrics.find((x: any) => x.key === v)?.label || v)}`).join(' &nbsp; ')}</p></section>` : ''}
+      ${splitWarn()}
       <section class="sx-card"><h3>1 · Match sheet</h3>
         <div class="sx-form">
           <div><p class="sx-small" style="margin:0">Match</p><b>${fx(m.home, m.away)}</b></div><div><p class="sx-small" style="margin:0">Date and time</p><b>${esc(c.day(m.date))}${m.kickoff ? ` · ${esc(m.kickoff)}` : ''}</b></div>
@@ -269,9 +322,10 @@ async function form(c: Ctx, id: string) {
 
       <section class="sx-card"><div class="sx-row" style="justify-content:space-between"><h3 style="margin:0">2 · Match data collection</h3>
         <div class="sx-row" role="group" aria-label="Team"><button class="sx-btn ${side === 'lobi' ? 'sx-btn--p' : ''}" data-side="lobi">${esc(teamName('lobi'))}</button><button class="sx-btn ${side === 'opponent' ? 'sx-btn--p' : ''}" data-side="opponent">${esc(teamName('opponent'))}</button><button class="sx-btn ${both ? 'sx-btn--p' : ''}" data-side="both">Both</button></div></div>
-        <div class="bst-clock" aria-label="Match clock"><span>Clock: <b>${esc(clockText())}</b></span>${locked() ? '' : clockButtons()}</div>
+        ${totStrip}
+        <div class="bst-clock" aria-label="Match clock"><span>Clock: <b>${esc(clockText())}</b></span>${locked() ? '' : clockButtons()}<button class="sx-btn" data-follow aria-pressed="${st.follow !== false}">${st.follow !== false ? '⏱ Following the clock' : '⏱ Follow the clock'}</button>${vid ? `<a class="sx-btn" href="${esc(vid)}" target="_blank" rel="noopener">▶ Watch this block</a>` : ''}</div>
         <div class="bst-block"><button class="sx-btn" data-step="-1" aria-label="Previous block">◀</button><div><b>${esc(PNAME[S.period])} · ${esc(blockRange(S.period, S.block))}</b>${cur && cur.period === S.period && cur.block === S.block ? ' <span class="sx-pill live">now</span>' : ''}${cur && !(cur.period === S.period && cur.block === S.block) ? ` <button class="sx-btn" data-now style="min-height:34px;padding:2px 10px">Go to now</button>` : ''}</div><button class="sx-btn" data-step="1" aria-label="Next block">▶</button></div>
-        ${both ? `<p class="bst-bothhead"><span></span><b>${esc(teamName('lobi'))}</b><b>${esc(teamName('opponent'))}</b></p>` : ''}<ul class="bst-list${both ? ' both' : ''}">${d.metrics.map((mt: any, i: number) => `<li class="${mt.kind === 'calc' || mt.kind === 'derived' ? 'ro' : ''}${st.metric === i ? ' focus' : ''}" data-mi="${i}"><span class="bst-l">${esc(mt.label)}</span><span class="bst-c">${valueCell(mt, main)}</span>${both ? `<span class="bst-c">${valueCell(mt, 'opponent')}</span>` : ''}<span class="bst-t" title="Match total">${both ? `${d.totals.lobi[mt.key].full}–${d.totals.opponent[mt.key].full}` : T[mt.key].full}</span></li>`).join('')}</ul>
+        ${both ? `<p class="bst-bothhead"><span></span><b>${esc(teamName('lobi'))}</b><b>${esc(teamName('opponent'))}</b></p>` : ''}${grouped}
         <p class="sx-small">The event rows are the match's events (shared with live entry): a + adds one at ${esc(blockRange(S.period, S.block))} with no player (add the player later on the Review page); a − removes the latest one in this block. Grey rows are worked out. Keyboard: ← → blocks, ↑ ↓ rows, + and − to change.</p>
         <div class="sx-scroll bst-gridwrap"><table class="bst-grid"><thead><tr><th class="bst-sticky">Metric</th>${d.cols.map((col: any) => col.blocks.map((b: string) => `<th class="${col.period === S.period && b === S.block ? 'sel' : ''}${cur && cur.period === col.period && cur.block === b ? ' now' : ''}"><button data-pick="${col.period}|${b}" aria-label="${esc(PNAME[col.period])} ${esc(blockLabel(b))}">${esc(blockLabel(b))}</button></th>`).join('') + `<th class="tot">${col.period}</th>`).join('')}<th class="tot">Total</th>${both ? '<th class="tot">Lobi − Opp</th>' : ''}</tr></thead>
           <tbody>${d.metrics.map((mt: any) => `<tr class="${mt.kind === 'calc' || mt.kind === 'derived' ? 'ro' : ''}"><th class="bst-sticky">${esc(mt.label)}</th>${d.cols.map((col: any) => col.blocks.map((b: string) => { const v = g[mt.key][col.period][b]; return `<td class="${col.period === S.period && b === S.block ? 'sel' : ''}">${v ? (mt.kind === 'decimal' ? Number(v).toFixed(2) : v) : ''}</td>`; }).join('') + `<td class="tot">${T[mt.key][col.period] || ''}</td>`).join('')}<td class="tot"><b>${T[mt.key].full || ''}</b></td>${both ? '<td class="tot"></td>' : ''}</tr>${both ? `<tr class="opp${mt.kind === 'calc' || mt.kind === 'derived' ? ' ro' : ''}"><th class="bst-sticky">↳ ${esc(teamName('opponent'))}</th>${d.cols.map((col: any) => col.blocks.map((b: string) => { const v = d.grid.opponent[mt.key][col.period][b]; return `<td class="${col.period === S.period && b === S.block ? 'sel' : ''}">${v ? (mt.kind === 'decimal' ? Number(v).toFixed(2) : v) : ''}</td>`; }).join('') + `<td class="tot">${d.totals.opponent[mt.key][col.period] || ''}</td>`).join('')}<td class="tot"><b>${d.totals.opponent[mt.key].full || ''}</b></td><td class="tot diff">${Math.round((d.totals.lobi[mt.key].full - d.totals.opponent[mt.key].full) * 100) / 100}</td></tr>` : ''}`).join('')}</tbody></table></div>
@@ -315,11 +369,16 @@ async function form(c: Ctx, id: string) {
     v.addEventListener('click', async (e: any) => {
       const t = e.target.closest('button'); if (!t) return;
       if (t.dataset.lu) { st.lu = t.dataset.lu; save(); draw(); }
-      else if (t.dataset.side) { st.side = t.dataset.side; save(); draw(); }
-      else if (t.dataset.step) { const n = Math.max(0, Math.min(allBlocks.length - 1, si + Number(t.dataset.step))); st.sel = allBlocks[n]; save(); draw(); }
-      else if (t.hasAttribute('data-now')) { const k = clockBlock(); if (k) { st.sel = k; save(); draw(); } }
-      else if (t.dataset.pick) { const [p, b] = t.dataset.pick.split('|'); st.sel = { period: p, block: b }; save(); draw(); }
-      else if (t.dataset.m) change(t.dataset.m, S.period, S.block, Number(t.dataset.d), {}, t.dataset.s || main);
+      else if (t.dataset.side) { st.side = t.dataset.side; save(); draw(); beat(); }
+      else if (t.dataset.step) { const n = Math.max(0, Math.min(allBlocks.length - 1, si + Number(t.dataset.step))); st.sel = allBlocks[n]; st.follow = false; save(); draw(); }
+      else if (t.hasAttribute('data-now')) { const k = clockBlock(); if (k) { st.sel = k; st.follow = true; save(); draw(); } }
+      else if (t.dataset.pick) { const [p, b] = t.dataset.pick.split('|'); st.sel = { period: p, block: b }; st.follow = false; save(); draw(); }
+      else if (t.hasAttribute('data-follow')) { st.follow = st.follow === false; if (st.follow) { const k = clockBlock(); if (k) st.sel = k; } save(); draw(); }
+      else if (t.dataset.tally !== undefined) { st.tally = t.dataset.tally === '1'; save(); draw(); window.scrollTo(0, 0); }
+      else if (t.hasAttribute('data-keys')) { st.keys = !st.keys; save(); draw(); }
+      else if (t.hasAttribute('data-nocheck')) { st.noCheck = true; save(); draw(); }
+      else if (t.dataset.def) { st.def = st.def === t.dataset.def ? null : t.dataset.def; save(); draw(); }
+      else if (t.dataset.m) { try { navigator.vibrate?.(12); } catch { /* no vibration */ } change(t.dataset.m, S.period, S.block, Number(t.dataset.d), {}, t.dataset.s || main); }
       else if (t.dataset.card) change('cards', S.period, S.block, 1, { card: t.dataset.card }, t.dataset.s || main);
       else if (t.dataset.ui) { toggleUi(t.dataset.ui); draw(); }
       else if (t.dataset.clock) {
@@ -373,6 +432,7 @@ async function form(c: Ctx, id: string) {
         try { const sideF = /Home/.test(name) ? 'home' : 'away'; const ver = await api(`lineup/version?id=${encodeURIComponent(m.id)}&side=${sideF}`); await api('lineup/changes', { id: m.id, side: sideF, baseVersion: ver.version, changes: [{ op: /Finish$/.test(name) ? 'formation_finish' : 'formation', value }] }); m[name] = value; d.checks = (await api(`bst/one?id=${encodeURIComponent(id)}`)).checks; lastSaved = new Date().toISOString(); showSaved(); draw(); } catch (x: any) { c.toast(x.message, false); }
       }
     }, R);
+    v.addEventListener('toggle', (e: any) => { const g = e.target?.dataset?.grp; if (g) { st.open[g] = e.target.open; save(); } }, { ...R, capture: true } as any);
     v.addEventListener('input', (e: any) => {
       const t = e.target; const f = t.dataset.text; if (!f) return;
       status('Saving…'); clearTimeout(timers[f]); timers[f] = window.setTimeout(() => saveText(f, t.value), 800);
@@ -381,8 +441,16 @@ async function form(c: Ctx, id: string) {
       if (/input|textarea|select/i.test((e.target as HTMLElement).tagName)) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) redoLast(); else undo(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redoLast(); return; }
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        const k = e.key.toLowerCase();
+        if (KEYS[k] && !locked()) { change(KEYS[k], S.period, S.block, e.shiftKey ? -1 : 1, {}, main); try { navigator.vibrate?.(12); } catch { /* none */ } e.preventDefault(); return; }
+        if (k === '1' || k === '2' || k === '3') { st.side = k === '1' ? 'lobi' : k === '2' ? 'opponent' : 'both'; save(); draw(); beat(); e.preventDefault(); return; }
+        if (k === 'n') { const b = clockBlock(); if (b) { st.sel = b; st.follow = true; save(); draw(); } e.preventDefault(); return; }
+        if (k === 't') { st.tally = !st.tally; save(); draw(); e.preventDefault(); return; }
+        if (k === '?') { st.keys = !st.keys; save(); draw(); e.preventDefault(); return; }
+      }
       const mt = d.metrics[st.metric];
-      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const n = Math.max(0, Math.min(allBlocks.length - 1, si + (e.key === 'ArrowRight' ? 1 : -1))); st.sel = allBlocks[n]; save(); draw(); e.preventDefault(); }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const n = Math.max(0, Math.min(allBlocks.length - 1, si + (e.key === 'ArrowRight' ? 1 : -1))); st.sel = allBlocks[n]; st.follow = false; save(); draw(); e.preventDefault(); }
       else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { st.metric = Math.max(0, Math.min(d.metrics.length - 1, st.metric + (e.key === 'ArrowDown' ? 1 : -1))); save(); draw(); e.preventDefault(); }
       else if ((e.key === '+' || e.key === '=' || e.key === '-') && mt && (mt.kind === 'cell' || (mt.kind === 'event' && mt.key !== 'cards'))) { change(mt.key, S.period, S.block, e.key === '-' ? -1 : 1, {}, main); e.preventDefault(); }
     }, R);
@@ -415,14 +483,22 @@ async function form(c: Ctx, id: string) {
   // Who else has it open, and newer changes made by someone else.
   const beat = async () => {
     try {
-      const r = await api('bst/presence', { id });
+      const r = await api('bst/presence', { id, side: st.side });
+      const before = JSON.stringify(recording); recording = r.recording || [];
+      if (JSON.stringify(recording) !== before && !document.activeElement?.matches('textarea,input')) draw();
       const el = document.getElementById('bstOthers');
       if (el) { el.hidden = !r.others.length; el.textContent = r.others.length ? `${r.others.join(', ')} also has this analysis open. Your numbers are added together safely; agree who writes the overview.` : ''; }
       if (r.version !== d.analysis.version && !pending() && !saving && !document.activeElement?.matches('textarea,input')) { await reload(); if (r.updatedBy && !String(r.updatedBy).startsWith(c.S.user.fullName)) c.toast(`Updated by ${r.updatedBy}`); }
     } catch { /* offline: try again later */ }
   };
   beat();
-  hb = window.setInterval(() => { if (!location.pathname.startsWith(`${BASE}${id}`)) { clearInterval(hb); return; } beat(); flushCells(); }, 20000);
+  hb = window.setInterval(() => { if (!location.pathname.startsWith(`${BASE}${id}`)) { clearInterval(hb); clearInterval(fc); return; } beat(); flushCells(); }, 20000);
+  // Follow the clock: move to the new 2-minute block by itself (not while typing).
+  const fc = window.setInterval(() => {
+    if (!location.pathname.startsWith(`${BASE}${id}`)) { clearInterval(fc); return; }
+    if (st.follow === false || locked() || document.activeElement?.matches('textarea,input,select')) return;
+    const k = clockBlock(); if (k && (k.period !== st.sel?.period || k.block !== st.sel?.block)) { st.sel = k; save(); draw(); }
+  }, 10000);
   window.addEventListener('online', () => flushCells(), { once: true });
 }
 

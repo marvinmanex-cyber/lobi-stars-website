@@ -46,7 +46,7 @@ export async function onRequest({ request, env }) {
   const path = url.pathname.replace(/\/+$/, '');
   if (path === '/staff/statistics-center/manifest.webmanifest') return new Response(JSON.stringify(MANIFEST), { headers: { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'public, max-age=3600', 'X-Robots-Tag': 'noindex' } });
   if (path === '/staff/statistics-center/sw.js') return new Response(SW, { headers: { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': '/staff/statistics-center/', 'X-Robots-Tag': 'noindex' } });
-  if (!/^\/staff\/statistics-center(\/bst-analysis(\/(blank|[A-Za-z0-9_-]{6,40}(\/(print|summary))?))?)?$/.test(path)) return new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain', 'X-Robots-Tag': 'noindex, nofollow' } });
+  if (!/^\/staff\/statistics-center(\/bst-analysis(\/(blank|[A-Za-z0-9_-]{6,40}(\/(print|summary|half-time))?))?)?$/.test(path)) return new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain', 'X-Robots-Tag': 'noindex, nofollow' } });
   if (!url.pathname.endsWith('/')) return Response.redirect(`${url.origin}${path}/${url.search}`, 301);
   const res = await env.ASSETS.fetch(new URL('/staff/statistics-center/', url));
   const out = new Response(res.body, res);

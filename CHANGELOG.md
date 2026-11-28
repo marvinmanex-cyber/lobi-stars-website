@@ -8,6 +8,21 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-28: Analysis Form: ten improvements
+
+- **Half-time sheet:** one page for the dressing room. It shows the first-half score, talking points worked out from the numbers (attacking share, attempts and accuracy, our and their most dangerous spells, discipline), key moments, first-half numbers for both teams, an attacks chart and the analyst's first-half note. Print or save as PDF, **Send on WhatsApp** (as text) or copy.
+- **Automatic delivery to coaches:** coach accounts see a "new" badge on Analysis Form when an analysis is marked Final, and a **New** label on it in the list.
+- **Video link per block:** when the match video and its kick-off time are set in Match Setup, **Watch this block** opens the video at that moment.
+- **Follow the clock:** the form moves to the current 2-minute block by itself. Choosing another block pauses it; **Go to now** turns it back on.
+- **Tally mode (phones):** big + and − buttons for the current block only, with a small vibration on each tap. Choose the team at the top.
+- **Keyboard keys (laptops):** a letter adds one and Shift + the letter removes one (A attack, D defense, G dangerous attack, S on target, O off target, B blocked, X crossing, C corner, F free kick, K save, L foul, W tackle won, Y offside). 1/2/3 switch team, N goes to now, T opens tally mode, ? shows the keys.
+- **Sharing the work:** the form shows who is recording which team, and warns if two people record the same team, because each tap would then count twice.
+- **Grouped sections:** Attack, Defence and Set pieces & discipline open and close. A totals strip (score, attempts, on target, dangerous attacks, xG) stays at the top of the data section while scrolling.
+- **Definitions:** tap a measure's name to see what counts, so everyone records the same way.
+- **Before kick-off checklist:** line-up, opponent, formation, kick-off time, video, internet and who is sharing, with links to fix anything missing. It can be hidden.
+
+---
+
 ## 2026-11-28: Statistics Center button and link check
 
 - Every button and link on every Statistics Center page was clicked by an automated test (38 pages, 500 links).

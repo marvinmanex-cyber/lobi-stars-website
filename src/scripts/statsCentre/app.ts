@@ -68,6 +68,8 @@ async function boot() {
   $('who').textContent = `${S.user.fullName}${S.user.admin ? ' · Super Admin' : S.user.readOnly ? ' · coach (view only)' : S.user.canPublish ? ' · may publish' : ''}`;
   document.body.classList.toggle('sx-ro', !!S.user.readOnly);
   show('vApp');
+  // Coach accounts: a badge on "Analysis Form" when a new analysis has been marked Final.
+  if (S.user.readOnly) api('bst/new-finals').then((r: any) => { if (r.count) document.querySelector('[data-nav="bst"]')?.insertAdjacentHTML('beforeend', ` <span class="sx-navbadge" aria-label="${r.count} new">${r.count} new</span>`); }).catch(() => {});
   updateSync(); flushAll();
   route();
 }

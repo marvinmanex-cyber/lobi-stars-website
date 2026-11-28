@@ -315,3 +315,10 @@ Tables:
 ## Official results (27 Nov 2026)
 
 `officialResults(db, eventIds)` (statsCentreData.js) reads the result the Results page shows: `match_centre` full-time score, else `league_fixtures` full_time/awarded goals (awarded always wins). `listMatches`, `dashboard` and `getMatch` attach `match.official`; `validate()` adds an error when the derived score differs, so publishing (which feeds match_centre) can never contradict /results.
+
+## Analysis Form improvements (28 Nov 2026)
+
+-  holds the definitions, the groups, the keys,  (block start → video time from /) and  (served at ).
+- In , the per-device state  gains , , , ,  and . A 10-second timer moves to the clock's block unless follow is off or someone is typing.
+- Presence () now stores  and returns , so the form can warn about double counting.
+- Coach delivery uses  and , with . Coaches are allowed to POST .
