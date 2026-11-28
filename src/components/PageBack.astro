@@ -10,7 +10,7 @@ import ShareButton from './ShareButton.astro';
 interface Props { title: string; share?: boolean; home?: boolean }
 const { title, share = false, home = false } = Astro.props;
 const SECTIONS: Record<string, [string, string] | null> = {
-  news: ['News', '/news/'], club: ['The Club', '/club/'], fixtures: ['Fixtures & Results', '/fixtures/'], matches: ['Fixtures & Results', '/fixtures/'],
+  news: ['Lobi Stars News', '/news/'], club: ['The Club', '/club/'], fixtures: ['Lobi Stars Fixtures & Results', '/fixtures/'], matches: ['Lobi Stars Fixtures & Results', '/fixtures/'],
   squad: ['Squad', '/squad/'], gallery: ['Gallery', '/gallery/'], tickets: ['Tickets', '/tickets/'], programme: ['Matchday Programme', '/programme/'],
   food: ['Food Orders', '/food/'], partners: ['Partners', '/partners/'], commentary: ['Live Commentary', '/commentary/'],
   'predict-and-win': ['Predict & Win', '/predict-and-win/'], motm: ['Man of the Match', '/man-of-the-match/'], newsletter: ['Newsletter', '/newsletter/'],

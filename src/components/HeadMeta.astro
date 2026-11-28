@@ -34,7 +34,7 @@ const ogImage = new URL(image || DEFAULT_IMAGE, Astro.site).toString();
 
 // Breadcrumbs from the URL, e.g. /news/some-story -> Home > News > Story.
 const SECTION_NAMES: Record<string, string> = {
-  news: 'News', club: 'The Club', fixtures: 'Fixtures & Results', squad: 'Squad', gallery: 'Gallery',
+  news: 'Lobi Stars News', club: 'The Club', fixtures: 'Lobi Stars Fixtures & Results', squad: 'Squad', gallery: 'Gallery',
   tickets: 'Tickets', programme: 'Matchday Programme', food: 'Food Orders',
 };
 const segments = Astro.url.pathname.split('/').filter(Boolean);

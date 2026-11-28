@@ -13,6 +13,8 @@ in HANDOVER-TODO.md.
 - **News photos are 25–40% lighter** (re-saved at the website's normal quality, with no visible difference), so phones show them sooner. New uploads are lightened automatically when the website is rebuilt. Kitchen pictures are not touched.
 - **Clearer speed warnings:** the SEO Scanner now records, from Google's weekly speed test, **which part of a page moves** while it loads (CLS) and **which item loads last** (LCP), and shows both in the warning. That says exactly what to fix.
 - **Checked:** Google Search Console and PageSpeed Insights are both connected and sending figures.
+- **Right page for the right search:** news stories now link back to the news page as **"Lobi Stars News"**, and match pages link back as **"Lobi Stars Fixtures & Results"** (in the breadcrumb and in Google's breadcrumb data). The News page also tells Google it is the club's list of news articles. This helps Google show /news/ for "Lobi Stars news" (it showed the homepage) and /fixtures/ for "Lobi Stars fixtures" and "match today". Google takes a few weeks to react.
+- **Fixture data:** Mighty Jets FC v Sokoto United FC (14 Nov) is now marked Postponed, which cleared the "Fixtures or table look out of date" warning.
 
 ## 2026-11-28: Analysis Form: ten improvements
 

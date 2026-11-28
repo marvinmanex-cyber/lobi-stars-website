@@ -5,11 +5,19 @@ import { getSortedNews, NEWS_CATEGORIES, categorySlug, tabOf } from '../../lib/n
 
 const articles = await getSortedNews();
 const tabs = [{ name: 'All', slug: 'all' }, ...NEWS_CATEGORIES];
+const site = Astro.site ?? new URL('https://lobistarsfc.com');
+// Tells Google this page is the club's news hub (so "Lobi Stars news" leads here, not the homepage).
+const newsHub = [{
+  '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'Lobi Stars News', url: new URL('/news/', site).toString(),
+  about: { '@type': 'SportsTeam', name: 'Lobi Stars FC' },
+  mainEntity: { '@type': 'ItemList', itemListElement: articles.slice(0, 20).map((a, i) => ({ '@type': 'ListItem', position: i + 1, url: new URL(`/news/${a.id}/`, site).toString(), name: a.data.title })) },
+}];
 ---
 <Layout
   title="News | Lobi Stars Football Club"
   description="The latest Lobi Stars FC news: team news, features and ticket updates from the Pride of Benue."
   image={articles[0]?.data.coverImage}
+  jsonLd={newsHub}
 >
   <div class="nl-banner">
     <div class="nl-banner-inner">
